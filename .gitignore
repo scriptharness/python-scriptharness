@@ -1,0 +1,3 @@
+.tox
+nosetests.xml
+scriptharness.egg-info
