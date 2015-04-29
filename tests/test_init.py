@@ -12,19 +12,19 @@ class TestVersionString(unittest.TestCase):
     '''
     Test the various semver version->version string conversions
     '''
-    def test_three_version_string(self):
+    def test_three_version(self):
         '''
         3 digit tuple -> version string
         '''
         self.assertEqual(sh.get_version_string((0, 1, 0)), '0.1.0')
 
-    def test_non_digit_three_version_string(self):
+    def test_illegal_three_version(self):
         '''
         Raise if a 3-len tuple has a non-digit
         '''
         self.assertRaises(TypeError, sh.get_version_string, (('one', 'two', 'three')))
 
-    def test_four_version_string(self):
+    def test_four_version(self):
         '''
         3 digit + string tuple -> version string
         '''

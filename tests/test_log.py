@@ -3,6 +3,7 @@
 Test scriptharness.log
 '''
 from copy import deepcopy
+import logging
 import mock
 import scriptharness.log as log
 import unittest
@@ -57,7 +58,7 @@ class TestLogMethodInit(unittest.TestCase):
     '''
     def test_no_kwargs(self):
         '''
-        Test LogMethod.__init__() with no keyword arguments
+        LogMethod.__init__() with no keyword arguments
         '''
         func = 'x'
         log_method = log.LogMethod(func)
@@ -66,16 +67,17 @@ class TestLogMethodInit(unittest.TestCase):
 
     def test_illegal_kwargs(self):
         '''
-        Test LogMethod.__init__() with illegal keyword argument
+        LogMethod.__init__() with illegal keyword argument
         '''
         kwargs = {
+            'level': logging.WARNING,
             'illegal_scriptharness_option': 1,
         }
         self.assertRaises(ScriptHarnessException, log.LogMethod, 'x', **kwargs)
 
     def test_basic_decorator_return(self):
         '''
-        Test basic @LogMethod decorator return
+        Basic @LogMethod decorator return
         '''
         @log.LogMethod
         def test_func(*args, **kwargs):
@@ -89,13 +91,13 @@ class TestLogMethodInit(unittest.TestCase):
 # TestLogMethod {{{1
 class TestLogMethod(unittest.TestCase):
     '''
-    Test scriptharness.log.LogMethod, outside of __init__()
+    scriptharness.log.LogMethod, outside of __init__()
     '''
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_prefunc(mock_logging):
         '''
-        Test basic @LogMethod pre_func()
+        Basic @LogMethod pre_func()
         '''
         class NoPostFunc(log.LogMethod):
             '''
@@ -133,7 +135,7 @@ class TestLogMethod(unittest.TestCase):
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_postfunc(mock_logging):
         '''
-        Test basic @LogMethod post_func()
+        Basic @LogMethod post_func()
         '''
         @log.LogMethod
         def test_func(*args, **kwargs):
