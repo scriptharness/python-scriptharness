@@ -11,7 +11,6 @@ import os
 from scriptharness import ScriptHarnessException
 
 # "Constants"
-LOG = logging.getLogger('scriptharness')
 LOGGING_DEFAULTS = {
     'level': logging.INFO,
     'datefmt': '%H:%M:%S',
@@ -113,7 +112,9 @@ class LogMethod(object):
 
         This method is split out for easier subclassing.
         '''
-        LOG.log(self.config['level'], self.config['pre_msg'], self.repl_dict)
+        # should I getLogger(self.func.__name__) ?
+        log = logging.getLogger('scriptharness')
+        log.log(self.config['level'], self.config['pre_msg'], self.repl_dict)
 
     def call_func(self):
         '''
@@ -135,7 +136,9 @@ class LogMethod(object):
 
         TODO error detection
         '''
-        LOG.log(self.config['level'], self.config['post_success_msg'], self.repl_dict)
+        # should I getLogger(self.func.__name__) ?
+        log = logging.getLogger('scriptharness')
+        log.log(self.config['level'], self.config['post_success_msg'], self.repl_dict)
 
 
 @LogMethod
@@ -147,11 +150,13 @@ def chdir(*args, **kwargs):
     but this could potentially become scriptharness.os.chdir()
     '''
     os.chdir(*args, **kwargs)
-    LOG.info('Now in %s', os.getcwd())
+    log = logging.getLogger('scriptharness')
+    log.info('Now in %s', os.getcwd())
 
 
 
 if __name__ == '__main__':
     set_logging_config()
+    LOG = logging.getLogger('scriptharness')
     LOG.info('test')
     chdir('/tmp')
