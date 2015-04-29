@@ -6,7 +6,7 @@ from copy import deepcopy
 import mock
 import scriptharness.log as log
 import unittest
-#from scriptharness import ScriptHarnessException
+from scriptharness import ScriptHarnessException
 
 
 # TestSetLoggingConfig {{{1
@@ -55,12 +55,70 @@ class TestLogMethodInit(unittest.TestCase):
     '''
     Test scriptharness.log.LogMethod.__init__()
     '''
-    @mock.patch('scriptharness.log.logging')
-    def test_no_kwargs(self, mock_logging):
+    def test_no_kwargs(self):
         '''
         Test LogMethod.__init__() with no keyword arguments
         '''
         func = 'x'
-        lm = log.LogMethod(func)
-        self.assertEqual(lm.config, log.LogMethod.config)
-        self.assertEqual(lm.func, func)
+        log_method = log.LogMethod(func)
+        self.assertEqual(log_method.config, log.LogMethod.config)
+        self.assertEqual(log_method.func, func)
+
+    def test_illegal_kwargs(self):
+        '''
+        Test LogMethod.__init__() with illegal keyword argument
+        '''
+        kwargs = {
+            'illegal_scriptharness_option': 1,
+        }
+        self.assertRaises(ScriptHarnessException, log.LogMethod, 'x', **kwargs)
+
+    def test_basic_decorator_return(self):
+        '''
+        Test basic @LogMethod decorator return
+        '''
+        @log.LogMethod
+        def test_func(*args, **kwargs):
+            ''' test method '''
+            return args, kwargs
+        args = ('a', 'b')
+        kwargs = {'c': 1, 'd': 2}
+        self.assertEqual((args, kwargs), test_func(*args, **kwargs))
+
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_basic_decorator_prefunc(mock_logging):
+        '''
+        Test basic @LogMethod pre_func()
+        '''
+        class NoPostFunc(log.LogMethod):
+            '''
+            Subclass LogMethod to only log from pre_func()
+            '''
+            def call_func(self):
+                ''' Skip calling '''
+                pass
+            def post_func(self):
+                ''' Skip logging '''
+                pass
+
+        @NoPostFunc
+        def test_func(*args, **kwargs):
+            ''' test method '''
+            return args, kwargs
+
+        mock_func = mock.MagicMock()
+        mock_logging.getLogger.return_value = mock_func
+
+        args = ('a', 'b')
+        kwargs = {'c': 1, 'd': 2}
+        test_func(*args, **kwargs)
+        mock_func.log.assert_called_once_with(
+            log.LogMethod.config['level'],
+            log.LogMethod.config['pre_msg'],
+            {
+                'func_name': 'test_func',
+                'args': args,
+                'kwargs': kwargs,
+            },
+        )
