@@ -2,6 +2,7 @@
 """
 Script harness.
 """
+
 from __future__ import print_function
 
 
@@ -13,8 +14,7 @@ class ScriptHarnessException(Exception):
     pass
 
 
-# Versioning {{{1
-# Semantic versioning 2.0.0  http://semver.org/
+# get_version_string {{{1
 def get_version_string(version):
     '''
     Specify the __version__ as a tuple for more precise comparisons, and
@@ -32,6 +32,9 @@ def get_version_string(version):
             "Version tuple is non-semver-compliant {0} length!".format(version_len)
         )
     return version_string
+# 1}}}
 
+
+# Semantic versioning 2.0.0  http://semver.org/
 __version__ = (0, 1, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
