@@ -85,6 +85,12 @@ class TestLogMethodInit(unittest.TestCase):
         kwargs = {'c': 1, 'd': 2}
         self.assertEqual((args, kwargs), test_func(*args, **kwargs))
 
+
+# TestLogMethod {{{1
+class TestLogMethod(unittest.TestCase):
+    '''
+    Test scriptharness.log.LogMethod, outside of __init__()
+    '''
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_prefunc(mock_logging):
@@ -120,5 +126,33 @@ class TestLogMethodInit(unittest.TestCase):
                 'func_name': 'test_func',
                 'args': args,
                 'kwargs': kwargs,
+            },
+        )
+
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_basic_decorator_postfunc(mock_logging):
+        '''
+        Test basic @LogMethod post_func()
+        '''
+        @log.LogMethod
+        def test_func(*args, **kwargs):
+            ''' test method '''
+            return args, kwargs
+
+        mock_func = mock.MagicMock()
+        mock_logging.getLogger.return_value = mock_func
+
+        args = ('a', 'b')
+        kwargs = {'c': 1, 'd': 2}
+        test_func(*args, **kwargs)
+        mock_func.log.assert_called_with(
+            log.LogMethod.config['level'],
+            log.LogMethod.config['post_success_msg'],
+            {
+                'func_name': 'test_func',
+                'args': args,
+                'kwargs': kwargs,
+                'return_value': (args, kwargs)
             },
         )

@@ -141,22 +141,14 @@ class LogMethod(object):
         log.log(self.config['level'], self.config['post_success_msg'], self.repl_dict)
 
 
-@LogMethod
-def chdir(*args, **kwargs):
-    '''
-    Test log_decorator by wrapping os.chdir()
-
-    I haven't decided yet whether I'm going to wrap a bunch of python builtins,
-    but this could potentially become scriptharness.os.chdir()
-    '''
-    os.chdir(*args, **kwargs)
-    log = logging.getLogger('scriptharness')
-    log.info('Now in %s', os.getcwd())
-
-
-
-if __name__ == '__main__':
-    set_logging_config()
-    LOG = logging.getLogger('scriptharness')
-    LOG.info('test')
-    chdir('/tmp')
+#@LogMethod
+#def chdir(*args, **kwargs):
+#    '''
+#    Test log_decorator by wrapping os.chdir()
+#
+#    I haven't decided yet whether I'm going to wrap a bunch of python builtins,
+#    but this could potentially become scriptharness.os.chdir()
+#    '''
+#    os.chdir(*args, **kwargs)
+#    log = logging.getLogger('scriptharness')
+#    log.info('Now in %s', os.getcwd())
