@@ -11,8 +11,7 @@ import os
 from scriptharness import ScriptHarnessException
 
 # "Constants"
-LOG = logging.getLogger(__name__)
-
+LOG = logging.getLogger('scriptharness')
 LOGGING_DEFAULTS = {
     'level': logging.INFO,
     'datefmt': '%H:%M:%S',
@@ -28,20 +27,6 @@ def set_logging_config(**kwargs):
     for key, value in LOGGING_DEFAULTS.items():
         kwargs.setdefault(key, value)
     logging.basicConfig(**kwargs)
-
-# from http://simeonfranklin.com/blog/2012/jul/1/python-decorators-in-12-steps/
-def simple_log(func):
-    '''
-    Use this decorator to add generic logging to any function.
-    Most likely this will be abandoned in favor of the class.
-    '''
-    def inner(*args, **kwargs):
-        '''
-        Call the wrapped function.
-        '''
-        LOG.info('%s arguments were: %s %s', func.__name__, args, kwargs)
-        return func(*args, **kwargs)
-    return inner
 
 
 class LogMethod(object):
@@ -107,6 +92,14 @@ class LogMethod(object):
         '''
         The log messages in pre_func() and post_func() require some additional
         info.  Specify that info in the replacement dictionary.
+
+        Currently, set the following:
+
+            func_name: self.func.__name__
+            args: the args passed to self.func()
+            kwargs: the kwargs passed to self.func()
+
+        After self.call_func(), return_value will also be set.
         '''
         self.repl_dict = {
             'func_name': self.func.__name__,
@@ -117,13 +110,19 @@ class LogMethod(object):
     def pre_func(self):
         '''
         Log the function call before proceeding.
+
+        This method is split out for easier subclassing.
         '''
         LOG.log(self.config['level'], self.config['pre_msg'], self.repl_dict)
 
     def call_func(self):
         '''
         Set self.return_value from the function call, and add it to the repl_dict.
+
+        This method is split out for easier subclassing.
+
         TODO error detection
+        TODO try/except?
         '''
         self.return_value = self.func(*self.args, **self.kwargs)
         self.repl_dict['return_value'] = self.return_value
@@ -131,15 +130,21 @@ class LogMethod(object):
     def post_func(self):
         '''
         Currently, log the success message until we get an error detection callback.
+
+        This method is split out for easier subclassing.
+
         TODO error detection
         '''
         LOG.log(self.config['level'], self.config['post_success_msg'], self.repl_dict)
 
 
-@simple_log
+@LogMethod
 def chdir(*args, **kwargs):
     '''
     Test log_decorator by wrapping os.chdir()
+
+    I haven't decided yet whether I'm going to wrap a bunch of python builtins,
+    but this could potentially become scriptharness.os.chdir()
     '''
     os.chdir(*args, **kwargs)
     LOG.info('Now in %s', os.getcwd())

@@ -13,7 +13,11 @@ dependencies = [
     'six',
 ]
 
-# TODO verify we can run in 2.6!
+try:
+    import json
+except ImportError:
+    dependencies.append('simplejson')
+
 if sys.version_info < (2, 6):
     print('ERROR: scriptharness requires Python 2.6 or above! Exiting...')
     sys.exit(1)
