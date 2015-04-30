@@ -7,7 +7,8 @@ import logging
 import mock
 import scriptharness.log as log
 import unittest
-from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
+#from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
+from scriptharness import ScriptHarnessUsageException
 
 
 # TestSetLoggingConfig {{{1

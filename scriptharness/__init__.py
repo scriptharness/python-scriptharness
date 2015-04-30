@@ -30,8 +30,8 @@ class ScriptHarnessFailure(ScriptHarnessException):
     pass
 
 
-# _get_version_string {{{1
-def _get_version_string(version):
+# get_version_string {{{1
+def get_version_string(version):
     '''
     Specify the __version__ as a tuple for more precise comparisons, and
     translate it to __version_string__ for when that's needed.
@@ -53,4 +53,4 @@ def _get_version_string(version):
 
 # Semantic versioning 2.0.0  http://semver.org/
 __version__ = (0, 1, 0, 'alpha')
-__version_string__ = _get_version_string(__version__)
+__version_string__ = get_version_string(__version__)
