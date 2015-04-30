@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-Logging.
+Allow for full logging.
 '''
 
 # Imports
@@ -8,9 +8,9 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import os
-from scriptharness import ScriptHarnessException
 
-# "Constants"
+from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
+
 LOGGING_DEFAULTS = {
     'level': logging.INFO,
     'datefmt': '%H:%M:%S',
@@ -36,6 +36,7 @@ class LogMethod(object):
     args = None
     kwargs = None
     repl_dict = {}
+    detected_errors = False
 
     config = {
         'level': logging.INFO,
@@ -43,8 +44,8 @@ class LogMethod(object):
         'pre_msg': '%(func_name)s arguments were: %(args)s %(kwargs)s',
         'post_success_msg': '%(func_name)s completed.',
         'post_failure_msg': '%(func_name)s failed.',
-        #'raise_on_failure': False,
-        #'detect_error_cb': None,
+        'raise_on_error': False,
+        'detect_error_cb': None,
     }
 
     def __init__(self, func, **kwargs):
@@ -62,13 +63,16 @@ class LogMethod(object):
         subclassing and changing self.defaults.
         '''
         self.func = func
-        message = ''
+        messages = []
         for key, value in kwargs.items():
             if key not in self.config:
-                message += 'Unknown key {0} in kwargs!{1}'.format(key, os.linesep)
+                messages.append('Unknown key {0} in kwargs!'.format(key))
             self.config[key] = value
-        if message:
-            raise ScriptHarnessException(message)
+        if kwargs.get('detect_error_cb') is not None and \
+                not callable(kwargs['detect_error_cb']):
+            messages.append('detect_error_cb not callable!')
+        if messages:
+            raise ScriptHarnessUsageException(os.linesep.join(messages))
 
     def __call__(self, *args, **kwargs):
         '''
@@ -77,7 +81,6 @@ class LogMethod(object):
         * self.pre_function to log the call before running the function
         * self.call_function run the function
         * self.post_function to log the function completion.
-        TODO detect errors
         '''
         self.args = args
         self.kwargs = kwargs
@@ -122,23 +125,32 @@ class LogMethod(object):
 
         This method is split out for easier subclassing.
 
-        TODO error detection
         TODO try/except?
         '''
         self.return_value = self.func(*self.args, **self.kwargs)
         self.repl_dict['return_value'] = self.return_value
+        if self.config['detect_error_cb'] is not None:
+            self.detected_errors = self.config['detect_error_cb'].__call__(self)
 
     def post_func(self):
         '''
         Currently, log the success message until we get an error detection callback.
 
         This method is split out for easier subclassing.
-
-        TODO error detection
         '''
         # should I getLogger(self.func.__name__) ?
         log = logging.getLogger('scriptharness')
-        log.log(self.config['level'], self.config['post_success_msg'], self.repl_dict)
+        if self.detected_errors:
+            msg = self.config['post_failure_msg']
+            level = self.config['error_level']
+        else:
+            msg = self.config['post_success_msg']
+            level = self.config['level']
+        log.log(level, msg, self.repl_dict)
+        if self.detected_errors and self.config['raise_on_error']:
+            raise ScriptHarnessFailure(
+                self.config['post_failure_msg'].format(self.repl_dict)
+            )
 
 
 #@LogMethod
