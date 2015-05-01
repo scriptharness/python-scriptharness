@@ -6,6 +6,7 @@ Allow for full logging.
 # Imports
 from __future__ import absolute_import, division, print_function
 
+from copy import deepcopy
 import logging
 import os
 
@@ -32,14 +33,9 @@ class LogMethod(object):
     '''
     Wrapper decorator object for logging and error detection.
     '''
-    return_value = None
-    args = None
-    kwargs = None
-    func = None
-    repl_dict = {}
-    detected_errors = False
-
-    config = {
+    # Beware: Changes to default_config will carry over to other decorated
+    # LogMethod functions!
+    default_config = {
         'level': logging.INFO,
         'error_level': logging.ERROR,
         'logger_name': '{func_name}',
@@ -64,8 +60,13 @@ class LogMethod(object):
         All of the self.defaults are overrideable via **kwargs or
         subclassing and changing self.defaults.
         '''
-        if func is not None:
-            self.func = func
+        self.func = func
+        self.return_value = None
+        self.args = None
+        self.kwargs = None
+        self.repl_dict = {}
+        self.detected_errors = False
+        self.config = deepcopy(self.default_config)
         messages = []
         for key, value in kwargs.items():
             if key not in self.config:

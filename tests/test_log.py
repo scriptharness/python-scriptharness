@@ -7,8 +7,7 @@ import logging
 import mock
 import scriptharness.log as log
 import unittest
-#from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
-from scriptharness import ScriptHarnessUsageException
+from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
 
 
 # TestSetLoggingConfig {{{1
@@ -63,7 +62,7 @@ class TestLogMethodInit(unittest.TestCase):
         '''
         func = 'x'
         log_method = log.LogMethod(func)
-        self.assertEqual(log_method.config, log.LogMethod.config)
+        self.assertEqual(log_method.config, log.LogMethod.default_config)
         self.assertEqual(log_method.func, func)
 
     def test_illegal_kwargs(self):
@@ -86,6 +85,8 @@ class TestLogMethodInit(unittest.TestCase):
         def test_func(*args, **kwargs):
             ''' test method '''
             return args, kwargs
+        import pprint
+        pprint.pprint(log.LogMethod.default_config)
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         self.assertEqual((args, kwargs), test_func(*args, **kwargs))
@@ -100,10 +101,10 @@ class TestLogMethodInit(unittest.TestCase):
         )
 
 
-# TestLogMethod {{{1
-class TestLogMethod(unittest.TestCase):
+# TestLogMethodFunction {{{1
+class TestLogMethodFunction(unittest.TestCase):
     '''
-    scriptharness.log.LogMethod, outside of __init__()
+    scriptharness.log.LogMethod wrapping a function
     '''
     @staticmethod
     @mock.patch('scriptharness.log.logging')
@@ -134,8 +135,8 @@ class TestLogMethod(unittest.TestCase):
         kwargs = {'c': 1, 'd': 2}
         test_func(*args, **kwargs)
         mock_func.log.assert_called_once_with(
-            log.LogMethod.config['level'],
-            log.LogMethod.config['pre_msg'],
+            log.LogMethod.default_config['level'],
+            log.LogMethod.default_config['pre_msg'],
             {
                 'func_name': 'test_func',
                 'args': args,
@@ -162,8 +163,8 @@ class TestLogMethod(unittest.TestCase):
         kwargs = {'c': 1, 'd': 2}
         test_func(*args, **kwargs)
         mock_func.log.assert_called_with(
-            log.LogMethod.config['level'],
-            log.LogMethod.config['post_success_msg'],
+            log.LogMethod.default_config['level'],
+            log.LogMethod.default_config['post_success_msg'],
             {
                 'func_name': 'test_func',
                 'args': args,
@@ -174,11 +175,11 @@ class TestLogMethod(unittest.TestCase):
 
     @staticmethod
     @mock.patch('scriptharness.log.logging')
-    def test_detect_error_cb(mock_logging):
+    def test_error_cb_failure(mock_logging):
         '''
-        Use @LogMethod detect_error_cb
+        Use @LogMethod detect_error_cb, fail
         '''
-        def detect_error_cb(log_method):
+        def detect_error_cb(*args):
             ''' always detect errors '''
             return True
 
@@ -196,7 +197,7 @@ class TestLogMethod(unittest.TestCase):
             test_func(*args, **kwargs)
             mock_func.log.assert_called_with(
                 level,
-                log.LogMethod.config['post_failure_msg'],
+                log.LogMethod.default_config['post_failure_msg'],
                 {
                     'func_name': 'test_func',
                     'args': args,
@@ -204,3 +205,31 @@ class TestLogMethod(unittest.TestCase):
                     'return_value': (args, kwargs)
                 },
             )
+
+    @mock.patch('scriptharness.log.logging')
+    def test_raise_on_error(self, mock_logging):
+        '''
+        Use @LogMethod detect_error_cb, raise
+        '''
+        def detect_error_cb(*args):
+            ''' always detect errors '''
+            return True
+        mock_func = mock.MagicMock()
+        mock_logging.getLogger.return_value = mock_func
+        args = ('a', 'b')
+        kwargs = {'c': 1, 'd': 2}
+        @log.LogMethod(detect_error_cb=detect_error_cb, raise_on_error=True)
+        def test_func(*args, **kwargs):
+            ''' test method '''
+            return args, kwargs
+        self.assertRaises(ScriptHarnessFailure, test_func, *args, **kwargs)
+        mock_func.log.assert_called_with(
+            log.LogMethod.default_config['error_level'],
+            log.LogMethod.default_config['post_failure_msg'],
+            {
+                'func_name': 'test_func',
+                'args': args,
+                'kwargs': kwargs,
+                'return_value': (args, kwargs)
+            },
+        )
