@@ -16,7 +16,13 @@ class TestVersionString(unittest.TestCase):
         '''
         3 digit tuple -> version string
         '''
-        self.assertEqual(sh.get_version_string((0, 1, 0)), '0.1.0')
+        test_dict = {
+            '0.1.0': (0, 1, 0),
+            '1.2.3': (1, 2, 3),
+            '4.1.5': (4, 1, 5),
+        }
+        for key, value in test_dict.items():
+            self.assertEqual(sh.get_version_string(value), key)
 
     def test_illegal_three_version(self):
         '''
