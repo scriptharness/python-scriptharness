@@ -35,6 +35,7 @@ class LogMethod(object):
     return_value = None
     args = None
     kwargs = None
+    func = None
     repl_dict = {}
     detected_errors = False
 
@@ -48,7 +49,7 @@ class LogMethod(object):
         'detect_error_cb': None,
     }
 
-    def __init__(self, func, **kwargs):
+    def __init__(self, func=None, **kwargs):
         '''
         Set instance attributes from the decorator, e.g.
 
@@ -62,7 +63,8 @@ class LogMethod(object):
         All of the self.defaults are overrideable via **kwargs or
         subclassing and changing self.defaults.
         '''
-        self.func = func
+        if func is not None:
+            self.func = func
         messages = []
         for key, value in kwargs.items():
             if key not in self.config:
@@ -74,13 +76,13 @@ class LogMethod(object):
         if messages:
             raise ScriptHarnessUsageException(os.linesep.join(messages))
 
-    def __call__(self, *args, **kwargs):
+    def decorator_without_args_call(self, *args, **kwargs):
         '''
         Set self.args and self.kwargs before this workflow:
 
-        * self.pre_function to log the call before running the function
-        * self.call_function run the function
-        * self.post_function to log the function completion.
+        * self.pre_func to log the call before running the function
+        * self.call_func run the function
+        * self.post_func to log the function completion.
         '''
         self.args = args
         self.kwargs = kwargs
@@ -89,6 +91,36 @@ class LogMethod(object):
         self.call_func()
         self.post_func()
         return self.return_value
+
+    def decorator_with_args_call(self, *args, **kwargs):
+        '''
+        When there are decorator arguments, __call__ is only called once, at
+        decorator time.  *args and **kwargs only show up when func is called,
+        so we need to create and return a wrapping function.
+        '''
+        def wrapped_func(*args, **kwargs):
+            '''
+            This function replaces the decorated function.
+            '''
+            self.args = args
+            self.kwargs = kwargs
+            self.set_repl_dict()
+            self.pre_func()
+            self.return_value = self.func(*self.args, **self.kwargs)
+            self.repl_dict['return_value'] = self.return_value
+            if self.config['detect_error_cb'] is not None:
+                self.detected_errors = self.config['detect_error_cb'].__call__(self)
+            self.post_func()
+            return self.return_value
+        return wrapped_func
+
+    def __call__(self, func=None, *args, **kwargs):
+        if func is not None:
+            self.func = func
+            method = self.decorator_with_args_call
+        else:
+            method = self.decorator_without_args_call
+        return method(*args, **kwargs)
 
     def set_repl_dict(self):
         '''

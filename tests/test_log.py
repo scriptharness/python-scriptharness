@@ -82,13 +82,22 @@ class TestLogMethodInit(unittest.TestCase):
         '''
         Basic @LogMethod decorator return
         '''
-        @log.LogMethod
+        @log.LogMethod()
         def test_func(*args, **kwargs):
             ''' test method '''
             return args, kwargs
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         self.assertEqual((args, kwargs), test_func(*args, **kwargs))
+
+    def test_illegal_callback(self):
+        '''
+        LogMethod.__init__() with illegal detect_error_cb
+        '''
+        self.assertRaises(
+            ScriptHarnessUsageException, log.LogMethod,
+            'x', **{'detect_error_cb': 'y'}
+        )
 
 
 # TestLogMethod {{{1
@@ -113,7 +122,7 @@ class TestLogMethod(unittest.TestCase):
                 ''' Skip logging '''
                 pass
 
-        @NoPostFunc
+        @NoPostFunc()
         def test_func(*args, **kwargs):
             ''' test method '''
             return args, kwargs
@@ -131,6 +140,7 @@ class TestLogMethod(unittest.TestCase):
                 'func_name': 'test_func',
                 'args': args,
                 'kwargs': kwargs,
+                'return_value': (args, kwargs)
             },
         )
 
@@ -140,7 +150,7 @@ class TestLogMethod(unittest.TestCase):
         '''
         Basic @LogMethod post_func()
         '''
-        @log.LogMethod
+        @log.LogMethod()
         def test_func(*args, **kwargs):
             ''' test method '''
             return args, kwargs
@@ -161,3 +171,36 @@ class TestLogMethod(unittest.TestCase):
                 'return_value': (args, kwargs)
             },
         )
+
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_detect_error_cb(mock_logging):
+        '''
+        Use @LogMethod detect_error_cb
+        '''
+        def detect_error_cb(log_method):
+            ''' always detect errors '''
+            return True
+
+        mock_func = mock.MagicMock()
+        mock_logging.getLogger.return_value = mock_func
+        args = ('a', 'b')
+        kwargs = {'c': 1, 'd': 2}
+
+        for level in logging.ERROR, logging.WARNING, logging.CRITICAL:
+            @log.LogMethod(detect_error_cb=detect_error_cb, error_level=level)
+            def test_func(*args, **kwargs):
+                ''' test method '''
+                return args, kwargs
+
+            test_func(*args, **kwargs)
+            mock_func.log.assert_called_with(
+                level,
+                log.LogMethod.config['post_failure_msg'],
+                {
+                    'func_name': 'test_func',
+                    'args': args,
+                    'kwargs': kwargs,
+                    'return_value': (args, kwargs)
+                },
+            )
