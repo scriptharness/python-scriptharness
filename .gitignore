@@ -1,8 +1,10 @@
 .coverage
 .tox
 htmlcov
+coverage.xml
 nosetests.xml
 pylint.out
 scriptharness.egg-info
 *.pyc
 *.orig
+*,cover
