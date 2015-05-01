@@ -42,6 +42,7 @@ class LogMethod(object):
     config = {
         'level': logging.INFO,
         'error_level': logging.ERROR,
+        'logger_name': '{func_name}',
         'pre_msg': '%(func_name)s arguments were: %(args)s %(kwargs)s',
         'post_success_msg': '%(func_name)s completed.',
         'post_failure_msg': '%(func_name)s failed.',
@@ -76,28 +77,13 @@ class LogMethod(object):
         if messages:
             raise ScriptHarnessUsageException(os.linesep.join(messages))
 
-    def decorator_without_args_call(self, *args, **kwargs):
-        '''
-        Set self.args and self.kwargs before this workflow:
-
-        * self.pre_func to log the call before running the function
-        * self.call_func run the function
-        * self.post_func to log the function completion.
-        '''
-        self.args = args
-        self.kwargs = kwargs
-        self.set_repl_dict()
-        self.pre_func()
-        self.call_func()
-        self.post_func()
-        return self.return_value
-
-    def decorator_with_args_call(self, *args, **kwargs):
+    def __call__(self, func, *args, **kwargs):
         '''
         When there are decorator arguments, __call__ is only called once, at
         decorator time.  *args and **kwargs only show up when func is called,
         so we need to create and return a wrapping function.
         '''
+        self.func = func
         def wrapped_func(*args, **kwargs):
             '''
             This function replaces the decorated function.
@@ -114,14 +100,6 @@ class LogMethod(object):
             return self.return_value
         return wrapped_func
 
-    def __call__(self, func=None, *args, **kwargs):
-        if func is not None:
-            self.func = func
-            method = self.decorator_with_args_call
-        else:
-            method = self.decorator_without_args_call
-        return method(*args, **kwargs)
-
     def set_repl_dict(self):
         '''
         The log messages in pre_func() and post_func() require some additional
@@ -133,7 +111,7 @@ class LogMethod(object):
             args: the args passed to self.func()
             kwargs: the kwargs passed to self.func()
 
-        After self.call_func(), return_value will also be set.
+        After running self.func, we'll also set return_value.
         '''
         self.repl_dict = {
             'func_name': self.func.__name__,
@@ -147,22 +125,10 @@ class LogMethod(object):
 
         This method is split out for easier subclassing.
         '''
-        # should I getLogger(self.func.__name__) ?
-        log = logging.getLogger('scriptharness')
+        log = logging.getLogger(
+            self.config['logger_name'].format(**self.repl_dict)
+        )
         log.log(self.config['level'], self.config['pre_msg'], self.repl_dict)
-
-    def call_func(self):
-        '''
-        Set self.return_value from the function call, and add it to the repl_dict.
-
-        This method is split out for easier subclassing.
-
-        TODO try/except?
-        '''
-        self.return_value = self.func(*self.args, **self.kwargs)
-        self.repl_dict['return_value'] = self.return_value
-        if self.config['detect_error_cb'] is not None:
-            self.detected_errors = self.config['detect_error_cb'].__call__(self)
 
     def post_func(self):
         '''
@@ -170,8 +136,9 @@ class LogMethod(object):
 
         This method is split out for easier subclassing.
         '''
-        # should I getLogger(self.func.__name__) ?
-        log = logging.getLogger('scriptharness')
+        log = logging.getLogger(
+            self.config['logger_name'].format(**self.repl_dict)
+        )
         if self.detected_errors:
             msg = self.config['post_failure_msg']
             level = self.config['error_level']
@@ -181,18 +148,5 @@ class LogMethod(object):
         log.log(level, msg, self.repl_dict)
         if self.detected_errors and self.config['raise_on_error']:
             raise ScriptHarnessFailure(
-                self.config['post_failure_msg'].format(self.repl_dict)
+                self.config['post_failure_msg'].format(**self.repl_dict)
             )
-
-
-#@LogMethod
-#def chdir(*args, **kwargs):
-#    '''
-#    Test log_decorator by wrapping os.chdir()
-#
-#    I haven't decided yet whether I'm going to wrap a bunch of python builtins,
-#    but this could potentially become scriptharness.os.chdir()
-#    '''
-#    os.chdir(*args, **kwargs)
-#    log = logging.getLogger('scriptharness')
-#    log.info('Now in %s', os.getcwd())
