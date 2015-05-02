@@ -67,7 +67,7 @@ class LockedFrozenSet(frozenset):
     def __new__(cls, items):
         return frozenset.__new__(cls, (make_immutable(x) for x in items))
     def __deepcopy__(self, memo):
-        return [deepcopy(elem, memo) for elem in self]
+        return set([deepcopy(elem, memo) for elem in self])
 
 
 class ReadOnlyDict(dict):

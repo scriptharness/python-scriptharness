@@ -10,6 +10,7 @@ from scriptharness import ScriptHarnessException
 
 
 CONTROL_DICT = {
+    'a': set([1, 2, 3]),
     'b': '2',
     'c': {
         'd': '4',
@@ -25,6 +26,7 @@ CONTROL_DICT = {
 }
 
 # Test ReadOnlyDict {{{1
+# helper methods {{{2
 def get_unlocked_rod():
     '''
     Helper function to create a known unlocked ReadOnlyDict
@@ -101,15 +103,50 @@ class TestUnlockedROD(unittest.TestCase):
         self.assertEqual(rod, {},
                          msg="can't clear() ReadOnlyDict when unlocked")
 
+    def test_update(self):
+        '''
+        Update the dict when unlocked
+        '''
+        rod = get_unlocked_rod()
+        dict2 = {
+            'q': 'blah',
+        }
+        rod.update(dict2)
+        dict2.update(CONTROL_DICT)
+        self.assertEqual(rod, dict2,
+                         msg="can't update() ReadOnlyDict when unlocked")
+
     def test_set_default(self):
         '''
         setdefault() when unlocked
         '''
-        rod = get_unlocked_rod()
+        rod = config.ReadOnlyDict()
         for key in CONTROL_DICT.keys():
             rod.setdefault(key, CONTROL_DICT[key])
         self.assertEqual(rod, CONTROL_DICT,
                          msg="can't setdefault() ReadOnlyDict when unlocked")
+
+    def test_set_add(self):
+        '''
+        set.add() when unlocked
+        '''
+        rod = get_unlocked_rod()
+        rod['a'].add(4)
+        self.assertEqual(
+            rod['a'], set([1, 2, 3, 4]),
+            msg="can't add() to a child set in ReadOnlyDict when unlocked"
+        )
+
+    def test_set_remove(self):
+        '''
+        set.remove() when unlocked
+        '''
+        rod = get_unlocked_rod()
+        rod['a'].remove(2)
+        self.assertEqual(
+            rod['a'], set([1, 3]),
+            msg="can't remove() a child set in ReadOnlyDict when unlocked"
+        )
 
 
 # TestLockedROD {{{2
@@ -222,14 +259,39 @@ class TestLockedROD(unittest.TestCase):
         else:
             self.assertEqual(0, 1, "can append to list-in-tuple when locked")
 
+    def test_frozenset_add(self):
+        '''
+        locked child set add() should raise
+        '''
+        rod = get_locked_rod()
+        try:
+            rod['a'].add(4)
+        except AttributeError:
+            pass
+        else:
+            self.assertEqual(0, 1, "can add to set when locked")
 
+    def test_frozenset_remove(self):
+        '''
+        locked child set remove() should raise
+        '''
+        rod = get_locked_rod()
+        try:
+            rod['a'].remove(4)
+        except AttributeError:
+            pass
+        else:
+            self.assertEqual(0, 1, "can remove to set when locked")
+
+
+# TestDeepcopyROD {{{2
 class TestDeepcopyROD(unittest.TestCase):
     '''
     Make sure deepcopy behaves properly on ReadOnlyDict
     '''
     def test_deepcopy_equality(self):
         '''
-        deepcopy of locked rod should still equal the original dict
+        deepcopy of locked rod should equal the original rod
         '''
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
