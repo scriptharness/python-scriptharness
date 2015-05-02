@@ -40,7 +40,7 @@ def get_version_string(version):
     '''
     version_len = len(version)
     if version_len == 3:
-        version_string = '.'.join(['%d' % i for i in version])
+        version_string = '%d.%d.%d' % version
     elif version_len == 4:
         version_string = '{0}.{1}.{2}-{3}'.format(*version)
     else:
