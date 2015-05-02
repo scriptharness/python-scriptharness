@@ -55,7 +55,7 @@ class LockedTuple(tuple):
     def __new__(cls, items):
         return tuple.__new__(cls, (make_immutable(x) for x in items))
     def __deepcopy__(self, memo):
-        return [deepcopy(elem, memo) for elem in self]
+        return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
 
 
 class LockedFrozenSet(frozenset):
@@ -67,7 +67,9 @@ class LockedFrozenSet(frozenset):
     def __new__(cls, items):
         return frozenset.__new__(cls, (make_immutable(x) for x in items))
     def __deepcopy__(self, memo):
-        return set([deepcopy(elem, memo) for elem in self])
+        return set(  # pragma: no branch
+            [deepcopy(elem, memo) for elem in self]
+        )
 
 
 class ReadOnlyDict(dict):
