@@ -222,6 +222,22 @@ class TestLockedROD(unittest.TestCase):
         else:
             self.assertEqual(0, 1, "can append to list-in-tuple when locked")
 
+
+class TestDeepcopyROD(unittest.TestCase):
+    '''
+    Make sure deepcopy behaves properly on ReadOnlyDict
+    '''
+    def test_deepcopy_equality(self):
+        '''
+        deepcopy of locked rod should still equal the original dict
+        '''
+        rod = get_locked_rod()
+        rod2 = deepcopy(rod)
+        self.assertEqual(
+            rod2, CONTROL_DICT,
+            msg="ReadOnlyDict deepcopy is not equal to original dict!"
+        )
+
     def test_deepcopy_set(self):
         '''
         deepcopy of locked rod should be read-write

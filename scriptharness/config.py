@@ -128,10 +128,6 @@ class ReadOnlyDict(dict):
         '''
         result = self.__class__()
         memo[id(self)] = result
-        for key, value in self.__dict__.items():
-            if key == '_lock':
-                continue
-            setattr(result, key, deepcopy(value, memo))
         for key, value in self.items():
             result[key] = deepcopy(value, memo)
         return result
