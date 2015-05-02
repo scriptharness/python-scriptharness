@@ -7,14 +7,14 @@ import sys
 
 
 # scriptharness exceptions {{{1
-class ScriptHarnessException(Exception):
+class ScriptHarnessBaseException(Exception):
     '''
     All scriptharness exceptions should inherit this exception.
     '''
     pass
 
 
-class ScriptHarnessUsageException(Exception):
+class ScriptHarnessException(ScriptHarnessBaseException):
     '''
     There is a problem in how scriptharness is being called.
     This is a message for the developer.
@@ -22,7 +22,7 @@ class ScriptHarnessUsageException(Exception):
     pass
 
 
-class ScriptHarnessFailure(ScriptHarnessException):
+class ScriptHarnessFailure(ScriptHarnessBaseException):
     '''
     Scriptharness has detected a failure in the running process.
     This exception should result in program termination.

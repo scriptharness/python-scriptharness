@@ -3,14 +3,12 @@
 Allow for full logging.
 '''
 
-# Imports
 from __future__ import absolute_import, division, print_function
-
 from copy import deepcopy
 import logging
 import os
+from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
-from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
 
 LOGGING_DEFAULTS = {
     'level': logging.INFO,
@@ -29,6 +27,7 @@ def set_logging_config(**kwargs):
     logging.basicConfig(**kwargs)
 
 
+# LogMethod decorator {{{1
 class LogMethod(object):
     '''
     Wrapper decorator object for logging and error detection.
@@ -76,7 +75,7 @@ class LogMethod(object):
                 not callable(kwargs['detect_error_cb']):
             messages.append('detect_error_cb not callable!')
         if messages:
-            raise ScriptHarnessUsageException(os.linesep.join(messages))
+            raise ScriptHarnessException(os.linesep.join(messages))
 
     def __call__(self, func, *args, **kwargs):
         '''

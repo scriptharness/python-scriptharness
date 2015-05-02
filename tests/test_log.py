@@ -7,7 +7,7 @@ import logging
 import mock
 import scriptharness.log as log
 import unittest
-from scriptharness import ScriptHarnessUsageException, ScriptHarnessFailure
+from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
 
 # Helper methods {{{1
@@ -95,7 +95,7 @@ class TestLogMethodInit(unittest.TestCase):
             'illegal_scriptharness_option': 1,
         }
         self.assertRaises(
-            ScriptHarnessUsageException, log.LogMethod, 'x', **kwargs
+            ScriptHarnessException, log.LogMethod, 'x', **kwargs
         )
 
     def test_basic_decorator_return(self):
@@ -117,7 +117,7 @@ class TestLogMethodInit(unittest.TestCase):
         LogMethod.__init__() with illegal detect_error_cb
         '''
         self.assertRaises(
-            ScriptHarnessUsageException, log.LogMethod,
+            ScriptHarnessException, log.LogMethod,
             'x', **{'detect_error_cb': 'y'}
         )
 

@@ -39,6 +39,6 @@ This is in the same spirit of other frameworks that allow for discrete targets, 
 
 ## Running unit tests
     # By default, this will look for all minor versions of python between 2.6 and 3.5
-    # This can be changed by editing tox.ini
+    # You can run |tox -e ENV| to run a specific env, e.g. |tox -e py27|
     pip install tox
     tox
