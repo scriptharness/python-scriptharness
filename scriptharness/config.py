@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-'''
-Allow for flexible configuration.
-'''
+"""Allow for flexible configuration.
+"""
 
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
@@ -15,24 +14,31 @@ from scriptharness import ScriptHarnessException
 
 # ReadOnlyDict {{{1
 def make_immutable(item):
-    '''
-    In order to lock ReadOnlyDict, we also have to lock any children of
-    ReadOnlyDict (for example, if r is a ReadOnlyDict that looks like
+    """Recursively lock all contents of a ReadOnlyDict.
 
-        {
-            'a': 1,
-            'b': ['contents', 'of', 'b'],
-            'c': {
-                'key': 'value',
-            },
-        }
+    In order to lock ReadOnlyDict, we also have to lock any children of
+    ReadOnlyDict (for example, if r is a ReadOnlyDict that looks like::
+
+      {
+          'a': 1,
+          'b': ['contents', 'of', 'b'],
+          'c': {
+              'key': 'value',
+          },
+      }
 
     and we locked r on a shallow level, we could still r['b'].append() or
     r['c']['key2'] = 'value2'.  So to avoid that, we need to recursively
     lock r via make_immutable.
 
     Taken from mozharness, but added LockedFrozenSet.
-    '''
+
+    Args:
+      item (object): a child of a ReadOnlyDict.
+
+    Returns:
+      A locked version of item, when applicable, or item.
+    """
     if isinstance(item, list) or isinstance(item, tuple):
         result = LockedTuple(item)
     elif isinstance(item, dict):
@@ -46,34 +52,41 @@ def make_immutable(item):
 
 
 class LockedTuple(tuple):
-    '''
+    """A tuple with its children recursively locked.
+
     Tuples are read-only by nature, but we need to be able to recursively lock
     the contents of the tuple, since the tuple can contain dicts or lists.
 
     Taken straight from mozharness.
-    '''
+    """
     def __new__(cls, items):
         return tuple.__new__(cls, (make_immutable(x) for x in items))
     def __deepcopy__(self, memo):
+        """Return a list on deepcopy.
+        """
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
 
 
 class LockedFrozenSet(frozenset):
-    '''
+    """A frozenset with its children recursively locked.
+
     Frozensets are read-only by nature, but we need to be able to recursively
     lock the contents of the frozenset, since the frozenset can contain dicts
     or lists.
-    '''
+    """
     def __new__(cls, items):
         return frozenset.__new__(cls, (make_immutable(x) for x in items))
     def __deepcopy__(self, memo):
+        """Return a set on deepcopy.
+        """
         return set(  # pragma: no branch
             [deepcopy(elem, memo) for elem in self]
         )
 
 
 class ReadOnlyDict(dict):
-    '''
+    '''A dict that is lockable.  When locked, any changes raise exceptions.
+
     Slightly modified version of mozharness.base.config.ReadOnlyDict,
     largely for pylint.
     '''
@@ -82,16 +95,14 @@ class ReadOnlyDict(dict):
         super(ReadOnlyDict, self).__init__(*args, **kwargs)
 
     def _check_lock(self):
-        '''
-        Throw an exception if we try to change anything while locked.
-        '''
+        """Throw an exception if we try to change anything while locked.
+        """
         if self._lock:
             raise ScriptHarnessException("ReadOnlyDict is locked!")
 
     def lock(self):
-        '''
-        Recursively lock the dictionary.
-        '''
+        """Recursively lock the dictionary.
+        """
         for (key, value) in self.items():
             self[key] = make_immutable(value)
         self._lock = True
@@ -125,9 +136,8 @@ class ReadOnlyDict(dict):
         return super(ReadOnlyDict, self).update(*args)
 
     def __deepcopy__(self, memo):
-        '''
-        Create an unlocked ReadOnlyDict on deepcopy()
-        '''
+        """Create an unlocked ReadOnlyDict on deepcopy()
+        """
         result = self.__class__()
         memo[id(self)] = result
         for key, value in self.items():
