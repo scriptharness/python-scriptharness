@@ -53,7 +53,7 @@ class LoggingClass(object):
         """
         return super(LoggingClass, self).items()
 
-    def recusively_set_parent(self, name, parent=None):
+    def recusively_set_parent(self, name=None, parent=None):
         """Recursively set name + parent.
 
         If our LoggingDict is a multi-level nested Logging* instance, then
@@ -84,7 +84,7 @@ class LoggingClass(object):
                 if is_logging_class(elem):
                     elem.recursively_set_parent(six.text_type(count - 1), self)
 
-    def child_set_parent(self, child, child_name):
+    def _child_set_parent(self, child, child_name):
         """If child is a Logging* instance, set its parent and name.
 
         Args:
@@ -130,18 +130,30 @@ class LoggingList(LoggingClass, list):
         """
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
 
+    def __delitem__(self, item):
+        self.log_change("__delitem__ {0}".format(item))
+        if isinstance(item, slice):
+            position = item.start
+        else:
+            position = self.index(item)
+        super(LoggingList, self).__delitem__(item)
+        self.log_change("now looks like {0}".format(self))
+        if position < len(self):
+            self.child_set_parent(position)
+
+    def __setitem__(self, position, value):
+        self.log_change("__setitem__ {0} to {1}".format(position, value))
+        super(LoggingList, self).__setitem__(position, value)
+        self.log_change("now looks like {0}".format(self))
+        self.child_set_parent(position)
+
     def child_set_parent(self, position=0):
         """When the list changes, we either want to change all of the
         children's names (which correspond to indeces) or a subset of
         [position:]
-
-        Override child_set_parent to make this simpler.
         """
         for count, elem in enumerate(self, start=position):
-            super(LoggingList, self).child_set_parent(
-                elem,
-                six.text_type(count)
-            )
+            self._child_set_parent(elem, six.text_type(count))
 
     def append(self, item):
         self.log_change("appending {0}".format(six.text_type(item)))
@@ -209,35 +221,73 @@ class LoggingTuple(LoggingClass, tuple):
 
 class LoggingDict(LoggingClass, dict):
     """A dict that logs any changes, as do its children.
+
+    TODO use pprint?
+    TODO secret key, e.g. {'credentials': {}} that notes changes but
+         doesn't log them?
     """
     def __new__(cls, *args, **kwargs):
         return LoggingClass.__new__(cls, dict, *args, **kwargs)
-    def __setitem__(self, *args):
-        return super(LoggingDict, self).__setitem__(*args)
-    def __delitem__(self, *args):
-        return super(LoggingDict, self).__delitem__(*args)
-    def clear(self, *args):
-        return super(LoggingDict, self).clear(*args)
+
+    def __setitem__(self, key, value):
+        self.log_change("__setitem__ {0} to {1}".format(key, value))
+        super(LoggingDict, self).__setitem__(key, value)
+        self.child_set_parent(key)
+
+    def __delitem__(self, key):
+        self.log_change("__delitem__ {0}".format(key))
+        super(LoggingDict, self).__delitem__(key)
+
+    def child_set_parent(self, key):
+        """When the dict changes, we can just target the specific changed
+        children.  Very simple wrapper method.
+
+        Args:
+            key (str): the dict key to the child value.
+        """
+        self._child_set_parent(self[key], six.text_type(key))
+
+    def clear(self):
+        self.log_change("clearing dict")
+        super(LoggingDict, self).clear()
+
     def pop(self, *args):
+        self.log_change("popping dict: {0}".format(six.text_type(args)))
         return super(LoggingDict, self).pop(*args)
+
     def popitem(self, *args):
-        return super(LoggingDict, self).popitem(*args)
-    def setdefault(self, *args):
-        return super(LoggingDict, self).setdefault(*args)
-    def update(self, *args):
-        return super(LoggingDict, self).update(*args)
+        self.log_change("popitem dict: {0}".format(six.text_type(args)))
+        status = super(LoggingDict, self).popitem(*args)
+        self.log_change("now looks like: {0}".format(six.text_type(self)))
+        return status
+
+    def setdefault(self, key, default=None):
+        if key not in self:
+            self.log_change("setdefault: {0} {1}".format(key, default))
+        return super(LoggingDict, self).setdefault(key, default)
+
+    def update(self, args):
+        super(LoggingDict, self).update(*args)
+        if isinstance(args, dict):
+            keys = args.keys()
+        else:
+            keys = args[::2]
+        # Is there a smarter way to do this?
+        for key in keys:
+            self.child_set_parent(key)
+
     def __deepcopy__(self, memo):
         """Return a dict on deepcopy()
+
+        TODO needed?
         """
-        # TODO needed?
         result = {}
         memo[id(self)] = result
+        for key, value in self.__dict__.items():
+            setattr(result, key, deepcopy(value, memo))
         for key, value in self.items():
             result[key] = deepcopy(value, memo)
         return result
-    # TODO add logging
-    # TODO secret key, e.g. {'credentials': {}} that notes changes but
-    # doesn't log them?
 
 # end logging classes 2}}}
 
