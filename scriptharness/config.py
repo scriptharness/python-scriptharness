@@ -63,11 +63,7 @@ class LoggingClass(object):
         message is helpful.
 
         For each child, set name automatically.  For dicts, the name is the
-        key.  For everything else, the name is the index.  This is a bit odd
-        for sets and frozensets, which don't really have indeces (though
-        enumerate() will provide the "index" number).  The alternative is to
-        use the value as the name, which works well for numbers and short
-        strings, and poorly for complex objects or long strings.
+        key.  For everything else, the name is the index.
 
         name (str): set self.name, for later logging purposes.
         parent (Logging* object, optional): set self.parent, for later logging
@@ -211,53 +207,6 @@ class LoggingTuple(LoggingClass, tuple):
         )
 
 
-class LoggingSet(LoggingClass, set):
-    """A set that logs any changes, as do its children.
-
-    There are difficulties in naming set children.
-    """
-    def __new__(cls, *args, **kwargs):
-        return LoggingClass.__new__(cls, set, *args, **kwargs)
-
-    def __deepcopy__(self, memo):
-        """Return a set on deepcopy.
-        """
-        return set(  # pragma: no branch
-            [deepcopy(elem, memo) for elem in self]
-        )
-
-    def update(self, *args):
-        pass
-    def intersection_update(self, *args):
-        pass
-    def difference_update(self, *args):
-        pass
-    def symmetric_difference_update(self, *args):
-        pass
-    def add(self, elem):
-        pass
-    def remove(self, elem):
-        pass
-    def discard(self, elem):
-        pass
-    def pop(self):
-        pass
-    def clear(self):
-        pass
-
-
-class LoggingFrozenSet(LoggingClass, frozenset):
-    """A frozenset whose children log any changes.
-    """
-    def __new__(cls, *args, **kwargs):
-        return LoggingClass.__new__(cls, frozenset, *args, **kwargs)
-    def __deepcopy__(self, memo):
-        """Return a set on deepcopy.
-        """
-        return frozenset(  # pragma: no branch
-            [deepcopy(elem, memo) for elem in self]
-        )
-
 class LoggingDict(LoggingClass, dict):
     """A dict that logs any changes, as do its children.
     """
@@ -294,9 +243,7 @@ class LoggingDict(LoggingClass, dict):
 
 SUPPORTED_LOGGING_TYPES = {
     dict: LoggingDict,
-    frozenset: LoggingFrozenSet,
     list: LoggingList,
-    set: LoggingSet,
     tuple: LoggingTuple,
 }
 
@@ -309,11 +256,7 @@ def enable_logging(item, logger_name=None, level=logging.INFO):
     """Recursively add logging to all contents of a LoggingDict.
 
     Any children of supported types will also have logging enabled.
-    Currently supported:: list, tuple, dict, set, frozenset.
-
-    Note:: a tuple or frozenset will become a LoggingList or LoggingSet,
-    respectively; this means they will become read/write.  We can
-    add non-recursive locking capability to these if this becomes a problem.
+    Currently supported:: list, tuple, dict.
 
     Args:
       item (object): a child of a LoggingDict.
@@ -333,13 +276,11 @@ def make_immutable(item):
     """Recursively lock all contents of a ReadOnlyDict.
 
     Any children of supported types will also be locked.
-    Currently supported:: list, tuple, dict, set, frozenset.
+    Currently supported:: list, tuple, dict.
 
     and we locked r on a shallow level, we could still r['b'].append() or
     r['c']['key2'] = 'value2'.  So to avoid that, we need to recursively
     lock r via make_immutable.
-
-    Taken from mozharness, but added LockedFrozenSet.
 
     Args:
       item (object): a child of a ReadOnlyDict.
@@ -352,8 +293,6 @@ def make_immutable(item):
     elif isinstance(item, dict):
         result = ReadOnlyDict(item)
         result.lock()
-    elif isinstance(item, set) or isinstance(item, frozenset):
-        result = LockedFrozenSet(item)
     else:
         result = item
     return result
@@ -373,23 +312,6 @@ class LockedTuple(tuple):
         """Return a list on deepcopy.
         """
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
-
-
-class LockedFrozenSet(frozenset):
-    """A frozenset with its children recursively locked.
-
-    Frozensets are read-only by nature, but we need to be able to recursively
-    lock the contents of the frozenset, since the frozenset can contain dicts
-    or lists.
-    """
-    def __new__(cls, items):
-        return frozenset.__new__(cls, (make_immutable(x) for x in items))
-    def __deepcopy__(self, memo):
-        """Return a set on deepcopy.
-        """
-        return set(  # pragma: no branch
-            [deepcopy(elem, memo) for elem in self]
-        )
 
 
 class ReadOnlyDict(dict):

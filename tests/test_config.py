@@ -10,7 +10,6 @@ from scriptharness import ScriptHarnessException
 
 
 CONTROL_DICT = {
-    'a': set([1, 2, 3]),
     'b': '2',
     'c': {
         'd': '4',
@@ -76,15 +75,6 @@ class TestUnlockedROD(unittest.TestCase):
         self.assertEqual(len(rod), len(CONTROL_DICT) - 1,
                          msg="can't pop() ReadOnlyDict when unlocked")
 
-    def test_set(self):
-        '''
-        Set a key to value when unlocked
-        '''
-        rod = get_unlocked_rod()
-        rod['e'] = 'yarrr'
-        self.assertEqual(rod['e'], 'yarrr',
-                         msg="can't set var in ReadOnlyDict when unlocked")
-
     def test_del(self):
         '''
         Del a key when unlocked
@@ -125,28 +115,6 @@ class TestUnlockedROD(unittest.TestCase):
             rod.setdefault(key, CONTROL_DICT[key])
         self.assertEqual(rod, CONTROL_DICT,
                          msg="can't setdefault() ReadOnlyDict when unlocked")
-
-    def test_set_add(self):
-        '''
-        set.add() when unlocked
-        '''
-        rod = get_unlocked_rod()
-        rod['a'].add(4)
-        self.assertEqual(
-            rod['a'], set([1, 2, 3, 4]),
-            msg="can't add() to a child set in ReadOnlyDict when unlocked"
-        )
-
-    def test_set_remove(self):
-        '''
-        set.remove() when unlocked
-        '''
-        rod = get_unlocked_rod()
-        rod['a'].remove(2)
-        self.assertEqual(
-            rod['a'], set([1, 3]),
-            msg="can't remove() a child set in ReadOnlyDict when unlocked"
-        )
 
 
 # TestLockedROD {{{2
@@ -258,30 +226,6 @@ class TestLockedROD(unittest.TestCase):
             pass
         else:
             self.assertEqual(0, 1, "can append to list-in-tuple when locked")
-
-    def test_frozenset_add(self):
-        '''
-        locked child set add() should raise
-        '''
-        rod = get_locked_rod()
-        try:
-            rod['a'].add(4)
-        except AttributeError:
-            pass
-        else:
-            self.assertEqual(0, 1, "can add to set when locked")
-
-    def test_frozenset_remove(self):
-        '''
-        locked child set remove() should raise
-        '''
-        rod = get_locked_rod()
-        try:
-            rod['a'].remove(4)
-        except AttributeError:
-            pass
-        else:
-            self.assertEqual(0, 1, "can remove to set when locked")
 
 
 # TestDeepcopyROD {{{2
