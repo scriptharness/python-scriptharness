@@ -51,8 +51,8 @@ class LoggingClass(object):
     def recusively_set_parent(self, name, parent=None):
         """Recursively set name + parent.
 
-        If our LoggingDict is a multi-level nested Logging* class, then
-        seeing a log message that something in one of the Logging* classes
+        If our LoggingDict is a multi-level nested Logging* instance, then
+        seeing a log message that something in one of the Logging* instances
         has changed can be confusing.  If we know that it's
         grandparent[parent][self][child] that has changed, then the log
         message is helpful.
@@ -72,7 +72,16 @@ class LoggingClass(object):
         else:
             for count, elem in enumerate(self):
                 if is_logging_class(elem):
-                    elem.recursively_set_parent(six.text_type(count), self)
+                    elem.recursively_set_parent(six.text_type(count - 1), self)
+    def child_set_parent(self, child, child_name):
+        """If child is a Logging* instance, set its parent and name.
+
+        Args:
+          child: an object, which might be a Logging* instance
+          child_name: the name to set in the child
+        """
+        if is_logging_class(child):
+            child.recursively_set_parent(child_name, parent=self)
     def log_change(self, message, child_list=None):
         """Log a change to self.
 
@@ -93,8 +102,8 @@ class LoggingClass(object):
         if child_list:
             name = six.text_type(child_list.pop(0))
             for item in child_list:
-                name += "[{}]".format(six.text_type(item))
-            message = "{}: {}".format(name, message)
+                name += "[{0}]".format(six.text_type(item))
+            message = "{0}: {1}".format(name, message)
         return logger.log(self.level, message)
 
 class LoggingList(LoggingClass, list):
@@ -102,11 +111,78 @@ class LoggingList(LoggingClass, list):
     """
     def __new__(cls, *args, **kwargs):
         return LoggingClass.__new__(cls, list, *args, **kwargs)
+
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
         """
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
-    # TODO add logging
+
+    def child_set_parent(self, position=0):
+        """When the list changes, we either want to change all of the
+        children's names (which correspond to indeces) or a subset of
+        [position:]
+
+        Override child_set_parent to make this simpler.
+        """
+        for count, elem in enumerate(self, start=position):
+            super(LoggingList, self).child_set_parent(
+                elem,
+                six_text_type(count)
+            )
+
+    def append(self, item):
+        self.log_change("appending {0}".format(six.text_type(item)))
+        super(LoggingList, self).append(item)
+        self.log_change("now looks like {0}".format(self))
+        self.child_set_parent(item, six.text_type(len(self) - 1))
+
+    def extend(self, items):
+        self.log_change("extending with {0}".format(items))
+        super(LoggingList, self).extend(items)
+        self.log_change("now looks like {0}".format(self))
+        for count, elem in enumerate(self):
+            self.child_set_parent(elem, six.text_type(count))
+
+    def insert(self, position, item):
+        self.log_change("inserting {0} at position {1}".format(item, position))
+        super(LoggingList, self).insert(position, item)
+        self.log_change("now looks like {0}".format(self))
+        for count, elem in enumerate(self, start=position):
+            self.child_set_parent(elem, six.text_type(count))
+
+    def remove(self, item):
+        self.log_change("removing {0}".format(item))
+        position = self.index(item)
+        super(LoggingList, self).remove(item)
+        self.log_change("now looks like {0}".format(self))
+        for count, elem in enumerate(self, start=position):
+            self.child_set_parent(elem, six.text_type(count))
+
+    def pop(self, position=None):
+        message = "popping"
+        if position:
+            message += " position {0}".format(position)
+        self.log_change(message)
+        value = super(LoggingList, self).pop(position)
+        self.log_change("now looks like {0}".format(self))
+        if position:
+            for count, elem in enumerate(self, start=position):
+                self.child_set_parent(elem, six.text_type(count))
+        return value
+
+    def sort(self, *args, **kwargs):
+        self.log_change("sorting")
+        super(LoggingList, self).sort(*args, **kwargs)
+        self.log_change("now looks like {0}".format(self))
+        for count, elem in enumerate(self):
+            self.child_set_parent(elem, six.text_type(count))
+
+    def reverse(self):
+        self.log_change("reversing")
+        super(LoggingList, self).reverse()
+        self.log_change("now looks like {0}".format(self))
+        for count, elem in enumerate(self):
+            self.child_set_parent(elem, six.text_type(count))
 
 class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
