@@ -45,9 +45,14 @@ class LoggingClass(object):
         self.level = level
         self.logger_name = logger_name
         return self
+
     def items(self):
-        """Shut up pylint"""
+        """Shut up pylint.
+        The main negative here might be adding an attr items to non-dict
+        data types.
+        """
         return super(LoggingClass, self).items()
+
     def recusively_set_parent(self, name, parent=None):
         """Recursively set name + parent.
 
@@ -56,6 +61,13 @@ class LoggingClass(object):
         has changed can be confusing.  If we know that it's
         grandparent[parent][self][child] that has changed, then the log
         message is helpful.
+
+        For each child, set name automatically.  For dicts, the name is the
+        key.  For everything else, the name is the index.  This is a bit odd
+        for sets and frozensets, which don't really have indeces (though
+        enumerate() will provide the "index" number).  The alternative is to
+        use the value as the name, which works well for numbers and short
+        strings, and poorly for complex objects or long strings.
 
         name (str): set self.name, for later logging purposes.
         parent (Logging* object, optional): set self.parent, for later logging
@@ -68,11 +80,14 @@ class LoggingClass(object):
         if issubclass(self, dict):
             for child_name, child in self.items():
                 if is_logging_class(child):
-                    child.recursively_set_parent(child_name, self)
+                    child.recursively_set_parent(
+                        six.text_type(child_name), self
+                    )
         else:
             for count, elem in enumerate(self):
                 if is_logging_class(elem):
                     elem.recursively_set_parent(six.text_type(count - 1), self)
+
     def child_set_parent(self, child, child_name):
         """If child is a Logging* instance, set its parent and name.
 
@@ -82,6 +97,7 @@ class LoggingClass(object):
         """
         if is_logging_class(child):
             child.recursively_set_parent(child_name, parent=self)
+
     def log_change(self, message, child_list=None):
         """Log a change to self.
 
@@ -106,6 +122,7 @@ class LoggingClass(object):
             message = "{0}: {1}".format(name, message)
         return logger.log(self.level, message)
 
+
 class LoggingList(LoggingClass, list):
     """A list that logs any changes, as do its children.
     """
@@ -127,36 +144,35 @@ class LoggingList(LoggingClass, list):
         for count, elem in enumerate(self, start=position):
             super(LoggingList, self).child_set_parent(
                 elem,
-                six_text_type(count)
+                six.text_type(count)
             )
 
     def append(self, item):
         self.log_change("appending {0}".format(six.text_type(item)))
         super(LoggingList, self).append(item)
         self.log_change("now looks like {0}".format(self))
-        self.child_set_parent(item, six.text_type(len(self) - 1))
+        self.child_set_parent(len(self) - 1)
 
     def extend(self, items):
+        position = len(self)
         self.log_change("extending with {0}".format(items))
         super(LoggingList, self).extend(items)
         self.log_change("now looks like {0}".format(self))
-        for count, elem in enumerate(self):
-            self.child_set_parent(elem, six.text_type(count))
+        self.child_set_parent(position)
 
     def insert(self, position, item):
         self.log_change("inserting {0} at position {1}".format(item, position))
         super(LoggingList, self).insert(position, item)
         self.log_change("now looks like {0}".format(self))
-        for count, elem in enumerate(self, start=position):
-            self.child_set_parent(elem, six.text_type(count))
+        self.child_set_parent(position)
 
     def remove(self, item):
         self.log_change("removing {0}".format(item))
         position = self.index(item)
         super(LoggingList, self).remove(item)
         self.log_change("now looks like {0}".format(self))
-        for count, elem in enumerate(self, start=position):
-            self.child_set_parent(elem, six.text_type(count))
+        if position < len(self):
+            self.child_set_parent(position)
 
     def pop(self, position=None):
         message = "popping"
@@ -166,23 +182,21 @@ class LoggingList(LoggingClass, list):
         value = super(LoggingList, self).pop(position)
         self.log_change("now looks like {0}".format(self))
         if position:
-            for count, elem in enumerate(self, start=position):
-                self.child_set_parent(elem, six.text_type(count))
+            self.child_set_parent(position)
         return value
 
     def sort(self, *args, **kwargs):
         self.log_change("sorting")
         super(LoggingList, self).sort(*args, **kwargs)
         self.log_change("now looks like {0}".format(self))
-        for count, elem in enumerate(self):
-            self.child_set_parent(elem, six.text_type(count))
+        self.child_set_parent()
 
     def reverse(self):
         self.log_change("reversing")
         super(LoggingList, self).reverse()
         self.log_change("now looks like {0}".format(self))
-        for count, elem in enumerate(self):
-            self.child_set_parent(elem, six.text_type(count))
+        self.child_set_parent()
+
 
 class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
@@ -196,18 +210,41 @@ class LoggingTuple(LoggingClass, tuple):
             [deepcopy(elem, memo) for elem in self]
         )
 
+
 class LoggingSet(LoggingClass, set):
     """A set that logs any changes, as do its children.
+
+    There are difficulties in naming set children.
     """
     def __new__(cls, *args, **kwargs):
         return LoggingClass.__new__(cls, set, *args, **kwargs)
+
     def __deepcopy__(self, memo):
         """Return a set on deepcopy.
         """
         return set(  # pragma: no branch
             [deepcopy(elem, memo) for elem in self]
         )
-    # TODO add logging
+
+    def update(self, *args):
+        pass
+    def intersection_update(self, *args):
+        pass
+    def difference_update(self, *args):
+        pass
+    def symmetric_difference_update(self, *args):
+        pass
+    def add(self, elem):
+        pass
+    def remove(self, elem):
+        pass
+    def discard(self, elem):
+        pass
+    def pop(self):
+        pass
+    def clear(self):
+        pass
+
 
 class LoggingFrozenSet(LoggingClass, frozenset):
     """A frozenset whose children log any changes.
