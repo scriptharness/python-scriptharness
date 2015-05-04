@@ -17,44 +17,66 @@ from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 from scriptharness import ScriptHarnessException
 import logging
-#try:
-#    import simplejson as json
-#except ImportError:
-#    import json
-
 
 # LoggingDict and helpers {{{1
 # logging classes {{{2
-class LoggingList(list):
-    """A list that logs any changes, as do its children.
+class LoggingClass(object):
+    """General logging methods for the Logging* classes to subclass.
     """
-    def __new__(cls, items, logger_name='scriptharness.config',
-                level=logging.INFO):
-        self = list.__new__(
+    level = None
+    logger_name = None
+    name = None
+    parent = None
+    def __new__(cls, super_class, items, level=logging.INFO,
+                logger_name='scriptharness.config'):
+        self = super_class.__new__(
             cls,
             (enable_logging(x, logger_name, level) for x in items)
         )
-        self.logger_name = logger_name
         self.level = level
+        self.logger_name = logger_name
         return self
+    def items(self):
+        """Shut up pylint"""
+        return super(LoggingClass, self).items()
+    def recusively_set_name(self, name=None, parent=None):
+        """Set name + parent, recursively, for later logging purposes.
+        """
+        if name is not None:
+            self.name = name
+        if parent is not None:
+            self.parent = parent
+        if issubclass(self, dict):
+            for name, child in self.items():
+                if is_logging_class(child):
+                    child.recursively_set_name(name, self)
+        else:
+            for count, elem in enumerate(self):
+                if is_logging_class(elem):
+                    elem.recursively_set_name(str(count), self)
+    def log_change(self, message):
+        """Log a change to self.
+        """
+        # TODO name + parent
+        logger = logging.getLogger(self.logger_name)
+        logger.log(self.level, message)
+
+class LoggingList(LoggingClass, list):
+    """A list that logs any changes, as do its children.
+    """
+    def __new__(cls, *args, **kwargs):
+        return LoggingClass.__new__(cls, list, *args, **kwargs)
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
         """
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
     # TODO add logging
 
-class LoggingTuple(tuple):
+class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
     """
-    def __new__(cls, items, logger_name='scriptharness.config',
-                level=logging.INFO):
-        self = tuple.__new__(
-            cls,
-            (enable_logging(x, logger_name, level) for x in items)
-        )
-        self.logger_name = logger_name
-        self.level = level
-        return self
+    def __new__(cls, *args, **kwargs):
+        return LoggingClass.__new__(cls, tuple, *args, **kwargs)
     def __deepcopy__(self, memo):
         """Return a tuple on deepcopy.
         """
@@ -62,17 +84,11 @@ class LoggingTuple(tuple):
             [deepcopy(elem, memo) for elem in self]
         )
 
-class LoggingSet(set):
+class LoggingSet(LoggingClass, set):
     """A set that logs any changes, as do its children.
     """
-    def __new__(cls, items, logger_name='scriptharness.config',
-                level=logging.INFO):
-        self = set.__new__(
-            cls, (enable_logging(x, logger_name, level) for x in items)
-        )
-        self.logger_name = logger_name
-        self.level = level
-        return self
+    def __new__(cls, *args, **kwargs):
+        return LoggingClass.__new__(cls, set, *args, **kwargs)
     def __deepcopy__(self, memo):
         """Return a set on deepcopy.
         """
@@ -81,17 +97,11 @@ class LoggingSet(set):
         )
     # TODO add logging
 
-class LoggingFrozenSet(frozenset):
+class LoggingFrozenSet(LoggingClass, frozenset):
     """A frozenset whose children log any changes.
     """
-    def __new__(cls, items, logger_name='scriptharness.config',
-                level=logging.INFO):
-        self = frozenset.__new__(
-            cls, (enable_logging(x, logger_name, level) for x in items)
-        )
-        self.logger_name = logger_name
-        self.level = level
-        return self
+    def __new__(cls, *args, **kwargs):
+        return LoggingClass.__new__(cls, frozenset, *args, **kwargs)
     def __deepcopy__(self, memo):
         """Return a set on deepcopy.
         """
@@ -99,14 +109,11 @@ class LoggingFrozenSet(frozenset):
             [deepcopy(elem, memo) for elem in self]
         )
 
-class LoggingDict(dict):
+class LoggingDict(LoggingClass, dict):
     """A dict that logs any changes, as do its children.
     """
-    def __init__(self, logger_name="scriptharness.config", level=logging.INFO,
-                 *args, **kwargs):
-        self.logger_name = logger_name
-        self.level = level
-        super(LoggingDict, self).__init__(*args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        return LoggingClass.__new__(cls, dict, *args, **kwargs)
     def __setitem__(self, *args):
         return super(LoggingDict, self).__setitem__(*args)
     def __delitem__(self, *args):
@@ -143,6 +150,11 @@ SUPPORTED_LOGGING_TYPES = {
     set: LoggingSet,
     tuple: LoggingTuple,
 }
+
+def is_logging_class(item):
+    """Determine if a class is one of the Logging* classes.
+    """
+    return item in SUPPORTED_LOGGING_TYPES.values()
 
 def enable_logging(item, logger_name=None, level=logging.INFO):
     """Recursively add logging to all contents of a LoggingDict.
