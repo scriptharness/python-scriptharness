@@ -17,11 +17,20 @@ from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 from scriptharness import ScriptHarnessException
 import logging
+import six
+
+# TODO use memo like deepcopy to prevent loop recursion
 
 # LoggingDict and helpers {{{1
 # logging classes {{{2
 class LoggingClass(object):
     """General logging methods for the Logging* classes to subclass.
+
+    Attributes:
+      level (int): the logging level for changes
+      logger_name (str): the logger name to use
+      name (str): the name of the class for logs
+      parent (str): the name of the parent, if applicable, for logs
     """
     level = None
     logger_name = None
@@ -39,27 +48,54 @@ class LoggingClass(object):
     def items(self):
         """Shut up pylint"""
         return super(LoggingClass, self).items()
-    def recusively_set_name(self, name=None, parent=None):
-        """Set name + parent, recursively, for later logging purposes.
+    def recusively_set_parent(self, name, parent=None):
+        """Recursively set name + parent.
+
+        If our LoggingDict is a multi-level nested Logging* class, then
+        seeing a log message that something in one of the Logging* classes
+        has changed can be confusing.  If we know that it's
+        grandparent[parent][self][child] that has changed, then the log
+        message is helpful.
+
+        name (str): set self.name, for later logging purposes.
+        parent (Logging* object, optional): set self.parent, for later logging
+          purposes.
         """
         if name is not None:
             self.name = name
         if parent is not None:
             self.parent = parent
         if issubclass(self, dict):
-            for name, child in self.items():
+            for child_name, child in self.items():
                 if is_logging_class(child):
-                    child.recursively_set_name(name, self)
+                    child.recursively_set_parent(child_name, self)
         else:
             for count, elem in enumerate(self):
                 if is_logging_class(elem):
-                    elem.recursively_set_name(str(count), self)
-    def log_change(self, message):
+                    elem.recursively_set_parent(six.text_type(count), self)
+    def log_change(self, message, child_list=None):
         """Log a change to self.
+
+        Args:
+          message (str): The message to log.
+          child_list (list, automatically generated): in a multi-level nested
+            Logging* class, generate the list of children's names so we can log
+            which Logging* class has changed.  This list will be built by
+            prepending our name and calling log_change() on self.parent.
         """
-        # TODO name + parent
+        if self.parent:
+            if child_list is None:
+                child_list = []
+            child_list.insert(0, self.name)
+            # TODO what happens on deletion?
+            return self.parent.log_change(message, child_list)
         logger = logging.getLogger(self.logger_name)
-        logger.log(self.level, message)
+        if child_list:
+            name = six.text_type(child_list.pop(0))
+            for item in child_list:
+                name += "[{}]".format(six.text_type(item))
+            message = "{}: {}".format(name, message)
+        return logger.log(self.level, message)
 
 class LoggingList(LoggingClass, list):
     """A list that logs any changes, as do its children.
