@@ -94,7 +94,7 @@ class LoggingClass(object):
         if is_logging_class(child):
             child.recursively_set_parent(child_name, parent=self)
 
-    def log_change(self, message, *args, child_list=None):
+    def log_change(self, message, child_list=None, *args):
         """Log a change to self.
 
         Args:
@@ -256,7 +256,7 @@ class LoggingDict(LoggingClass, dict):
                         repl_dict={'key': six.text_type(key)})
         super(LoggingDict, self).__delitem__(key)
 
-    def log_change(self, message, *args, muted_message=None):
+    def log_change(self, message, child_list=None, muted_message=None, *args):
         repl_dict = {}
         if args and isinstance(args[0], dict):
             repl_dict = args[0]
