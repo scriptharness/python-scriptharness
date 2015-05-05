@@ -72,6 +72,41 @@ class TestSetLoggingConfig(unittest.TestCase):
             mock_logging.basicConfig.assert_called_with(**kwargs)
 
 
+# TestGetFormattter {{{1
+class TestGetFormatter(unittest.TestCase):
+    '''
+    Test scriptharness.log.get_formatter() method
+    '''
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_no_kwargs(mock_logging):
+        '''
+        Test get_formatter with no arguments
+        '''
+        log.get_formatter()
+        mock_logging.Formatter.assert_called_once_with(
+            fmt=log.LOGGING_DEFAULTS['format'],
+            datefmt=log.LOGGING_DEFAULTS['datefmt'],
+        )
+
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_with_kwargs(mock_logging):
+        '''
+        Test get_formatter with arguments
+        '''
+        for fmt, datefmt in [
+                ('%(message)s', '%H:%M:%S'),
+                ('%(name)s:%(levelname)s:%(message)s', '%Y-%m-%d %H:%M:%S'),
+                ('%(name)s - %(levelname)s: %(message)s', None),
+                (None, '%D:%H:%M:%S'),
+            ]:
+            log.get_formatter(fmt=fmt, datefmt=datefmt)
+            mock_logging.Formatter.assert_called_with(
+                fmt=fmt or log.LOGGING_DEFAULTS['format'],
+                datefmt=datefmt or log.LOGGING_DEFAULTS['datefmt'],
+            )
+
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
     '''
