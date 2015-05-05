@@ -68,7 +68,7 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
       logging.FileHandler handler.  This can be added to a logger
       via logger.addHandler(handler)
     """
-    if not append:
+    if not append and os.path.exists(path):
         os.remove(path)
     if not formatter:
         formatter = get_formatter()
