@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-'''
-Test scriptharness.log
-'''
+"""Test scriptharness.log
+"""
+from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 import logging
 import mock
+import os
 import scriptharness.log as log
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessFailure
@@ -12,54 +13,49 @@ from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
 # Helper methods {{{1
 class NoPostFunc(log.LogMethod):
-    '''
-    Subclass LogMethod to only log from pre_func()
-    '''
+    """Subclass LogMethod to only log from pre_func()
+    """
     def call_func(self):
-        ''' Skip calling '''
+        """Skip calling"""
         pass
     def post_func(self):
-        ''' Skip logging '''
+        """Skip logging"""
         pass
 
 def always_fail_cb(*args):
-    ''' always fail '''
+    """always fail"""
     return True
 
 def always_succeed_cb(*args):
-    ''' always succeed '''
+    """always succeed"""
     return False
 
 
 # TestSetLoggingConfig {{{1
 class TestSetLoggingConfig(unittest.TestCase):
-    '''
-    Test scriptharness.log.set_logging_config() method
-    '''
+    """Test scriptharness.log.set_logging_config() method
+    """
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_no_kwargs(mock_logging):
-        '''
-        Test set_logging_config with no arguments
-        '''
+        """Test set_logging_config with no arguments
+        """
         log.set_logging_config()
         mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
 
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_default_kwargs(mock_logging):
-        '''
-        Test set_logging_config with default kwargs
-        '''
+        """Test set_logging_config with default kwargs
+        """
         log.set_logging_config(**log.LOGGING_DEFAULTS)
         mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
 
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_kwargs(mock_logging):
-        '''
-        Test set_logging_config with non-default kwargs
-        '''
+        """Test set_logging_config with non-default kwargs
+        """
         test_kwargs = (
             {'filemode': 'a'},
             {'format': '%(message)s'},
@@ -72,17 +68,15 @@ class TestSetLoggingConfig(unittest.TestCase):
             mock_logging.basicConfig.assert_called_with(**kwargs)
 
 
-# TestGetFormattter {{{1
+# TestGetFormatter {{{1
 class TestGetFormatter(unittest.TestCase):
-    '''
-    Test scriptharness.log.get_formatter() method
-    '''
+    """Test scriptharness.log.get_formatter() method
+    """
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_no_kwargs(mock_logging):
-        '''
-        Test get_formatter with no arguments
-        '''
+        """Test get_formatter with no arguments
+        """
         log.get_formatter()
         mock_logging.Formatter.assert_called_once_with(
             fmt=log.LOGGING_DEFAULTS['format'],
@@ -92,9 +86,8 @@ class TestGetFormatter(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_with_kwargs(mock_logging):
-        '''
-        Test get_formatter with arguments
-        '''
+        """Test get_formatter with arguments
+        """
         for fmt, datefmt in [
                 ('%(message)s', '%H:%M:%S'),
                 ('%(name)s:%(levelname)s:%(message)s', '%Y-%m-%d %H:%M:%S'),
@@ -107,24 +100,53 @@ class TestGetFormatter(unittest.TestCase):
                 datefmt=datefmt or log.LOGGING_DEFAULTS['datefmt'],
             )
 
+
+# TestGetFileHandler {{{1
+class TestGetFileHandler(unittest.TestCase):
+    """Test scriptharness.log.get_file_handler() method
+    """
+    test_file = '_test_log'
+    test_contents = "Newly initialized test file"
+
+    def _absent_test_file(self):
+        """Return a test file path that doesn't exist.
+        """
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+        assert not os.path.exists(self.test_file)
+        return self.test_file
+
+    def _present_test_file(self):
+        """Return a test file path that exists with initialized content.
+        """
+        filehandle = open(self.test_file, 'w')
+        print(self.test_contents, file=filehandle)
+        filehandle.close()
+        return self.test_file
+
+    @mock.patch('scriptharness.log.logging')
+    def test_basic(self, mock_logging):
+        """Test basic get_file_handler
+        """
+        log_file = self._absent_test_file()
+        log.get_file_handler(log_file)
+        mock_logging.FileHandler.assert_called_once_with(log_file)
+
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
-    '''
-    Test scriptharness.log.LogMethod.__init__()
-    '''
+    """Test scriptharness.log.LogMethod.__init__()
+    """
     def test_no_kwargs(self):
-        '''
-        LogMethod.__init__() with no keyword arguments
-        '''
+        """LogMethod.__init__() with no keyword arguments
+        """
         func = 'x'
         log_method = log.LogMethod(func)
         self.assertEqual(log_method.config, log.LogMethod.default_config)
         self.assertEqual(log_method.func, func)
 
     def test_illegal_kwargs(self):
-        '''
-        LogMethod.__init__() with illegal keyword argument
-        '''
+        """LogMethod.__init__() with illegal keyword argument
+        """
         kwargs = {
             'level': logging.WARNING,
             'illegal_scriptharness_option': 1,
@@ -134,12 +156,11 @@ class TestLogMethodInit(unittest.TestCase):
         )
 
     def test_basic_decorator_return(self):
-        '''
-        Basic @LogMethod decorator return
-        '''
+        """Basic @LogMethod decorator return
+        """
         @log.LogMethod()
         def test_func(*args, **kwargs):
-            ''' test method '''
+            """test method"""
             return args, kwargs
         import pprint
         pprint.pprint(log.LogMethod.default_config)
@@ -148,9 +169,8 @@ class TestLogMethodInit(unittest.TestCase):
         self.assertEqual((args, kwargs), test_func(*args, **kwargs))
 
     def test_illegal_callback(self):
-        '''
-        LogMethod.__init__() with illegal detect_error_cb
-        '''
+        """LogMethod.__init__() with illegal detect_error_cb
+        """
         self.assertRaises(
             ScriptHarnessException, log.LogMethod,
             'x', **{'detect_error_cb': 'y'}
@@ -159,18 +179,16 @@ class TestLogMethodInit(unittest.TestCase):
 
 # TestLogMethodFunction {{{1
 class TestLogMethodFunction(unittest.TestCase):
-    '''
-    scriptharness.log.LogMethod wrapping a function
-    '''
+    """scriptharness.log.LogMethod wrapping a function
+    """
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_prefunc(mock_logging):
-        '''
-        Basic @LogMethod pre_func(), function
-        '''
+        """Basic @LogMethod pre_func(), function
+        """
         @NoPostFunc()
         def test_func(*args, **kwargs):
-            ''' test method '''
+            """test method"""
             return args, kwargs
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
@@ -191,12 +209,11 @@ class TestLogMethodFunction(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_postfunc(mock_logging):
-        '''
-        Basic @LogMethod post_func(), function
-        '''
+        """Basic @LogMethod post_func(), function
+        """
         @log.LogMethod()
         def test_func(*args, **kwargs):
-            ''' test method '''
+            """test method"""
             return args, kwargs
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
@@ -217,9 +234,8 @@ class TestLogMethodFunction(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_failure(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, function, fail
-        '''
+        """Use @LogMethod detect_error_cb, function, fail
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
@@ -227,7 +243,7 @@ class TestLogMethodFunction(unittest.TestCase):
         for level in logging.ERROR, logging.WARNING, logging.CRITICAL:
             @log.LogMethod(detect_error_cb=always_fail_cb, error_level=level)
             def test_func(*args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return args, kwargs
 
             test_func(*args, **kwargs)
@@ -245,9 +261,8 @@ class TestLogMethodFunction(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_success(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, function, succeed
-        '''
+        """Use @LogMethod detect_error_cb, function, succeed
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
@@ -255,7 +270,7 @@ class TestLogMethodFunction(unittest.TestCase):
         for level in logging.INFO, logging.DEBUG:
             @log.LogMethod(detect_error_cb=always_succeed_cb, level=level)
             def test_func(*args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return args, kwargs
             test_func(*args, **kwargs)
             mock_func.log.assert_called_with(
@@ -271,16 +286,15 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_raise_on_error(self, mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, function, raise
-        '''
+        """Use @LogMethod detect_error_cb, function, raise
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         @log.LogMethod(detect_error_cb=always_fail_cb, raise_on_error=True)
         def test_func(*args, **kwargs):
-            ''' test method '''
+            """test method"""
             return args, kwargs
         self.assertRaises(ScriptHarnessFailure, test_func, *args, **kwargs)
         mock_func.log.assert_called_with(
@@ -297,16 +311,15 @@ class TestLogMethodFunction(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_no_raise_success(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, function, don't raise on success
-        '''
+        """Use @LogMethod detect_error_cb, function, don't raise on success
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         @log.LogMethod(detect_error_cb=always_succeed_cb, raise_on_error=True)
         def test_func(*args, **kwargs):
-            ''' test method '''
+            """test method"""
             return args, kwargs
         test_func(*args, **kwargs)
         mock_func.log.assert_called_with(
@@ -323,8 +336,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
 # TestLogMethodClass {{{1
 class TestLogMethodClass(unittest.TestCase):
-    '''
-    scriptharness.log.LogMethod wrapping a class method.
+    """scriptharness.log.LogMethod wrapping a class method.
 
     This will largely be the same as TestLogMethodFunction, but will need to
     take into account for the 'self' arg.
@@ -332,21 +344,20 @@ class TestLogMethodClass(unittest.TestCase):
     It's debatable whether these tests add anything; if they don't catch any
     additional errors that the TestLogMethodFunction tests miss then they're
     a candidate for deletion.
-    '''
+    """
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_prefunc(mock_logging):
-        '''
-        Basic @LogMethod pre_func(), class method
-        '''
+        """Basic @LogMethod pre_func(), class method
+        """
         class TestClass(object):
-            ''' test class '''
+            """test class"""
             @NoPostFunc()
             def test_func(self, *args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return self, args, kwargs
             def shutup_pylint(self):
-                ''' pylint complains about too few public methods '''
+                """pylint complains about too few public methods"""
                 pass
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
@@ -368,17 +379,16 @@ class TestLogMethodClass(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_postfunc(mock_logging):
-        '''
-        Basic @LogMethod post_func(), class method
-        '''
+        """Basic @LogMethod post_func(), class method
+        """
         class TestClass(object):
-            ''' test class '''
+            """test class"""
             @log.LogMethod()
             def test_func(self, *args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return self, args, kwargs
             def shutup_pylint(self):
-                ''' pylint complains about too few public methods '''
+                """pylint complains about too few public methods"""
                 pass
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
@@ -401,23 +411,22 @@ class TestLogMethodClass(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_failure(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, class method, fail
-        '''
+        """Use @LogMethod detect_error_cb, class method, fail
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         for level in logging.ERROR, logging.WARNING, logging.CRITICAL:
             class TestClass(object):
-                ''' test class '''
+                """test class"""
                 @log.LogMethod(detect_error_cb=always_fail_cb,
                                error_level=level)
                 def test_func(self, *args, **kwargs):
-                    ''' test method '''
+                    """test method"""
                     return self, args, kwargs
                 def shutup_pylint(self):
-                    ''' pylint complains about too few public methods '''
+                    """pylint complains about too few public methods"""
                     pass
             test_instance = TestClass()
             test_instance.test_func(*args, **kwargs)
@@ -435,22 +444,21 @@ class TestLogMethodClass(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_success(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, class method, succeed
-        '''
+        """Use @LogMethod detect_error_cb, class method, succeed
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         for level in logging.INFO, logging.DEBUG:
             class TestClass(object):
-                ''' test class '''
+                """test class"""
                 @log.LogMethod(detect_error_cb=always_succeed_cb, level=level)
                 def test_func(self, *args, **kwargs):
-                    ''' test method '''
+                    """test method"""
                     return self, args, kwargs
                 def shutup_pylint(self):
-                    ''' pylint complains about too few public methods '''
+                    """pylint complains about too few public methods"""
                     pass
             test_instance = TestClass()
             test_instance.test_func(*args, **kwargs)
@@ -467,21 +475,20 @@ class TestLogMethodClass(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_raise_on_error(self, mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, class method, raise
-        '''
+        """Use @LogMethod detect_error_cb, class method, raise
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         class TestClass(object):
-            ''' test class '''
+            """test class"""
             @log.LogMethod(detect_error_cb=always_fail_cb, raise_on_error=True)
             def test_func(self, *args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return self, args, kwargs
             def shutup_pylint(self):
-                ''' pylint complains about too few public methods '''
+                """pylint complains about too few public methods"""
                 pass
         test_instance = TestClass()
         self.assertRaises(ScriptHarnessFailure, test_instance.test_func,
@@ -500,21 +507,20 @@ class TestLogMethodClass(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_no_raise_success(mock_logging):
-        '''
-        Use @LogMethod detect_error_cb, class method, don't raise on success
-        '''
+        """Use @LogMethod detect_error_cb, class method, don't raise on success
+        """
         mock_func = mock.MagicMock()
         mock_logging.getLogger.return_value = mock_func
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
         class TestClass(object):
-            ''' test class '''
+            """test class"""
             @log.LogMethod(detect_error_cb=always_succeed_cb, raise_on_error=True)
             def test_func(self, *args, **kwargs):
-                ''' test method '''
+                """test method"""
                 return self, args, kwargs
             def shutup_pylint(self):
-                ''' pylint complains about too few public methods '''
+                """pylint complains about too few public methods"""
                 pass
         test_instance = TestClass()
         test_instance.test_func(*args, **kwargs)
