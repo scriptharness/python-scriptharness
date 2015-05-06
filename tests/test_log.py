@@ -133,8 +133,10 @@ class TestGetFileHandler(unittest.TestCase):
         """Test basic get_file_handler
         """
         log_file = self._absent_test_file()
-        log.get_file_handler(log_file)
+        formatter = mock.MagicMock()
+        handler = log.get_file_handler(log_file, formatter=formatter)
         mock_logging.FileHandler.assert_called_once_with(log_file)
+        handler.setFormatter.assert_called_once_with(formatter)
 
     @mock.patch('scriptharness.log.logging')
     @mock.patch('scriptharness.log.os')
@@ -142,14 +144,39 @@ class TestGetFileHandler(unittest.TestCase):
     def test_delete_file(self, mock_logging, mock_os, mock_os_path):
         """Test get_file_handler with existing log file
         """
+        assert mock_logging  # shush pylint
         mock_os_path.exists.return_value = True
         log_file = self._present_test_file()
         logger = mock.MagicMock()
-        handler = mock.MagicMock()
-        mock_logging.FileHandler.return_value = handler
-        log.get_file_handler(log_file, logger=logger)
+        handler = log.get_file_handler(log_file, logger=logger)
         mock_os.remove.assert_called_once_with(log_file)
-        self.assertTrue(logger.addHandler.called)
+        logger.addHandler.assert_called_once_with(handler)
+
+# TestGetConsoleHandler {{{1
+class TestGetConsoleHandler(unittest.TestCase):
+    """Test scriptharness.log.get_console_handler() method
+    """
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_addhandler(mock_logging):
+        """Test get_console_handler with existing log file
+        """
+        assert mock_logging  # shush pylint
+        logger = mock.MagicMock()
+        handler = log.get_console_handler(logger=logger)
+        logger.addHandler.assert_called_once_with(handler)
+
+    @staticmethod
+    @mock.patch('scriptharness.log.logging')
+    def test_handler(mock_logging):
+        """Test basic get_console_handler
+        """
+        assert mock_logging  # shush pylint
+        formatter = mock.MagicMock()
+        handler = log.get_console_handler(formatter=formatter,
+                                          level=logging.DEBUG)
+        handler.setLevel.assert_called_once_with(logging.DEBUG)
+        handler.setFormatter.assert_called_once_with(formatter)
 
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
