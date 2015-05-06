@@ -47,11 +47,18 @@ class LoggingClass(object):
         return self
 
     def items(self):
-        """Shut up pylint.
+        """Return dict.items() for dicts, and enumerate(self) for lists+tuples.
+
+        This both simplifies recursively_set_parent() and shushes pylint
+        complaining that LoggingClass doesn't have an items() method.
+
         The main negative here might be adding an attr items to non-dict
         data types.
         """
-        return super(LoggingClass, self).items()
+        if issubclass(self, dict):
+            yield super(LoggingClass, self).items()
+        else:
+            yield enumerate(self)
 
     def recusively_set_parent(self, name=None, parent=None):
         """Recursively set name + parent.
@@ -73,16 +80,11 @@ class LoggingClass(object):
             self.name = name
         if parent is not None:
             self.parent = parent
-        if issubclass(self, dict):
-            for child_name, child in self.items():
-                if is_logging_class(child):
-                    child.recursively_set_parent(
-                        six.text_type(child_name), self
-                    )
-        else:
-            for count, elem in enumerate(self):
-                if is_logging_class(elem):
-                    elem.recursively_set_parent(six.text_type(count - 1), self)
+        for child_name, child in self.items():
+            if is_logging_class(child):
+                child.recursively_set_parent(
+                    six.text_type(child_name), self
+                )
 
     def _child_set_parent(self, child, child_name):
         """If child is a Logging* instance, set its parent and name.
@@ -340,7 +342,7 @@ SUPPORTED_LOGGING_TYPES = {
 def is_logging_class(item):
     """Determine if a class is one of the Logging* classes.
     """
-    return item in SUPPORTED_LOGGING_TYPES.values()
+    return issubclass(item, LoggingClass)
 
 def enable_logging(item, logger_name=None, level=logging.INFO):
     """Recursively add logging to all contents of a LoggingDict.
