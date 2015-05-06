@@ -132,6 +132,21 @@ class TestGetFileHandler(unittest.TestCase):
         log.get_file_handler(log_file)
         mock_logging.FileHandler.assert_called_once_with(log_file)
 
+    @mock.patch('scriptharness.log.logging')
+    @mock.patch('scriptharness.log.os')
+    @mock.patch('scriptharness.log.os.path')
+    def test_delete_file(self, mock_logging, mock_os, mock_os_path):
+        """Test get_file_handler with existing log file
+        """
+        mock_os_path.exists.return_value = True
+        log_file = self._present_test_file()
+        logger = mock.MagicMock()
+        handler = mock.MagicMock()
+        mock_logging.FileHandler.return_value = handler
+        log.get_file_handler(log_file, logger=logger)
+        mock_os.remove.assert_called_once_with(log_file)
+        self.assertTrue(logger.addHandler.called)
+
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
     """Test scriptharness.log.LogMethod.__init__()
