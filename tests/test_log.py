@@ -124,6 +124,10 @@ class TestGetFileHandler(unittest.TestCase):
         filehandle.close()
         return self.test_file
 
+    def tearDown(self):
+        if os.path.exists(self.test_file):
+            os.remove(self.test_file)
+
     @mock.patch('scriptharness.log.logging')
     def test_basic(self, mock_logging):
         """Test basic get_file_handler
