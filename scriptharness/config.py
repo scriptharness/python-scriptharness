@@ -9,6 +9,8 @@ The other model is to log any changes to the dict or its children.  When
 debugging, config changes will be marked in the log.
 
 Attributes:
+  DEFAULT_LEVEL (int): the default logging level to set
+  DEFAULT_LOGGER_NAME (str): the default logger name to use
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not yet supporting collections / OrderedDicts.
 """
@@ -19,6 +21,10 @@ from scriptharness import ScriptHarnessException
 import logging
 import six
 
+
+DEFAULT_LEVEL = logging.INFO
+DEFAULT_LOGGER_NAME = 'scriptharness.log'
+
 # TODO use memo like deepcopy to prevent loop recursion
 
 # LoggingDict and helpers {{{1
@@ -27,24 +33,11 @@ class LoggingClass(object):
     """General logging methods for the Logging* classes to subclass.
 
     Attributes:
-      level (int): the logging level for changes
-      logger_name (str): the logger name to use
       name (str): the name of the class for logs
       parent (str): the name of the parent, if applicable, for logs
     """
-    level = None
-    logger_name = None
     name = None
     parent = None
-    def __new__(cls, super_class, items, level=logging.INFO,
-                logger_name='scriptharness.config'):
-        self = super_class.__new__(
-            cls,
-            (enable_logging(x, logger_name, level) for x in items)
-        )
-        self.level = level
-        self.logger_name = logger_name
-        return self
 
     def items(self):
         """Return dict.items() for dicts, and enumerate(self) for lists+tuples.
@@ -55,7 +48,7 @@ class LoggingClass(object):
         The main negative here might be adding an attr items to non-dict
         data types.
         """
-        if issubclass(self, dict):
+        if issubclass(self.__class__, dict):
             yield super(LoggingClass, self).items()
         else:
             yield enumerate(self)
@@ -124,9 +117,19 @@ class LoggingClass(object):
 
 class LoggingList(LoggingClass, list):
     """A list that logs any changes, as do its children.
+    Attributes:
+      level (int): the logging level for changes
+      logger_name (str): the logger name to use
     """
-    def __new__(cls, *args, **kwargs):
-        return LoggingClass.__new__(cls, list, *args, **kwargs)
+    level = None
+    logger_name = None
+    def __init__(self, items, level=DEFAULT_LEVEL,
+                 logger_name=DEFAULT_LOGGER_NAME):
+        self.level = level
+        self.logger_name = logger_name
+        for x in items:
+            enable_logging(x, logger_name, level)
+        super(LoggingList, self).__init__(items)
 
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
@@ -215,8 +218,9 @@ class LoggingList(LoggingClass, list):
 class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
     """
-    def __new__(cls, *args, **kwargs):
-        return LoggingClass.__new__(cls, tuple, *args, **kwargs)
+    def __new__(cls, items, **kwargs):
+        return tuple.__new__(cls, (enable_logging(x, **kwargs) for x in items))
+
     def __deepcopy__(self, memo):
         """Return a tuple on deepcopy.
         """
@@ -233,15 +237,21 @@ class LoggingDict(LoggingClass, dict):
          doesn't log them?
 
     Attributes:
+      level (int): the logging level for changes
+      logger_name (str): the logger name to use
       muted_keys (list): a list of keys that should be muted in logs, e.g.
         ['credentials', 'binary_blobs'].  The values of these keys should
         be muted in logs.
     """
     muted_keys = []
-
-    def __new__(cls, muted_keys=None, *args, **kwargs):
-        self = LoggingClass.__new__(cls, dict, *args, **kwargs)
+    def __init__(self, items, muted_keys=None, level=DEFAULT_LEVEL,
+                 logger_name=DEFAULT_LOGGER_NAME):
         self.muted_keys = muted_keys or self.muted_keys
+        self.level = level
+        self.logger_name = logger_name
+        for x in items.values():
+            enable_logging(x, logger_name, level)
+        super(LoggingDict, self).__init__(items)
 
     def __setitem__(self, key, value):
 
@@ -342,7 +352,7 @@ SUPPORTED_LOGGING_TYPES = {
 def is_logging_class(item):
     """Determine if a class is one of the Logging* classes.
     """
-    return issubclass(item, LoggingClass)
+    return issubclass(item.__class__, LoggingClass)
 
 def enable_logging(item, logger_name=None, level=logging.INFO):
     """Recursively add logging to all contents of a LoggingDict.
