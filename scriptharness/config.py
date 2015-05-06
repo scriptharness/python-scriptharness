@@ -28,7 +28,7 @@ DEFAULT_LOGGER_NAME = 'scriptharness.log'
 # TODO use memo like deepcopy to prevent loop recursion
 
 # LoggingDict and helpers {{{1
-# logging classes {{{2
+# LoggingClass {{{2
 class LoggingClass(object):
     """General logging methods for the Logging* classes to subclass.
 
@@ -115,6 +115,7 @@ class LoggingClass(object):
         return logger.log(self.level, message, *args)
 
 
+# LoggingList {{{2
 class LoggingList(LoggingClass, list):
     """A list that logs any changes, as do its children.
     Attributes:
@@ -215,6 +216,7 @@ class LoggingList(LoggingClass, list):
         self.child_set_parent()
 
 
+# LoggingTuple {{{2
 class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
     """
@@ -229,6 +231,7 @@ class LoggingTuple(LoggingClass, tuple):
         )
 
 
+# LoggingDict {{{2
 class LoggingDict(LoggingClass, dict):
     """A dict that logs any changes, as do its children.
 
@@ -254,27 +257,28 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).__init__(items)
 
     def __setitem__(self, key, value):
-
+        repl_dict={'key': six.text_type(key), 'value': six.text_type(value)}
         self.log_change(
             "__setitem__ %(key)s to %(value)s",
-            "__setitem__ %(key)s to ********",
-            {'key': six.text_type(key), 'value': six.text_type(value)}
+            muted_message="__setitem__ %(key)s to ********",
+            repl_dict=repl_dict,
         )
         super(LoggingDict, self).__setitem__(key, value)
         self.child_set_parent(key)
 
     def __delitem__(self, key):
-        self.log_change("__delitem__ %(key)s", "",
+        self.log_change("__delitem__ %(key)s",
                         repl_dict={'key': six.text_type(key)})
         super(LoggingDict, self).__delitem__(key)
 
-    def log_change(self, message, child_list=None, muted_message=None, *args):
-        repl_dict = {}
-        if args and isinstance(args[0], dict):
-            repl_dict = args[0]
-        if repl_dict.get('key') in self.muted_keys and muted_message:
-            message = muted_message
-        super(LoggingDict, self).log_change(message, *args)
+    def log_change(self, message, muted_message=None, repl_dict=None, child_list=None):
+        print("message %s" % message)
+        if repl_dict:
+            if muted_message and 'key' in repl_dict and repl_dict['key'] in self.muted_keys:
+                message = muted_message
+            message = message % repl_dict
+        print("transformed message %s" % message)
+        super(LoggingDict, self).log_change(message, child_list=child_list)
 
     def child_set_parent(self, key):
         """When the dict changes, we can just target the specific changed
@@ -298,19 +302,27 @@ class LoggingDict(LoggingClass, dict):
         if default:
             message += " (default %(default)s)"
             repl_dict['default'] = default
-        self.log_change(message, repl_dict, muted_message=muted_message)
+        self.log_change(message, repl_dict=repl_dict, muted_message=muted_message)
         return super(LoggingDict, self).pop(key, default)
 
-    def popitem(self, *args):
-        self.log_change("popitem dict: %s", "", six.text_type(args))
-        status = super(LoggingDict, self).popitem(*args)
+    def popitem(self, key):
+        pre_keys = set(self.keys())
+        self.log_change("popitem")
+        status = super(LoggingDict, self).popitem(key)
+        post_keys = set(self.keys())
+        self.log_change(
+            "the popitem removed the key %(key)s",
+            repl_dict={
+                'key': six.text_type(pre_keys.difference(post_keys)),
+            },
+        )
         return status
 
     def setdefault(self, key, default=None):
         if key not in self:
             self.log_change(
                 "setdefault %(key)s: %(default)s",
-                {'key': six.text_type(key), 'default': six.text_type(default)},
+                repl_dict={'key': six.text_type(key), 'default': six.text_type(default)},
                 muted_message="setdefault %(key)s: ********"
             )
         status = super(LoggingDict, self).setdefault(key, default)
@@ -335,14 +347,12 @@ class LoggingDict(LoggingClass, dict):
         """
         result = {}
         memo[id(self)] = result
-        for key, value in self.__dict__.items():
-            setattr(result, key, deepcopy(value, memo))
         for key, value in self.items():
             result[key] = deepcopy(value, memo)
         return result
 
-# end logging classes 2}}}
 
+# LoggingHelpers {{{2
 SUPPORTED_LOGGING_TYPES = {
     dict: LoggingDict,
     list: LoggingList,
