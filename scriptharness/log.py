@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Allow for full logging.
 
 Attributes:
@@ -102,6 +103,7 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 
 
 # LogMethod decorator {{{1
+# TODO add unicode option?
 class LogMethod(object):
     '''
     Wrapper decorator object for logging and error detection.

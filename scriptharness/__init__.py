@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Script harness.
 
 Attributes:
@@ -6,6 +7,7 @@ Attributes:
   __version_string__ (str): semver version in string format.
 """
 from __future__ import print_function
+import six
 import sys
 
 
@@ -61,3 +63,11 @@ def get_version_string(version):
 # Semantic versioning 2.0.0  http://semver.org/
 __version__ = (0, 1, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
+
+# py2 unicode help.  This may move into a separate file later.
+# http://farmdev.com/talks/unicode/
+def force_unicode(obj, encoding='utf-8'):
+    if sys.version_info[0] < 3:
+        if isinstance(obj, basestring) and not isinstance(obj, unicode):
+            obj = unicode(obj, encoding)
+    return obj

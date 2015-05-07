@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Allow for flexible configuration.
 
 There are two config dict models here:: one is to recursively lock the
@@ -11,6 +12,7 @@ debugging, config changes will be marked in the log.
 Attributes:
   DEFAULT_LEVEL (int): the default logging level to set
   DEFAULT_LOGGER_NAME (str): the default logger name to use
+  QUOTES (tuple): the order of quotes to use for key logging
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not yet supporting collections / OrderedDicts.
 """
@@ -24,8 +26,10 @@ import six
 
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_LOGGER_NAME = 'scriptharness.log'
+QUOTES = ("'", '"', "'''", '"""')
 
 # TODO use memo like deepcopy to prevent loop recursion
+# TODO logging strings dict
 
 # LoggingDict and helpers {{{1
 # LoggingClass {{{2
@@ -33,11 +37,15 @@ class LoggingClass(object):
     """General logging methods for the Logging* classes to subclass.
 
     Attributes:
+      level (int): the logging level for changes
+      logger_name (str): the logger name to use
       name (str): the name of the class for logs
       parent (str): the name of the parent, if applicable, for logs
     """
     name = None
     parent = None
+    level = None
+    logger_name = None
 
     def items(self):
         """Return dict.items() for dicts, and enumerate(self) for lists+tuples.
@@ -76,7 +84,7 @@ class LoggingClass(object):
         for child_name, child in self.items():
             if is_logging_class(child):
                 child.recursively_set_parent(
-                    six.text_type(child_name), self
+                    child_name, self
                 )
 
     def _child_set_parent(self, child, child_name):
@@ -103,17 +111,28 @@ class LoggingClass(object):
             if child_list is None:
                 child_list = []
             child_list.insert(0, self.name)
-            # TODO what happens on deletion?
             return self.parent.log_change(message, repl_dict=repl_dict,
                                           child_list=child_list)
         logger = logging.getLogger(self.logger_name)
         name = self.name or ""
         if child_list:
             for item in child_list:
-                name += "[{0}]".format(six.text_type(item))
+                if isinstance(item, int):
+                    name += "[%d]" % item
+                else:
+                    quote = ""
+                    item = six.text_type(item)
+                    for sep in QUOTES:
+                        if sep not in item:
+                            quote = sep
+                            break
+                    name += "[%s%s%s]" % (quote, six.text_type(item), quote)
         if name:
             message = "{0}: {1}".format(name, message)
-        return logger.log(self.level, message, repl_dict)
+        args = [self.level, message]
+        if repl_dict:
+            args.append(repl_dict)
+        return logger.log(*args)
 
 
 # LoggingList {{{2
@@ -129,8 +148,8 @@ class LoggingList(LoggingClass, list):
                  logger_name=DEFAULT_LOGGER_NAME):
         self.level = level
         self.logger_name = logger_name
-        for x in items:
-            enable_logging(x, logger_name, level)
+        for item in items:
+            enable_logging(item, logger_name, level)
         super(LoggingList, self).__init__(items)
 
     def __deepcopy__(self, memo):
@@ -171,9 +190,14 @@ class LoggingList(LoggingClass, list):
         for count, elem in enumerate(self, start=position):
             enable_logging(elem, logger_name=self.logger_name,
                            level=self.level)
-            self._child_set_parent(elem, six.text_type(count))
+            self._child_set_parent(elem, int(count))
 
     def log_self(self):
+        """Log the current list.
+
+        Since some methods insert values or rearrange them, it'll be easier to
+        debug things if we log the list after those operations.
+        """
         self.log_change("now looks like %(self)s",
                         repl_dict={'self': six.text_type(self)})
 
@@ -194,10 +218,10 @@ class LoggingList(LoggingClass, list):
 
     def insert(self, position, item):
         self.log_change(
-            "inserting %(item)s at position %(position)d",
+            "inserting %(item)s at position %(position)s",
             repl_dict={
                 'item': six.text_type(item),
-                'position': position
+                'position': six.text_type(position)
             }
         )
         super(LoggingList, self).insert(position, item)
@@ -214,15 +238,17 @@ class LoggingList(LoggingClass, list):
             self.child_set_parent(position)
 
     def pop(self, position=None):
-        message = "popping"
-        repl_dict = None
-        if position:
-            message = "popping position %(position)d"
-            repl_dict = {'position': position}
-        self.log_change(message, repl_dict=repl_dict)
-        value = super(LoggingList, self).pop(position)
+        if position is None:
+            self.log_change("popping")
+            value = super(LoggingList, self).pop()
+        else:
+            self.log_change(
+                "popping position %(position)d",
+                repl_dict={'position': position}
+            )
+            value = super(LoggingList, self).pop(position)
         self.log_self()
-        if position:
+        if position is not None:
             self.child_set_parent(position)
         return value
 
@@ -282,7 +308,7 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).__init__(items)
 
     def __setitem__(self, key, value):
-        repl_dict={'key': six.text_type(key), 'value': six.text_type(value)}
+        repl_dict = {'key': six.text_type(key), 'value': six.text_type(value)}
         self.log_change(
             "__setitem__ %(key)s to %(value)s",
             muted_message="__setitem__ %(key)s to ********",
@@ -298,12 +324,13 @@ class LoggingDict(LoggingClass, dict):
                         repl_dict={'key': six.text_type(key)})
         super(LoggingDict, self).__delitem__(key)
 
-    def log_change(self, message, muted_message=None, repl_dict=None, child_list=None):
+    def log_change(self, message, muted_message=None, repl_dict=None, **kwargs):
         if repl_dict:
-            if muted_message and 'key' in repl_dict and repl_dict['key'] in self.muted_keys:
+            if muted_message and 'key' in repl_dict and \
+                    repl_dict['key'] in self.muted_keys:
                 message = muted_message
         super(LoggingDict, self).log_change(
-            message, repl_dict=repl_dict, child_list=child_list
+            message, repl_dict=repl_dict, **kwargs
         )
 
     def child_set_parent(self, key):
@@ -313,9 +340,6 @@ class LoggingDict(LoggingClass, dict):
         Args:
             key (str): the dict key to the child value.
         """
-        # TODO remove this enable_logging
-        enable_logging(self[key], logger_name=self.logger_name,
-                       level=self.level)
         self._child_set_parent(self[key], six.text_type(key))
 
     def clear(self):
@@ -333,10 +357,10 @@ class LoggingDict(LoggingClass, dict):
                         muted_message=muted_message)
         return super(LoggingDict, self).pop(key, default)
 
-    def popitem(self, key):
+    def popitem(self):
         pre_keys = set(self.keys())
         self.log_change("popitem")
-        status = super(LoggingDict, self).popitem(key)
+        status = super(LoggingDict, self).popitem()
         post_keys = set(self.keys())
         self.log_change(
             "the popitem removed the key %(key)s",
@@ -347,27 +371,68 @@ class LoggingDict(LoggingClass, dict):
         return status
 
     def setdefault(self, key, default=None):
-        if key not in self:
-            self.log_change(
-                "setdefault %(key)s: %(default)s",
-                repl_dict={
-                    'key': six.text_type(key), 'default': six.text_type(default)
-                },
-                muted_message="setdefault %(key)s: ********"
-            )
-        status = super(LoggingDict, self).setdefault(key, default)
+        value = self.get(key, default)
+        repl_dict = {
+            'key': six.text_type(key),
+            'default': six.text_type(default),
+            'value': value
+        }
+        self.log_change(
+            "setdefault %(key)s to %(default)s",
+            repl_dict=repl_dict,
+            muted_message="setdefault %(key)s to ********"
+        )
+        if key in self and value == default:
+            changed_message = "setdefault: %(key)s unchanged."
+            changed_muted_message = None
+        else:
+            changed_message = "setdefault: %(key)s now %(value)s"
+            changed_muted_message = "setdefault: %(key)s changed."
+            status = super(LoggingDict, self).setdefault(key, default)
+        self.log_change(changed_message, repl_dict=repl_dict,
+                        muted_message=changed_muted_message)
         self.child_set_parent(key)
         return status
 
+    def log_update(self, key, value):
+        """Helper method for update(): log one key/value pair at a time.
+
+        Args:
+            key (str): key to update
+            value (any): value to set
+
+        Returns:
+            key (str) if it doesn't exist in self, else None
+        """
+        repl_dict = {
+            'key': key, 'value': value,
+        }
+        self.log_change(
+            "update %(key)s to %(value)s",
+            repl_dict=repl_dict,
+            muted_message="update %(key)s to ********",
+        )
+        if key not in self:
+            return key
+
     def update(self, args):
+        changed_keys = []
         if isinstance(args, dict):
-            keys = args.keys()
+            for key, value in args.items():
+                changed_keys.append(self.log_update(key, value))
         else:
-            keys = args[::2]
-        super(LoggingDict, self).update(*args)
-        # TODO will this auto-log or do I need to add it?
-        # Is there a smarter way to do this?
-        for key in keys:
+            # odd values are keys, even values are values
+            for key, value in zip(a[::2], a[1::2]):
+                changed_keys.append(self.log_update(key, value))
+        super(LoggingDict, self).update(args)
+        for key in changed_keys:
+            if key is None:
+                continue
+            self.log_change(
+                "%(key)s is now %(value)s",
+                repl_dict={'key': key, 'value': self[key]},
+                muted_message="%(key)s changed."
+            )
             self.child_set_parent(key)
 
     def __deepcopy__(self, memo):
