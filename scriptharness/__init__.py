@@ -65,8 +65,18 @@ __version__ = (0, 1, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
 
 # py2 unicode help.  This may move into a separate file later.
-# http://farmdev.com/talks/unicode/
-def force_unicode(obj, encoding='utf-8'):
+def to_unicode(obj, encoding='utf-8'):
+    """Encode a string as unicode in python2.
+
+    http://farmdev.com/talks/unicode/
+
+    Args:
+        obj (str): the string to encode
+        encoding (str, optional): the encoding to use
+
+    Returns:
+        obj (unicode): the encoded string
+    """
     if sys.version_info[0] < 3:
         if isinstance(obj, basestring) and not isinstance(obj, unicode):
             obj = unicode(obj, encoding)
