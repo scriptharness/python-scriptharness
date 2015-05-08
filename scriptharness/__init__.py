@@ -1,33 +1,55 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script harness.
+"""Python scripting harness / framework.
+
+Core principles:
+  Full logging.
+  Flexible configuration.
+  Modular actions.
 
 Attributes:
   __version__ (tuple): semver version - three integers and an optional string.
   __version_string__ (str): semver version in string format.
+  _universal_unicode (bool): whether we use unicode everywhere
 """
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function, \
+                       unicode_literals
 import six
 
 
-# scriptharness exceptions {{{1
+# scriptharness exceptions + unicode support {{{1
+@six.python_2_unicode_compatible
 class ScriptHarnessBaseException(Exception):
+    """All scriptharness exceptions should inherit this exception.
     """
-    All scriptharness exceptions should inherit this exception.
-    """
-
+    def __str__(self):
+        """
+        """
+        if six.PY3:
+            string = super(ScriptHarnessBaseException, self).__str__()
+        else:
+            string = super(ScriptHarnessBaseException, self).message
+        string = six.text_type(string)
+        return string
 
 class ScriptHarnessException(ScriptHarnessBaseException):
-    """
-    There is a problem in how scriptharness is being called.
-    This is a message for the developer.
-    """
+    """All developer-facing exceptions should inherit this class.
 
+    There is a problem in how scriptharness is being called.
+    If you want to catch all developer-facing scriptharness exceptions, use
+
+      try::
+          ...
+      except ScriptHarnessException as exc_info::
+          ...
+    """
 
 class ScriptHarnessFailure(ScriptHarnessBaseException):
-    """
+    """User-facing exception.
+
     Scriptharness has detected a failure in the running process.
-    This exception should result in program termination.
+    This exception should result in program termination; using try/except may
+    result in unexpected or dangerous behavior.
     """
 
 
