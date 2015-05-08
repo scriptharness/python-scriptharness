@@ -1,5 +1,6 @@
 #!/bin/bash
 
+coverage erase
 tox && coverage html
 rm -f pylint.out
 files=$(find tests scriptharness -type f -name \*.py)
