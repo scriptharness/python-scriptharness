@@ -8,7 +8,6 @@ Attributes:
 """
 from __future__ import print_function
 import six
-import sys
 
 
 # scriptharness exceptions {{{1
@@ -77,7 +76,7 @@ def to_unicode(obj, encoding='utf-8'):
     Returns:
         obj (unicode): the encoded string
     """
-    if sys.version_info[0] < 3:  # pragma: no branch
+    if six.PY2:  # pragma: no branch
         if not isinstance(obj, six.text_type):
             for string_type in six.string_types:
                 if isinstance(obj, string_type):  # pragma: no branch
