@@ -77,7 +77,10 @@ def to_unicode(obj, encoding='utf-8'):
     Returns:
         obj (unicode): the encoded string
     """
-    if sys.version_info[0] < 3:
-        if isinstance(obj, basestring) and not isinstance(obj, unicode):
-            obj = unicode(obj, encoding)
+    if sys.version_info[0] < 3:  # pragma: no branch
+        if not isinstance(obj, six.text_type):
+            for string_type in six.string_types:
+                if isinstance(obj, string_type):  # pragma: no branch
+                    obj = six.text_type(obj, encoding)
+                    continue
     return obj
