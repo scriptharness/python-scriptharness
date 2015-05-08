@@ -10,7 +10,6 @@ Core principles:
 Attributes:
   __version__ (tuple): semver version - three integers and an optional string.
   __version_string__ (str): semver version in string format.
-  _universal_unicode (bool): whether we use unicode everywhere
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
