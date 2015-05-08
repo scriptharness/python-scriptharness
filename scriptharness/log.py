@@ -5,57 +5,92 @@
 Attributes:
   DEFAULT_DATEFMT (str): default logging date format
   DEFAULT_FMT (str): default logging format
+  DEFAULT_LEVEL (int): default logging level
   LOGGING_DEFAULTS (dict): provide defaults for logging.basicConfig().
 """
 
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, \
+                       unicode_literals
 from copy import deepcopy
 import logging
 import os
+import six
+
 from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
 
 DEFAULT_DATEFMT = '%H:%M:%S'
 DEFAULT_FMT = '%(asctime)s %(levelname)8s - %(message)s'
-LOGGING_DEFAULTS = {
-    'level': logging.INFO,
-    'datefmt': DEFAULT_DATEFMT,
-    'format': DEFAULT_FMT,
-}
+DEFAULT_LEVEL = logging.INFO
+
+
+# UnicodeFormatter {{{1
+class UnicodeFormatter(logging.Formatter):
+    """Subclass logging.Formatter to not barf on unicode strings in py2.
+
+    Attributes:
+        encoding (str): defaults to utf-8.
+    """
+    encoding = 'utf-8'
+
+    def format(self, record):
+        string = super(UnicodeFormatter, self).format(record)
+        if six.PY2 and isinstance(string, six.text_type):
+            string = string.encode(self.encoding, 'replace')
+        return string
 
 
 # logging helper methods {{{1
-def set_logging_config(**kwargs):
-    """Set the logging.basicConfig() defaults.
-
-    These can be overridden on either a global level or per-logger.
-
-    Args:
-      **kwargs: These will be combined with the LOGGING_DEFAULTS and used
-        as the logging.basicConfig() kwargs.
-    """
-    for key, value in LOGGING_DEFAULTS.items():
-        kwargs.setdefault(key, value)
-    logging.basicConfig(**kwargs)
-
-def get_formatter(fmt=None, datefmt=None):
-    """Create a logging formatter to add to logging handlers.
+def get_formatter(fmt=DEFAULT_FMT, datefmt=DEFAULT_DATEFMT):
+    """Create a unicode-friendly formatter to add to logging handlers.
 
     Args:
       fmt (str, optional): logging message format.
       datefmt (str, optional): date format for the log message.
 
     Returns:
-      logging.Formatter to add to a handler - handler.setFormatter(formatter)
+      UnicodeFormatter to add to a handler - handler.setFormatter(formatter)
     """
-    if fmt is None:
-        fmt = LOGGING_DEFAULTS['format']
-    if datefmt is None:
-        datefmt = LOGGING_DEFAULTS['datefmt']
-    return logging.Formatter(fmt=fmt, datefmt=datefmt)
+    formatter = UnicodeFormatter(fmt=fmt, datefmt=datefmt)
+    return formatter
+
+
+def prepare_logging(path='', mode='w', logger_name='',
+                    file_level=DEFAULT_LEVEL, console_level=DEFAULT_LEVEL):
+    """Create a unicode-friendly logger.
+
+    By default it'll create the root logger with a console handler; if passed
+    a path it'll also create a file handler.  Both handlers will have a
+    unicode-friendly formatter.
+
+    This function is intended to be called a single time.  If called
+    a second time, beware creating multiple console handlers or multiple
+    file handlers writing to the same file.
+
+    Args:
+      path (str, optional): path to the file log.  If this isn't set,
+        don't create a file handler.  Default ''
+      mode (char, optional): the mode to open the file log.  Default 'w'
+      logger_name (str, optional): the name of the logger to use. Default ''
+      file_level (int, optional): the level to log to the file.  If this is
+        None, don't create a file handler.  Default DEFAULT_LEVEL
+      console_level (int, optional): the level to log to the console.  If this
+        is None, don't create a console handler.  Default DEFAULT_LEVEL
+
+    Returns:
+        logger (Logger object).  This is also easily retrievable via
+            logging.getLogger(logger_name).
+    """
+    logger = logging.getLogger(logger_name)
+    if file_level is not None and path:
+        get_file_handler(path, logger=logger, mode=mode, level=file_level)
+    if console_level is not None:
+        get_console_handler(logger=logger, level=console_level)
+    return logger
+
 
 def get_file_handler(path, level=logging.INFO, formatter=None,
-                     logger=None, append=False):
+                     logger=None, mode='w'):
     """Create a file handler to add to a logger.
 
     Args:
@@ -69,11 +104,9 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
       logging.FileHandler handler.  This can be added to a logger
       via logger.addHandler(handler)
     """
-    if not append and os.path.exists(path):
-        os.remove(path)
     if not formatter:
         formatter = get_formatter()
-    handler = logging.FileHandler(path)
+    handler = logging.FileHandler(path, mode)
     handler.setLevel(level)
     handler.setFormatter(formatter)
     if logger:
@@ -103,7 +136,6 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 
 
 # LogMethod decorator {{{1
-# TODO add unicode option?
 class LogMethod(object):
     """Wrapper decorator object for logging and error detection.
 

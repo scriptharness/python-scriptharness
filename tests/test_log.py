@@ -32,74 +32,74 @@ def always_succeed_cb(*args):
     return False
 
 
-# TestSetLoggingConfig {{{1
-class TestSetLoggingConfig(unittest.TestCase):
-    """Test scriptharness.log.set_logging_config() method
-    """
-    @staticmethod
-    @mock.patch('scriptharness.log.logging')
-    def test_no_kwargs(mock_logging):
-        """Test set_logging_config with no arguments
-        """
-        log.set_logging_config()
-        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
-
-    @staticmethod
-    @mock.patch('scriptharness.log.logging')
-    def test_default_kwargs(mock_logging):
-        """Test set_logging_config with default kwargs
-        """
-        log.set_logging_config(**log.LOGGING_DEFAULTS)
-        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
-
-    @staticmethod
-    @mock.patch('scriptharness.log.logging')
-    def test_kwargs(mock_logging):
-        """Test set_logging_config with non-default kwargs
-        """
-        test_kwargs = (
-            {'filemode': 'a'},
-            {'format': '%(message)s'},
-            {'filename': 'x', 'filemode': 'w'},
-        )
-        for orig_kwargs in test_kwargs:
-            log.set_logging_config(**orig_kwargs)
-            kwargs = deepcopy(log.LOGGING_DEFAULTS)
-            kwargs.update(orig_kwargs)
-            mock_logging.basicConfig.assert_called_with(**kwargs)
+## TestSetLoggingConfig {{{1
+#class TestSetLoggingConfig(unittest.TestCase):
+#    """Test scriptharness.log.set_logging_config() method
+#    """
+#    @staticmethod
+#    @mock.patch('scriptharness.log.logging')
+#    def test_no_kwargs(mock_logging):
+#        """Test set_logging_config with no arguments
+#        """
+#        log.set_logging_config()
+#        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
+#
+#    @staticmethod
+#    @mock.patch('scriptharness.log.logging')
+#    def test_default_kwargs(mock_logging):
+#        """Test set_logging_config with default kwargs
+#        """
+#        log.set_logging_config(**log.LOGGING_DEFAULTS)
+#        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
+#
+#    @staticmethod
+#    @mock.patch('scriptharness.log.logging')
+#    def test_kwargs(mock_logging):
+#        """Test set_logging_config with non-default kwargs
+#        """
+#        test_kwargs = (
+#            {'filemode': 'a'},
+#            {'format': '%(message)s'},
+#            {'filename': 'x', 'filemode': 'w'},
+#        )
+#        for orig_kwargs in test_kwargs:
+#            log.set_logging_config(**orig_kwargs)
+#            kwargs = deepcopy(log.LOGGING_DEFAULTS)
+#            kwargs.update(orig_kwargs)
+#            mock_logging.basicConfig.assert_called_with(**kwargs)
 
 
 # TestGetFormatter {{{1
 class TestGetFormatter(unittest.TestCase):
     """Test scriptharness.log.get_formatter() method
     """
-    @staticmethod
-    @mock.patch('scriptharness.log.logging')
-    def test_no_kwargs(mock_logging):
-        """Test get_formatter with no arguments
-        """
-        log.get_formatter()
-        mock_logging.Formatter.assert_called_once_with(
-            fmt=log.LOGGING_DEFAULTS['format'],
-            datefmt=log.LOGGING_DEFAULTS['datefmt'],
-        )
+#    @staticmethod
+#    @mock.patch('scriptharness.log.logging')
+#    def test_no_kwargs(mock_logging):
+#        """Test get_formatter with no arguments
+#        """
+#        log.get_formatter()
+#        mock_logging.Formatter.assert_called_once_with(
+#            fmt=log.DEFAULT_FMT,
+#            datefmt=log.DEFAULT_DATEFMT,
+#        )
 
-    @staticmethod
-    @mock.patch('scriptharness.log.logging')
-    def test_with_kwargs(mock_logging):
-        """Test get_formatter with arguments
-        """
-        for fmt, datefmt in [
-                ('%(message)s', '%H:%M:%S'),
-                ('%(name)s:%(levelname)s:%(message)s', '%Y-%m-%d %H:%M:%S'),
-                ('%(name)s - %(levelname)s: %(message)s', None),
-                (None, '%D:%H:%M:%S'),
-            ]:
-            log.get_formatter(fmt=fmt, datefmt=datefmt)
-            mock_logging.Formatter.assert_called_with(
-                fmt=fmt or log.LOGGING_DEFAULTS['format'],
-                datefmt=datefmt or log.LOGGING_DEFAULTS['datefmt'],
-            )
+#    @staticmethod
+#    @mock.patch('scriptharness.log.logging')
+#    def test_with_kwargs(mock_logging):
+#        """Test get_formatter with arguments
+#        """
+#        for fmt, datefmt in [
+#                ('%(message)s', '%H:%M:%S'),
+#                ('%(name)s:%(levelname)s:%(message)s', '%Y-%m-%d %H:%M:%S'),
+#                ('%(name)s - %(levelname)s: %(message)s', None),
+#                (None, '%D:%H:%M:%S'),
+#            ]:
+#            log.get_formatter(fmt=fmt, datefmt=datefmt)
+#            mock_logging.Formatter.assert_called_with(
+#                fmt=fmt or log.LOGGING_DEFAULTS['format'],
+#                datefmt=datefmt or log.LOGGING_DEFAULTS['datefmt'],
+#            )
 
 
 # TestGetFileHandler {{{1
@@ -135,23 +135,9 @@ class TestGetFileHandler(unittest.TestCase):
         """
         log_file = self._absent_test_file()
         formatter = mock.MagicMock()
-        handler = log.get_file_handler(log_file, formatter=formatter)
-        mock_logging.FileHandler.assert_called_once_with(log_file)
+        handler = log.get_file_handler(log_file, formatter=formatter, mode='a')
+        mock_logging.FileHandler.assert_called_once_with(log_file, 'a')
         handler.setFormatter.assert_called_once_with(formatter)
-
-    @mock.patch('scriptharness.log.logging')
-    @mock.patch('scriptharness.log.os')
-    @mock.patch('scriptharness.log.os.path')
-    def test_delete_file(self, mock_logging, mock_os, mock_os_path):
-        """Test get_file_handler with existing log file
-        """
-        assert mock_logging  # shush pylint
-        mock_os_path.exists.return_value = True
-        log_file = self._present_test_file()
-        logger = mock.MagicMock()
-        handler = log.get_file_handler(log_file, logger=logger)
-        mock_os.remove.assert_called_once_with(log_file)
-        logger.addHandler.assert_called_once_with(handler)
 
 # TestGetConsoleHandler {{{1
 class TestGetConsoleHandler(unittest.TestCase):
