@@ -32,30 +32,34 @@ def always_succeed_cb(*args):
     return False
 
 
-## TestSetLoggingConfig {{{1
-#class TestSetLoggingConfig(unittest.TestCase):
-#    """Test scriptharness.log.set_logging_config() method
-#    """
-#    @staticmethod
-#    @mock.patch('scriptharness.log.logging')
-#    def test_no_kwargs(mock_logging):
-#        """Test set_logging_config with no arguments
-#        """
-#        log.set_logging_config()
-#        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
-#
+# TestPrepareLogging {{{1
+class TestPrepareLogging(unittest.TestCase):
+    """Test scriptharness.log.prepare_logging() method
+    """
+    @mock.patch('scriptharness.log.logging')
+    def test_no_kwargs(self, mock_logging):
+        """Test prepare_logging with no arguments
+        """
+        console_mock = mock.MagicMock()
+        file_mock = mock.MagicMock()
+        mock_logging.StreamHandler().setLevel = console_mock
+        mock_logging.FileHandler().setLevel = file_mock
+        log.prepare_logging()
+        console_mock.assert_called_once_with(log.DEFAULT_LEVEL)
+        self.assertFalse(file_mock.called)
+
 #    @staticmethod
 #    @mock.patch('scriptharness.log.logging')
 #    def test_default_kwargs(mock_logging):
-#        """Test set_logging_config with default kwargs
+#        """Test prepare_logging with default kwargs
 #        """
-#        log.set_logging_config(**log.LOGGING_DEFAULTS)
+#        log.prepare_logging(**log.LOGGING_DEFAULTS)
 #        mock_logging.basicConfig.assert_called_once_with(**log.LOGGING_DEFAULTS)
 #
 #    @staticmethod
 #    @mock.patch('scriptharness.log.logging')
 #    def test_kwargs(mock_logging):
-#        """Test set_logging_config with non-default kwargs
+#        """Test prepare_logging with non-default kwargs
 #        """
 #        test_kwargs = (
 #            {'filemode': 'a'},
@@ -63,7 +67,7 @@ def always_succeed_cb(*args):
 #            {'filename': 'x', 'filemode': 'w'},
 #        )
 #        for orig_kwargs in test_kwargs:
-#            log.set_logging_config(**orig_kwargs)
+#            log.prepare_logging(**orig_kwargs)
 #            kwargs = deepcopy(log.LOGGING_DEFAULTS)
 #            kwargs.update(orig_kwargs)
 #            mock_logging.basicConfig.assert_called_with(**kwargs)

@@ -149,7 +149,7 @@ class LoggingList(LoggingClass, list):
         self.level = level
         self.logger_name = logger_name
         for item in items:
-            enable_logging(item, logger_name, level)
+            add_logging_to_obj(item, logger_name, level)
         super(LoggingList, self).__init__(items)
 
     def __deepcopy__(self, memo):
@@ -175,8 +175,8 @@ class LoggingList(LoggingClass, list):
             "__setitem__ %(position)d to %(value)s",
             repl_dict={'position': position, 'value': six.text_type(value)}
         )
-        value = enable_logging(value, logger_name=self.logger_name,
-                               level=self.level)
+        value = add_logging_to_obj(value, logger_name=self.logger_name,
+                                   level=self.level)
         super(LoggingList, self).__setitem__(position, value)
         self.log_change("now looks like %(self)s",
                         repl_dict={'self': six.text_type(self)})
@@ -188,8 +188,8 @@ class LoggingList(LoggingClass, list):
         [position:]
         """
         for count, elem in enumerate(self, start=position):
-            enable_logging(elem, logger_name=self.logger_name,
-                           level=self.level)
+            add_logging_to_obj(elem, logger_name=self.logger_name,
+                               level=self.level)
             self._child_set_parent(elem, int(count))
 
     def log_self(self):
@@ -270,7 +270,9 @@ class LoggingTuple(LoggingClass, tuple):
     """A tuple whose children log any changes.
     """
     def __new__(cls, items, **kwargs):
-        return tuple.__new__(cls, (enable_logging(x, **kwargs) for x in items))
+        return tuple.__new__(
+            cls, (add_logging_to_obj(x, **kwargs) for x in items)
+        )
 
     def __deepcopy__(self, memo):
         """Return a tuple on deepcopy.
@@ -302,7 +304,7 @@ class LoggingDict(LoggingClass, dict):
         self.level = level
         self.logger_name = logger_name
         for key, value in items.items():
-            items[key] = enable_logging(
+            items[key] = add_logging_to_obj(
                 value, logger_name=logger_name, level=level
             )
         super(LoggingDict, self).__init__(items)
@@ -314,8 +316,8 @@ class LoggingDict(LoggingClass, dict):
             muted_message="__setitem__ %(key)s to ********",
             repl_dict=repl_dict,
         )
-        value = enable_logging(value, logger_name=self.logger_name,
-                               level=self.level)
+        value = add_logging_to_obj(value, logger_name=self.logger_name,
+                                   level=self.level)
         super(LoggingDict, self).__setitem__(key, value)
         self.child_set_parent(key)
 
@@ -459,7 +461,7 @@ def is_logging_class(item):
     """
     return issubclass(item.__class__, LoggingClass)
 
-def enable_logging(item, logger_name=None, level=logging.INFO):
+def add_logging_to_obj(item, logger_name=None, level=logging.INFO):
     """Recursively add logging to all contents of a LoggingDict.
 
     Any children of supported types will also have logging enabled.
