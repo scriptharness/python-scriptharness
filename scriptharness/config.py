@@ -522,11 +522,11 @@ class LockedTuple(tuple):
 
 
 class ReadOnlyDict(dict):
-    '''A dict that is lockable.  When locked, any changes raise exceptions.
+    """A dict that is lockable.  When locked, any changes raise exceptions.
 
     Slightly modified version of mozharness.base.config.ReadOnlyDict,
     largely for pylint.
-    '''
+    """
     def __init__(self, *args, **kwargs):
         self._lock = False
         super(ReadOnlyDict, self).__init__(*args, **kwargs)

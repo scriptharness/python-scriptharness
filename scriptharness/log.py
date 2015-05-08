@@ -105,14 +105,13 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 # LogMethod decorator {{{1
 # TODO add unicode option?
 class LogMethod(object):
-    '''
-    Wrapper decorator object for logging and error detection.
+    """Wrapper decorator object for logging and error detection.
 
     Attributes:
       default_config (dict): contains the config defaults that can be
         overridden via __init__ **kwargs.  Changing default_config directly
         may carry over to other decorated LogMethod functions!
-    '''
+    """
     default_config = {
         'level': logging.INFO,
         'error_level': logging.ERROR,
@@ -185,9 +184,8 @@ class LogMethod(object):
         """
         self.func = func
         def wrapped_func(*args, **kwargs):
-            '''
-            This function replaces the decorated function.
-            '''
+            """This function replaces the decorated function.
+            """
             self.args = args
             self.kwargs = kwargs
             self.set_repl_dict()
