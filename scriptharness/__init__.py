@@ -31,7 +31,11 @@ class ScriptHarnessBaseException(Exception):
             string = super(ScriptHarnessBaseException, self).__str__()
         else:
             string = super(ScriptHarnessBaseException, self).message
-        string = six.text_type(string)
+        try:
+            new_string = six.text_type(string, 'utf-8')
+            string = new_string
+        except TypeError:
+            pass
         return string
 
 class ScriptHarnessException(ScriptHarnessBaseException):
@@ -64,10 +68,7 @@ def to_unicode(obj, encoding='utf-8'):
         obj (unicode): the encoded string
     """
     if not isinstance(obj, six.text_type):
-        for string_type in six.string_types:
-            if isinstance(obj, string_type):  # pragma: no branch
-                obj = six.text_type(obj, encoding)
-                continue
+        obj = six.text_type(obj, encoding)
     return obj
 
 

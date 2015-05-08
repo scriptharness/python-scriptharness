@@ -57,14 +57,15 @@ class TestVersionString(unittest.TestCase):
 
 # TestUnicode {{{1
 UNICODE_STRINGS = [
+    'ascii',
     '日本語',
     '한국말',
     'हिन्दी',
     'العَرَبِيةُ',
     'ру́сский язы́к',
     'ខេមរភាសា',
-    'ascii',
-    six.u('unicode'),
+    six.u('uascii'),
+    six.u('ąćęłńóśźż'),
 ]
 
 class TestUnicode(unittest.TestCase):
@@ -75,9 +76,20 @@ class TestUnicode(unittest.TestCase):
         """
         for ustring in UNICODE_STRINGS:
             astring = sh.to_unicode(ustring)
-            if hasattr(ustring, 'decode'):
-                # python2
+            if six.PY2 and not isinstance(ustring, six.text_type):
                 self.assertEqual(ustring.decode('utf-8'), astring)
             else:
-                # python3
                 self.assertEqual(ustring, astring)
+
+    def test_exception(self):
+        """Verify ScriptHarnessBaseException works
+        """
+        for ustring in UNICODE_STRINGS:
+            exc = sh.ScriptHarnessBaseException(ustring)
+            if six.PY2:
+                if not isinstance(ustring, six.text_type):
+                    self.assertEqual(ustring, str(exc))
+                else:
+                    self.assertEqual(ustring, six.text_type(exc))
+            else:
+                self.assertEqual(ustring, str(exc))
