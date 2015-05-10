@@ -1,31 +1,64 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Test scriptharness.log
+
+Attributes:
+  UNICODE_STRINGS (list): a list of strings to test unicode functionality
+  TEST_FILE (str): the filename to use for test log files
+  TEST_CONSOLE (str): the filename to use for testing console output
+  TEST_FILE_CONTENTS (str): a string to prepopulate logs to test overwriting
+  TEST_LOGGER_NAME (str): the logger name to use for tests
+  TEST_STRING (str): a sample ascii string to use to test log output
+  STDOUT (file): a pointer to stdout so we can redirect stdout later.
+  STDERR (file): a pointer to stderr so we can redirect stderr later.
 """
 from __future__ import absolute_import, division, print_function
 import logging
 import mock
 import os
+import scriptharness as sh
 import scriptharness.log as log
-import six
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
 
 # py2 six.u() only works if we don't import unicode_literals from __future__
 UNICODE_STRINGS = [
+    'ascii',
     '日本語',
     '한국말',
     'हिन्दी',
     'العَرَبِيةُ',
     'ру́сский язы́к',
     'ខេមរភាសា',
-    six.u('uascii'),
-    six.u('ąćęłńóśźż'),
     'ascii',
 ]
+TEST_FILE = '_test_log_file'
+TEST_CONSOLE = '_test_log_console'
+TEST_FILE_CONTENTS = "Newly initialized test file"
+TEST_LOGGER_NAME = "_test_logger"
+TEST_STRING = "This is a test string"
+STDOUT = os.dup(1)
+STDERR = os.dup(2)
 
 # Helper methods {{{1
+def _absent_test_file(path=TEST_FILE):
+    """Return a test file path that doesn't exist.
+    """
+    if os.path.exists(path):
+        os.remove(path)
+    assert not os.path.exists(path)
+    return path
+
+def _present_test_file(path=TEST_FILE, contents=None):
+    """Return a test file path that exists with initialized content.
+    """
+    filehandle = open(path, 'w')
+    if contents is not None:
+        print(TEST_FILE_CONTENTS, file=filehandle)
+    filehandle.close()
+    return path
+
 class NoPostFunc(log.LogMethod):
     """Subclass LogMethod to only log from pre_func()
     """
@@ -68,7 +101,7 @@ class LoggerReplacement(object):
         self.level_messages.setdefault(level, [])
         self.level_messages[level].append((msg, args))
 
-    def shutup_pylint(self):
+    def silence_pylint(self):
         """pylint complains about too few public methods"""
         pass
 
@@ -106,38 +139,35 @@ class TestPrepareLogging(unittest.TestCase):
 class TestGetFileHandler(unittest.TestCase):
     """Test scriptharness.log.get_file_handler() method
     """
-    test_file = '_test_log'
-    test_contents = "Newly initialized test file"
-
-    def _absent_test_file(self):
-        """Return a test file path that doesn't exist.
-        """
-        if os.path.exists(self.test_file):
-            os.remove(self.test_file)
-        assert not os.path.exists(self.test_file)
-        return self.test_file
-
-    def _present_test_file(self):
-        """Return a test file path that exists with initialized content.
-        """
-        filehandle = open(self.test_file, 'w')
-        print(self.test_contents, file=filehandle)
-        filehandle.close()
-        return self.test_file
-
     def tearDown(self):
-        if os.path.exists(self.test_file):
-            os.remove(self.test_file)
+        assert self  # silence pylint
+        if os.path.exists(TEST_FILE):
+            os.remove(TEST_FILE)
 
+    @staticmethod
     @mock.patch('scriptharness.log.logging')
-    def test_basic(self, mock_logging):
+    def test_basic(mock_logging):
         """Test basic get_file_handler
         """
-        log_file = self._absent_test_file()
+        log_file = _absent_test_file()
         formatter = mock.MagicMock()
         handler = log.get_file_handler(log_file, formatter=formatter, mode='a')
         mock_logging.FileHandler.assert_called_once_with(log_file, 'a')
         handler.setFormatter.assert_called_once_with(formatter)
+
+    def test_overwrite(self):
+        """Verify that mode='w' deletes the existing file
+        """
+        log_file = _present_test_file()
+        logger = logging.getLogger(TEST_LOGGER_NAME)
+        formatter = logging.Formatter(fmt='%(message)s')
+        handler = log.get_file_handler(log_file, mode='w', formatter=formatter)
+        logger.addHandler(handler)
+        logger.info(TEST_STRING)
+        filehandle = open(log_file)
+        # not sure if it's best to rstrip() here or os.linesep
+        line = filehandle.readline().rstrip()
+        self.assertEqual(line, TEST_STRING)
 
 # TestGetConsoleHandler {{{1
 class TestGetConsoleHandler(unittest.TestCase):
@@ -413,7 +443,7 @@ class TestLogMethodClass(unittest.TestCase):
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs
-            def shutup_pylint(self):
+            def silence_pylint(self):
                 """pylint complains about too few public methods"""
                 pass
         test_instance = TestClass()
@@ -453,7 +483,7 @@ class TestLogMethodClass(unittest.TestCase):
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs
-            def shutup_pylint(self):
+            def silence_pylint(self):
                 """pylint complains about too few public methods"""
                 pass
         test_instance = TestClass()
@@ -478,3 +508,101 @@ class TestLogMethodClass(unittest.TestCase):
             repl_dict['return_value'],
             (test_instance, args, kwargs)
         )
+
+
+# TestUnicode {{{1
+class TestUnicode(unittest.TestCase):
+    """Test stdout + file logging, for real, to verify unicode
+    """
+    def tearDown(self):
+        os.close(1)
+        os.dup(STDOUT)
+        os.close(2)
+        os.dup(STDERR)
+        for path in (TEST_FILE, TEST_CONSOLE):
+            if os.path.exists(path):
+                os.remove(path)
+        assert self  # silence pylint
+
+    @staticmethod
+    def get_file_logger():
+        """Create a logger with a file handler for testing.
+
+        The formatter is a UnicodeFormatter with a fmt of %(message)s for
+        simplified message verification.
+        """
+        file_log = _present_test_file(TEST_FILE)
+        formatter = log.UnicodeFormatter(fmt='%(message)s')
+        file_handler = log.get_file_handler(
+            file_log, formatter=formatter, mode='w'
+        )
+        console_handler = log.get_console_handler(
+            formatter=formatter, level=logging.CRITICAL
+        )
+        logger = logging.getLogger(TEST_LOGGER_NAME)
+        logger.handlers = []
+        logger.addHandler(console_handler)
+        logger.addHandler(file_handler)
+        return logger
+
+    @staticmethod
+    def get_console_logger():
+        """Create a logger with a console handler for testing.
+
+        The formatter is a UnicodeFormatter with a fmt of %(message)s for
+        simplified message verification.
+        """
+        _present_test_file(TEST_CONSOLE)
+        formatter = log.UnicodeFormatter(fmt='%(message)s')
+        console_handler = log.get_console_handler(formatter=formatter)
+        logger = logging.getLogger(TEST_LOGGER_NAME)
+        logger.handlers = []
+        logger.addHandler(console_handler)
+        return logger
+
+    def test_unicode_file(self):
+        """Test logging unicode strings to a file
+        """
+        for string in UNICODE_STRINGS:
+            logger = self.get_file_logger()
+            logger.info(string)
+            filehandle = open(TEST_FILE)
+            line = filehandle.read().rstrip()
+            self.assertEqual(string, line)
+            filehandle.close()
+
+    def test_unicode_console(self):
+        """Test logging bare unicode strings to a console
+        """
+        for string in UNICODE_STRINGS:
+            logger = self.get_console_logger()
+            os.close(1)
+            os.open(TEST_CONSOLE, os.O_WRONLY)
+            os.dup2(1, 2)
+            logger.info(string)
+            os.close(1)
+            os.close(2)
+            os.dup(STDOUT)
+            os.dup(STDERR)
+            console_fh = open(TEST_CONSOLE)
+            console_line = console_fh.read().rstrip()
+            self.assertEqual(string, console_line)
+            console_fh.close()
+
+    def test_to_unicode_console(self):
+        """Test logging scriptharness.to_unicode strings to a console
+        """
+        for string in UNICODE_STRINGS:
+            logger = self.get_console_logger()
+            os.close(1)
+            os.open(TEST_CONSOLE, os.O_WRONLY)
+            os.dup2(1, 2)
+            logger.info(sh.to_unicode(string))
+            os.close(1)
+            os.close(2)
+            os.dup(STDOUT)
+            os.dup(STDERR)
+            console_fh = open(TEST_CONSOLE)
+            console_line = console_fh.read().rstrip()
+            self.assertEqual(sh.to_unicode(string), sh.to_unicode(console_line))
+            console_fh.close()
