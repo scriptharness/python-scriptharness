@@ -1,28 +1,69 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Test scriptharness.config
+
+Attributes:
+  CONTROL_DICT (dict): used to prepopulate the config data structures
+  SECONDARY_DICT (dict): used to add to the LoggingDict
+  SECONDARY_LIST (dict): used to add to the LoggingDict
+  UNICODE_STRINGS (list): a list of strings to test for unicode support
 """
 from copy import deepcopy
-import unittest
-
-import scriptharness.config as config
 from scriptharness import ScriptHarnessException
+import scriptharness.config as config
+import unittest
 
 
 CONTROL_DICT = {
+    'a': 1,
     'b': '2',
     'c': {
         'd': '4',
     },
     'd': {
-        'turtles': ['turtle1']
+        'turtles': ['turtle1', 'turtle2', 'turtle3'],
     },
     'e': [
         'f', 'g', {
-            'turtles': ['turtle1']
+            'turtles': ['turtle1', 'turtle2', 'turtle3'],
         },
     ],
 }
+
+SECONDARY_DICT = {
+    'A': 1,
+    'B': [1, 2, 3, 'four'],
+    'C': ('five', 6, 7, 8, [9, 10]),
+}
+
+SECONDARY_LIST = [
+    'Z', 'Y',
+    (
+        'X', 'W', 9,
+        {
+            'V': 8,
+            'U': 7,
+        },
+    )
+]
+
+UNICODE_STRINGS = [
+    'ascii',
+    '日本語',
+    '한국말',
+    'हिन्दी',
+    'العَرَبِيةُ',
+    'ру́сский язы́к',
+    'ខេមរភាសា',
+]
+
+
+# Test LoggingDict {{{1
+# helper methods {{{2
+def get_logging_dict():
+    """Helper function to create a known logging dict
+    """
+
 
 # Test ReadOnlyDict {{{1
 # helper methods {{{2

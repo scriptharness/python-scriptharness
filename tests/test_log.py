@@ -22,7 +22,6 @@ import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
 
-# py2 six.u() only works if we don't import unicode_literals from __future__
 UNICODE_STRINGS = [
     'ascii',
     '日本語',
@@ -31,7 +30,6 @@ UNICODE_STRINGS = [
     'العَرَبِيةُ',
     'ру́сский язы́к',
     'ខេមរភាសា',
-    'ascii',
 ]
 TEST_FILE = '_test_log_file'
 TEST_CONSOLE = '_test_log_console'

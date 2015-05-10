@@ -12,6 +12,18 @@ import six
 import unittest
 
 
+UNICODE_STRINGS = [
+    '日本語',
+    '한국말',
+    'हिन्दी',
+    'العَرَبِيةُ',
+    'ру́сский язы́к',
+    'ខេមរភាសា',
+    six.u('uascii'),
+    six.u('ąćęłńóśźż'),
+    'ascii',
+]
+
 # TestVersionString {{{1
 class TestVersionString(unittest.TestCase):
     """Test the various semver version->version string conversions
@@ -56,18 +68,6 @@ class TestVersionString(unittest.TestCase):
 
 
 # TestUnicode {{{1
-UNICODE_STRINGS = [
-    '日本語',
-    '한국말',
-    'हिन्दी',
-    'العَرَبِيةُ',
-    'ру́сский язы́к',
-    'ខេមរភាសា',
-    six.u('uascii'),
-    six.u('ąćęłńóśźż'),
-    'ascii',
-]
-
 class TestUnicode(unittest.TestCase):
     """Test unicode support.
     """
