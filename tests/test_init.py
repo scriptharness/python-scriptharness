@@ -57,7 +57,6 @@ class TestVersionString(unittest.TestCase):
 
 # TestUnicode {{{1
 UNICODE_STRINGS = [
-    'ascii',
     '日本語',
     '한국말',
     'हिन्दी',
@@ -66,6 +65,7 @@ UNICODE_STRINGS = [
     'ខេមរភាសា',
     six.u('uascii'),
     six.u('ąćęłńóśźż'),
+    'ascii',
 ]
 
 class TestUnicode(unittest.TestCase):
