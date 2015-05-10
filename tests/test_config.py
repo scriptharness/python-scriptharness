@@ -206,10 +206,5 @@ class TestDeepcopyROD(unittest.TestCase):
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
         rod2.lock()
-        # We can use |with self.assertRaises(...):| when we drop py26 support
-        try:
+        with self.assertRaises(ScriptHarnessException):
             rod2['e'] = 'hey'
-        except ScriptHarnessException:
-            pass
-        else:
-            self.assertEqual(0, 1, "can set var in rod2 after deepcopy + lock")
