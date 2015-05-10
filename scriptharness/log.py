@@ -194,7 +194,7 @@ class LogMethod(object):
         messages = []
         for key, value in kwargs.items():
             if key not in self.config:
-                messages.append('Unknown key {0} in kwargs!'.format(key))
+                messages.append('Unknown key {} in kwargs!'.format(key))
             self.config[key] = value
         if kwargs.get('detect_error_cb') is not None and \
                 not callable(kwargs['detect_error_cb']):

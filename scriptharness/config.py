@@ -128,7 +128,7 @@ class LoggingClass(object):
                             break
                     name += "[%s%s%s]" % (quote, six.text_type(item), quote)
         if name:
-            message = "{0}: {1}".format(name, message)
+            message = "{}: {}".format(name, message)
         args = [self.level, message]
         if repl_dict:
             args.append(repl_dict)

@@ -94,7 +94,7 @@ def get_version_string(version):
         version_string = '%d.%d.%d-%s' % version
     else:
         raise ScriptHarnessException(
-            'Version tuple is non-semver-compliant {0} length!'.format(version_len)
+            'Version tuple is non-semver-compliant {} length!'.format(version_len)
         )
     return version_string
 # 1}}}
