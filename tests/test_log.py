@@ -9,15 +9,15 @@ Attributes:
   TEST_FILE_CONTENTS (str): a string to prepopulate logs to test overwriting
   TEST_LOGGER_NAME (str): the logger name to use for tests
   TEST_STRING (str): a sample ascii string to use to test log output
-  STDOUT (file): a pointer to stdout so we can redirect stdout later.
-  STDERR (file): a pointer to stderr so we can redirect stderr later.
 """
 from __future__ import absolute_import, division, print_function
+from contextlib import contextmanager
 import logging
 import mock
 import os
 import scriptharness as sh
 import scriptharness.log as log
+import sys
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessFailure
 
@@ -38,8 +38,6 @@ TEST_CONSOLE = '_test_log_console'
 TEST_FILE_CONTENTS = "Newly initialized test file"
 TEST_LOGGER_NAME = "_test_logger"
 TEST_STRING = "This is a test string"
-STDOUT = os.dup(1)
-STDERR = os.dup(2)
 
 # Helper methods {{{1
 def _absent_test_file(path=TEST_FILE):
@@ -53,10 +51,9 @@ def _absent_test_file(path=TEST_FILE):
 def _present_test_file(path=TEST_FILE, contents=None):
     """Return a test file path that exists with initialized content.
     """
-    filehandle = open(path, 'w')
-    if contents is not None:
-        print(TEST_FILE_CONTENTS, file=filehandle)
-    filehandle.close()
+    with open(path, 'w') as filehandle:
+        if contents is not None:
+            print(TEST_FILE_CONTENTS, file=filehandle)
     return path
 
 class NoPostFunc(log.LogMethod):
@@ -76,6 +73,31 @@ def always_fail_cb(*args):
 def always_succeed_cb(*args):
     """always succeed"""
     return False
+
+# http://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python
+@contextmanager
+def stdstar_redirected(path):
+    """Open path and redirect stdout+stderr to it.
+
+    Args:
+      path (str): A file path to use to log stdout+stderr
+    """
+    stdout = sys.stdout
+    stderr = sys.stderr
+    with os.fdopen(os.dup(1), 'wb') as copied_out, \
+            os.fdopen(os.dup(2), 'wb') as copied_err:
+        stdout.flush()
+        stderr.flush()
+        with open(path, 'wb') as to_file:
+            os.dup2(to_file.fileno(), 1)
+            os.dup2(to_file.fileno(), 2)
+        try:
+            yield stdout
+        finally:
+            stdout.flush()
+            stderr.flush()
+            os.dup2(copied_out.fileno(), 1)  # $ exec >&copied
+            os.dup2(copied_err.fileno(), 2)  # $ exec >&copied
 
 class LoggerReplacement(object):
     """A replacement logging.Logger to more easily test
@@ -153,10 +175,10 @@ class TestGetFileHandler(unittest.TestCase):
         handler = log.get_file_handler(log_file, mode='w', formatter=formatter)
         logger.addHandler(handler)
         logger.info(TEST_STRING)
-        filehandle = open(log_file)
-        # not sure if it's best to rstrip() here or os.linesep
-        line = filehandle.readline().rstrip()
-        self.assertEqual(line, TEST_STRING)
+        with open(log_file) as filehandle:
+            # not sure if it's best to rstrip() here or os.linesep
+            line = filehandle.readline().rstrip()
+            self.assertEqual(line, TEST_STRING)
 
 # TestGetConsoleHandler {{{1
 class TestGetConsoleHandler(unittest.TestCase):
@@ -504,10 +526,6 @@ class TestUnicode(unittest.TestCase):
     """Test stdout + file logging, for real, to verify unicode
     """
     def tearDown(self):
-        os.close(1)
-        os.dup(STDOUT)
-        os.close(2)
-        os.dup(STDERR)
         for path in (TEST_FILE, TEST_CONSOLE):
             if os.path.exists(path):
                 os.remove(path)
@@ -541,7 +559,6 @@ class TestUnicode(unittest.TestCase):
         The formatter is a UnicodeFormatter with a fmt of %(message)s for
         simplified message verification.
         """
-        _present_test_file(TEST_CONSOLE)
         formatter = log.UnicodeFormatter(fmt='%(message)s')
         console_handler = log.get_console_handler(formatter=formatter)
         logger = logging.getLogger(TEST_LOGGER_NAME)
@@ -555,43 +572,29 @@ class TestUnicode(unittest.TestCase):
         for string in UNICODE_STRINGS:
             logger = self.get_file_logger()
             logger.info(string)
-            filehandle = open(TEST_FILE)
-            line = filehandle.read().rstrip()
-            self.assertEqual(string, line)
-            filehandle.close()
+            with open(TEST_FILE) as filehandle:
+                line = filehandle.read().rstrip()
+                self.assertEqual(string, line)
 
     def test_unicode_console(self):
         """Test logging bare unicode strings to a console
         """
         for string in UNICODE_STRINGS:
-            logger = self.get_console_logger()
-            os.close(1)
-            os.open(TEST_CONSOLE, os.O_WRONLY)
-            os.dup2(1, 2)
-            logger.info(string)
-            os.close(1)
-            os.close(2)
-            os.dup(STDOUT)
-            os.dup(STDERR)
-            console_fh = open(TEST_CONSOLE)
-            console_line = console_fh.read().rstrip()
-            self.assertEqual(string, console_line)
-            console_fh.close()
+            with stdstar_redirected(TEST_CONSOLE):
+                logger = self.get_console_logger()
+                logger.info(string)
+            with open(TEST_CONSOLE) as console_fh:
+                console_line = console_fh.read().rstrip()
+                self.assertEqual(string, console_line)
 
     def test_to_unicode_console(self):
         """Test logging scriptharness.to_unicode strings to a console
         """
         for string in UNICODE_STRINGS:
-            logger = self.get_console_logger()
-            os.close(1)
-            os.open(TEST_CONSOLE, os.O_WRONLY)
-            os.dup2(1, 2)
-            logger.info(sh.to_unicode(string))
-            os.close(1)
-            os.close(2)
-            os.dup(STDOUT)
-            os.dup(STDERR)
-            console_fh = open(TEST_CONSOLE)
-            console_line = console_fh.read().rstrip()
-            self.assertEqual(sh.to_unicode(string), sh.to_unicode(console_line))
-            console_fh.close()
+            with stdstar_redirected(TEST_CONSOLE):
+                logger = self.get_console_logger()
+                logger.info(sh.to_unicode(string))
+            with open(TEST_CONSOLE) as console_fh:
+                console_line = console_fh.read().rstrip()
+                self.assertEqual(sh.to_unicode(string),
+                                 sh.to_unicode(console_line))
