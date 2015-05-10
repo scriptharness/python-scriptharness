@@ -109,13 +109,8 @@ class LoggingClass(object):
             child.recursively_set_parent(child_name, parent=self)
 
     def ancestor_child_list(self, child_list=None):
-        """Get the original ancestor of self, and list of child names.
-        The child names are all the names of the direct ancestors of
-        self, including self, but not including the original ancestor.
-
-        For example, if ancestor is your great-grandmother, then child_list
-        will be your grandmother's name, your mother's name, and your name.
-        [Great-]aunts, [great-]uncles, and siblings are all ignored.
+        """Get the original ancestor of self, and the descending, linear list
+        of descendents' names leading up to (and including) self.
 
         Args:
           child_list (list, automatically generated): in a multi-level nested
@@ -124,8 +119,8 @@ class LoggingClass(object):
             ancestor_child_list() on self.parent.
 
         Returns:
-          (ancestor, child_list) (LoggingClass, list) for self.full_name and
-            self.log_change
+          (ancestor, child_list) (LoggingClass, list): for self.full_name and
+            self.log_change support
         """
         child_list = child_list or []
         if self.parent:

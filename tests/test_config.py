@@ -114,6 +114,7 @@ def get_logging_dict():
 
 
 # {{{2
+# TODO test names, including unicode
 class TestLoggingDict(unittest.TestCase):
     """Test LoggingDict's logging methods
     """
@@ -132,7 +133,10 @@ class TestLoggingDict(unittest.TestCase):
             expected = to_unicode(expected)
         self.assertEqual(contents, expected)
 
+    # TODO get these strings in LOGGING_STRINGS
     def test_setitem(self):
+        """Test logging dict setitem
+        """
         with get_logging_dict() as logd:
             logd['d'] = 3
         self.verify_log("{}: __setitem__ d to 3".format(DICT_NAME))
