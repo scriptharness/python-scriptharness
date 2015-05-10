@@ -3,18 +3,29 @@
 """Test scriptharness.config
 
 Attributes:
-  CONTROL_DICT (dict): used to prepopulate the config data structures
+  TEST_LOG (str): the path to log to
+  DICT_NAME (str): the logging dict's name
+  RO_CONTROL_DICT (dict): used to prepopulate ReadOnlyDict
+  LOGGING_CONTROL_DICT (dict): used to prepopulate LoggingDict
   SECONDARY_DICT (dict): used to add to the LoggingDict
   SECONDARY_LIST (dict): used to add to the LoggingDict
   UNICODE_STRINGS (list): a list of strings to test for unicode support
 """
+from contextlib import contextmanager
 from copy import deepcopy
-from scriptharness import ScriptHarnessException
+import logging
+import os
+import scriptharness as sh
 import scriptharness.config as config
+import scriptharness.log as shlog
 import unittest
 
 
-CONTROL_DICT = {
+# Constants {{{1
+TEST_LOG = "_test_config_log"
+DICT_NAME = 'LOGD'
+# Can only contain scalars, lists, and dicts, or the deepcopy tests will fail
+RO_CONTROL_DICT = {
     'a': 1,
     'b': '2',
     'c': {
@@ -24,18 +35,39 @@ CONTROL_DICT = {
         'turtles': ['turtle1', 'turtle2', 'turtle3'],
     },
     'e': [
-        'f', 'g', {
-            'turtles': ['turtle1', 'turtle2', 'turtle3'],
+        '5', '6', {
+            'turtles': ['turtle4', 'turtle5', 'turtle6'],
         },
     ],
 }
-
+# Can contain scalars, lists, dicts, and tuples
+LOGGING_CONTROL_DICT = {
+    'a': 1,
+    'b': '2',
+    'c': {
+        'd': '4',
+    },
+    'd': {
+        'turtles': ['turtle1', 'turtle2', 'turtle3'],
+        'yurts': ('yurt1', 'yurt2', 'yurt3'),
+    },
+    'e': [
+        '5', '6', {
+            'turtles': ['turtle4', 'turtle5', 'turtle6'],
+            'yurts': ('yurt4', 'yurt5', 'yurt6'),
+        },
+    ],
+}
 SECONDARY_DICT = {
     'A': 1,
-    'B': [1, 2, 3, 'four'],
-    'C': ('five', 6, 7, 8, [9, 10]),
+    'B': [1, 2, 3, 'four', (5, 6, 7), 'eight'],
+    'C': (9, 10, [11, 12], 13),
+    'D': {
+        'E': 14,
+        'F': [15, 16],
+        'G': (17, 18),
+    },
 }
-
 SECONDARY_LIST = [
     'Z', 'Y',
     (
@@ -46,7 +78,6 @@ SECONDARY_LIST = [
         },
     )
 ]
-
 UNICODE_STRINGS = [
     'ascii',
     '日本語',
@@ -60,9 +91,49 @@ UNICODE_STRINGS = [
 
 # Test LoggingDict {{{1
 # helper methods {{{2
+@contextmanager
 def get_logging_dict():
-    """Helper function to create a known logging dict
+    """Helper function to set up logging for the logging dict
     """
+    formatter = shlog.UnicodeFormatter(fmt='%(message)s')
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    handler = shlog.get_file_handler(
+        TEST_LOG, mode='w', level=logging.INFO, formatter=formatter
+    )
+    logger.handlers = []
+    logger.addHandler(handler)
+    logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
+    logd.recursively_set_parent(name=DICT_NAME)
+    try:
+        yield logd
+    finally:
+        logger.removeHandler(handler)
+
+
+# {{{2
+class TestLoggingDict(unittest.TestCase):
+    """Test LoggingDict's logging methods
+    """
+    def tearDown(self):
+        assert self  # silence pylint
+        if os.path.exists(TEST_LOG):
+            os.remove(TEST_LOG)
+
+    def verify_log(self, expected, to_unicode=False):
+        """Helper function to compare the log vs expected output
+        """
+        with open(TEST_LOG) as log_fh:
+            contents = log_fh.read().rstrip()
+        if to_unicode:
+            contents = to_unicode(contents)
+            expected = to_unicode(expected)
+        self.assertEqual(contents, expected)
+
+    def test_setitem(self):
+        with get_logging_dict() as logd:
+            logd['d'] = 3
+        self.verify_log("{}: __setitem__ d to 3".format(DICT_NAME))
 
 
 # Test ReadOnlyDict {{{1
@@ -70,12 +141,12 @@ def get_logging_dict():
 def get_unlocked_rod():
     """Helper function to create a known unlocked ReadOnlyDict
     """
-    return config.ReadOnlyDict(deepcopy(CONTROL_DICT))
+    return config.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
 
 def get_locked_rod():
     """Helper function to create a known locked ReadOnlyDict
     """
-    rod = config.ReadOnlyDict(deepcopy(CONTROL_DICT))
+    rod = config.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
     rod.lock()
     return rod
 
@@ -91,7 +162,7 @@ class TestUnlockedROD(unittest.TestCase):
         """A ROD and the equivalent dict should be equal.
         """
         rod = get_unlocked_rod()
-        self.assertEqual(rod, CONTROL_DICT,
+        self.assertEqual(rod, RO_CONTROL_DICT,
                          msg="can't transfer dict to ReadOnlyDict")
 
     def test_pop_item(self):
@@ -99,7 +170,7 @@ class TestUnlockedROD(unittest.TestCase):
         """
         rod = get_unlocked_rod()
         rod.popitem()
-        self.assertEqual(len(rod), len(CONTROL_DICT) - 1,
+        self.assertEqual(len(rod), len(RO_CONTROL_DICT) - 1,
                          msg="can't popitem() ReadOnlyDict when unlocked")
 
     def test_pop(self):
@@ -107,7 +178,7 @@ class TestUnlockedROD(unittest.TestCase):
         """
         rod = get_unlocked_rod()
         rod.pop('e')
-        self.assertEqual(len(rod), len(CONTROL_DICT) - 1,
+        self.assertEqual(len(rod), len(RO_CONTROL_DICT) - 1,
                          msg="can't pop() ReadOnlyDict when unlocked")
 
     def test_del(self):
@@ -115,7 +186,7 @@ class TestUnlockedROD(unittest.TestCase):
         """
         rod = get_unlocked_rod()
         del rod['e']
-        self.assertEqual(len(rod), len(CONTROL_DICT) - 1,
+        self.assertEqual(len(rod), len(RO_CONTROL_DICT) - 1,
                          msg="can't del in ReadOnlyDict when unlocked")
 
     def test_clear(self):
@@ -134,7 +205,7 @@ class TestUnlockedROD(unittest.TestCase):
             'q': 'blah',
         }
         rod.update(dict2)
-        dict2.update(CONTROL_DICT)
+        dict2.update(RO_CONTROL_DICT)
         self.assertEqual(rod, dict2,
                          msg="can't update() ReadOnlyDict when unlocked")
 
@@ -142,9 +213,9 @@ class TestUnlockedROD(unittest.TestCase):
         """setdefault() when unlocked
         """
         rod = config.ReadOnlyDict()
-        for key in CONTROL_DICT.keys():
-            rod.setdefault(key, CONTROL_DICT[key])
-        self.assertEqual(rod, CONTROL_DICT,
+        for key in RO_CONTROL_DICT.keys():
+            rod.setdefault(key, RO_CONTROL_DICT[key])
+        self.assertEqual(rod, RO_CONTROL_DICT,
                          msg="can't setdefault() ReadOnlyDict when unlocked")
 
 
@@ -168,37 +239,37 @@ class TestLockedROD(unittest.TestCase):
         """locked popitem() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod.popitem)
+        self.assertRaises(sh.ScriptHarnessException, rod.popitem)
 
     def test_update(self):
         """locked update() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod.update, {})
+        self.assertRaises(sh.ScriptHarnessException, rod.update, {})
 
     def test_set_default(self):
         """locked setdefault() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod.setdefault, {})
+        self.assertRaises(sh.ScriptHarnessException, rod.setdefault, {})
 
     def test_pop(self):
         """locked pop() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod.pop)
+        self.assertRaises(sh.ScriptHarnessException, rod.pop)
 
     def test_clear(self):
         """locked clear() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod.clear)
+        self.assertRaises(sh.ScriptHarnessException, rod.clear)
 
     def test_second_level_dict_update(self):
         """locked child dict update() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(ScriptHarnessException, rod['c'].update, {})
+        self.assertRaises(sh.ScriptHarnessException, rod['c'].update, {})
 
     def test_second_level_list_pop(self):
         """locked child list pop() should raise
@@ -229,7 +300,7 @@ class TestDeepcopyROD(unittest.TestCase):
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
         self.assertEqual(
-            rod2, CONTROL_DICT,
+            rod2, RO_CONTROL_DICT,
             msg="ReadOnlyDict deepcopy is not equal to original dict!"
         )
 
@@ -247,5 +318,5 @@ class TestDeepcopyROD(unittest.TestCase):
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
         rod2.lock()
-        with self.assertRaises(ScriptHarnessException):
+        with self.assertRaises(sh.ScriptHarnessException):
             rod2['e'] = 'hey'
