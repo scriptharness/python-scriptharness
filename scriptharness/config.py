@@ -286,10 +286,6 @@ class LoggingTuple(LoggingClass, tuple):
 class LoggingDict(LoggingClass, dict):
     """A dict that logs any changes, as do its children.
 
-    TODO use pprint?
-    TODO secret key, e.g. {'credentials': {}} that notes changes but
-         doesn't log them?
-
     Attributes:
       level (int): the logging level for changes
       logger_name (str): the logger name to use

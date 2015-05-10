@@ -106,34 +106,23 @@ class LoggerReplacement(object):
         pass
 
 
-# TestPrepareLogging {{{1
-class TestPrepareLogging(unittest.TestCase):
-    """Test scriptharness.log.prepare_logging() method
+# TestPrepareSimpleLogging {{{1
+class TestPrepareSimpleLogging(unittest.TestCase):
+    """Test scriptharness.log.prepare_simple_logging() method
     """
+    @staticmethod
     @mock.patch('scriptharness.log.logging')
-    def test_no_kwargs(self, mock_logging):
-        """Test prepare_logging with no arguments
+    def test_no_kwargs(mock_logging):
+        """Test prepare_simple_logging with just 'path'
         """
+        path = _absent_test_file()
         console_mock = mock.MagicMock()
         file_mock = mock.MagicMock()
         mock_logging.StreamHandler().setLevel = console_mock
         mock_logging.FileHandler().setLevel = file_mock
-        log.prepare_logging()
+        log.prepare_simple_logging(path)
         console_mock.assert_called_once_with(log.DEFAULT_LEVEL)
-        self.assertFalse(file_mock.called)
-
-    @mock.patch('scriptharness.log.logging')
-    def test_file_no_console(self, mock_logging):
-        """Test prepare_logging with a file and no console_level
-        """
-        console_mock = mock.MagicMock()
-        file_mock = mock.MagicMock()
-        mock_logging.StreamHandler().setLevel = console_mock
-        mock_logging.FileHandler().setLevel = file_mock
-        log.prepare_logging(path='foo', console_level=None)
         file_mock.assert_called_once_with(log.DEFAULT_LEVEL)
-        self.assertFalse(console_mock.called)
-
 
 # TestGetFileHandler {{{1
 class TestGetFileHandler(unittest.TestCase):

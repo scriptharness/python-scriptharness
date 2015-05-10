@@ -55,8 +55,8 @@ def get_formatter(fmt=DEFAULT_FMT, datefmt=DEFAULT_DATEFMT):
     return formatter
 
 
-def prepare_logging(path='', mode='w', logger_name='',
-                    file_level=DEFAULT_LEVEL, console_level=DEFAULT_LEVEL):
+def prepare_simple_logging(path, mode='w', logger_name='', level=DEFAULT_LEVEL,
+                           formatter=None):
     """Create a unicode-friendly logger.
 
     By default it'll create the root logger with a console handler; if passed
@@ -82,10 +82,10 @@ def prepare_logging(path='', mode='w', logger_name='',
             logging.getLogger(logger_name).
     """
     logger = logging.getLogger(logger_name)
-    if file_level is not None and path:
-        get_file_handler(path, logger=logger, mode=mode, level=file_level)
-    if console_level is not None:
-        get_console_handler(logger=logger, level=console_level)
+    logger.setLevel(level)
+    get_file_handler(path, logger=logger, mode=mode, level=level,
+                     formatter=formatter)
+    get_console_handler(logger=logger, level=level, formatter=formatter)
     return logger
 
 
