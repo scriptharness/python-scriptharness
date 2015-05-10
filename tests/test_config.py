@@ -23,6 +23,7 @@ import unittest
 
 # Constants {{{1
 TEST_LOG = "_test_config_log"
+LOGGER_NAME = "_test_log"
 DICT_NAME = 'LOGD'
 # Can only contain scalars, lists, and dicts, or the deepcopy tests will fail
 RO_CONTROL_DICT = {
@@ -96,7 +97,7 @@ def get_logging_dict():
     """Helper function to set up logging for the logging dict
     """
     formatter = shlog.UnicodeFormatter(fmt='%(message)s')
-    logger = logging.getLogger()
+    logger = logging.getLogger(LOGGER_NAME)
     logger.setLevel(logging.INFO)
     handler = shlog.get_file_handler(
         TEST_LOG, mode='w', level=logging.INFO, formatter=formatter
@@ -104,6 +105,7 @@ def get_logging_dict():
     logger.handlers = []
     logger.addHandler(handler)
     logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
+    logd.logger_name = LOGGER_NAME
     logd.recursively_set_parent(name=DICT_NAME)
     try:
         yield logd

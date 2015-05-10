@@ -15,6 +15,8 @@ Attributes:
   QUOTES (tuple): the order of quotes to use for key logging
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not yet supporting collections / OrderedDicts.
+  LOGGING_STRINGS (dict): a dict of logging strings.  This is for easier
+    unit testing, but could help lead to localizing scriptharness.
 """
 
 from __future__ import absolute_import, division, print_function
@@ -24,12 +26,21 @@ import logging
 import six
 
 
+# TODO use memo like deepcopy to prevent loop recursion
+# TODO logging strings dict
+
+# Constants {{{1
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_LOGGER_NAME = 'scriptharness.log'
 QUOTES = ("'", '"', "'''", '"""')
+# This may move to a strings file later.
+LOGGING_STRINGS = {
+    "list": {
+    },
+    "dict": {
+    }
+}
 
-# TODO use memo like deepcopy to prevent loop recursion
-# TODO logging strings dict
 
 # LoggingDict and helpers {{{1
 # LoggingClass {{{2
@@ -97,36 +108,69 @@ class LoggingClass(object):
         if is_logging_class(child):
             child.recursively_set_parent(child_name, parent=self)
 
-    def log_change(self, message, child_list=None, repl_dict=None):
+    def ancestor_child_list(self, child_list=None):
+        """Get the original ancestor of self, and list of child names.
+        The child names are all the names of the direct ancestors of
+        self, including self, but not including the original ancestor.
+
+        For example, if ancestor is your great-grandmother, then child_list
+        will be your grandmother's name, your mother's name, and your name.
+        [Great-]aunts, [great-]uncles, and siblings are all ignored.
+
+        Args:
+          child_list (list, automatically generated): in a multi-level nested
+            Logging* class, generate the list of children's names. This list
+            will be built by prepending our name and calling
+            ancestor_child_list() on self.parent.
+
+        Returns:
+          (ancestor, child_list) (LoggingClass, list) for self.full_name and
+            self.log_change
+        """
+        child_list = child_list or []
+        if self.parent:
+            child_list.insert(0, self.name)
+            return self.parent.ancestor_child_list(child_list=child_list)
+        else:
+            return self, child_list
+
+    def full_name(self):
+        """Get the full name of self.
+
+        This will call self.ancestor_child_list to get the original ancestor +
+        all the names of its descendents up to and including self, then
+        build the name from that.
+
+        Args:
+          ancestor (LoggingClass, optional): specify the ancestor
+          child_list (list, optional): a list of descendents' names, in order
+
+        Returns:
+          name (string): the full name of self.
+        """
+        ancestor, child_list = self.ancestor_child_list()
+        name = ancestor.name or ""
+        for item in child_list:
+            if isinstance(item, int):
+                name += "[%d]" % item
+            else:
+                quote = ""
+                item = six.text_type(item)
+                for sep in QUOTES:
+                    if sep not in item:
+                        quote = sep
+                        break
+                name += "[%s%s%s]" % (quote, six.text_type(item), quote)
+        return name
+
+    def log_change(self, message, repl_dict=None):
         """Log a change to self.
 
         Args:
           message (str): The message to log.
-          child_list (list, automatically generated): in a multi-level nested
-            Logging* class, generate the list of children's names so we can log
-            which Logging* class has changed.  This list will be built by
-            prepending our name and calling log_change() on self.parent.
         """
-        if self.parent:
-            if child_list is None:
-                child_list = []
-            child_list.insert(0, self.name)
-            return self.parent.log_change(message, repl_dict=repl_dict,
-                                          child_list=child_list)
         logger = logging.getLogger(self.logger_name)
-        name = self.name or ""
-        if child_list:
-            for item in child_list:
-                if isinstance(item, int):
-                    name += "[%d]" % item
-                else:
-                    quote = ""
-                    item = six.text_type(item)
-                    for sep in QUOTES:
-                        if sep not in item:
-                            quote = sep
-                            break
-                    name += "[%s%s%s]" % (quote, six.text_type(item), quote)
+        name = self.full_name()
         if name:
             message = "{}: {}".format(name, message)
         args = [self.level, message]
