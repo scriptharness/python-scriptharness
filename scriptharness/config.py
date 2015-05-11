@@ -139,12 +139,12 @@ class LoggingClass(object):
                 name += "[%d]" % item
             else:
                 quote = ""
-                item = six.text_type(item)
+                item = item
                 for sep in QUOTES:
                     if sep not in item:
                         quote = sep
                         break
-                name += "[%s%s%s]" % (quote, six.text_type(item), quote)
+                name += "[%s%s%s]" % (quote, item, quote)
         return name
 
     def log_change(self, message, repl_dict=None):
@@ -187,27 +187,27 @@ class LoggingList(LoggingClass, list):
 
     def __delitem__(self, item):
         self.log_change("__delitem__ %(item)s",
-                        repl_dict={'item': six.text_type(item)})
+                        repl_dict={'item': item})
         if isinstance(item, slice):
             position = item.start
         else:
             position = self.index(item)
         super(LoggingList, self).__delitem__(item)
         self.log_change("now looks like %(self)s",
-                        repl_dict={'self': six.text_type(self)})
+                        repl_dict={'self': pprint.pformat(self)})
         if position < len(self):
             self.child_set_parent(position)
 
     def __setitem__(self, position, value):
         self.log_change(
             "__setitem__ %(position)d to %(value)s",
-            repl_dict={'position': position, 'value': six.text_type(value)}
+            repl_dict={'position': position, 'value': value}
         )
         value = add_logging_to_obj(value, logger_name=self.logger_name,
                                    level=self.level)
         super(LoggingList, self).__setitem__(position, value)
         self.log_change("now looks like %(self)s",
-                        repl_dict={'self': six.text_type(self)})
+                        repl_dict={'self': pprint.pformat(self)})
         self.child_set_parent(position)
 
     def child_set_parent(self, position=0):
@@ -231,7 +231,7 @@ class LoggingList(LoggingClass, list):
 
     def append(self, item):
         self.log_change("appending %(item)s",
-                        repl_dict={'item': six.text_type(item)})
+                        repl_dict={'item': item})
         super(LoggingList, self).append(item)
         self.log_self()
         self.child_set_parent(len(self) - 1)
@@ -239,7 +239,7 @@ class LoggingList(LoggingClass, list):
     def extend(self, items):
         position = len(self)
         self.log_change("extending with %(items)s",
-                        repl_dict={'items': six.text_type(items)})
+                        repl_dict={'items': pprint.pformat(items)})
         super(LoggingList, self).extend(items)
         self.log_self()
         self.child_set_parent(position)
@@ -248,7 +248,7 @@ class LoggingList(LoggingClass, list):
         self.log_change(
             "inserting %(item)s at position %(position)s",
             repl_dict={
-                'item': six.text_type(item),
+                'item': item,
                 'position': six.text_type(position)
             }
         )
@@ -258,7 +258,7 @@ class LoggingList(LoggingClass, list):
 
     def remove(self, item):
         self.log_change("removing %(item)s",
-                        repl_dict={'item': six.text_type(item)})
+                        repl_dict={'item': item})
         position = self.index(item)
         super(LoggingList, self).remove(item)
         self.log_self()
@@ -334,7 +334,7 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).__init__(items)
 
     def __setitem__(self, key, value):
-        repl_dict = {'key': six.text_type(key), 'value': six.text_type(value)}
+        repl_dict = {'key': key, 'value': value}
         self.log_change(
             "__setitem__ %(key)s to %(value)s",
             muted_message="__setitem__ %(key)s to ********",
@@ -347,7 +347,7 @@ class LoggingDict(LoggingClass, dict):
 
     def __delitem__(self, key):
         self.log_change("__delitem__ %(key)s",
-                        repl_dict={'key': six.text_type(key)})
+                        repl_dict={'key': key})
         super(LoggingDict, self).__delitem__(key)
 
     def log_change(self, message, muted_message=None, repl_dict=None, **kwargs):
@@ -366,7 +366,7 @@ class LoggingDict(LoggingClass, dict):
         Args:
             key (str): the dict key to the child value.
         """
-        self._child_set_parent(self[key], six.text_type(key))
+        self._child_set_parent(self[key], key)
 
     def clear(self):
         self.log_change("clearing dict")
@@ -375,7 +375,7 @@ class LoggingDict(LoggingClass, dict):
     def pop(self, key, default=None):
         message = "popping dict key %(key)s"
         muted_message = message
-        repl_dict = {'key': six.text_type(key)}
+        repl_dict = {'key': key}
         if default:
             message += " (default %(default)s)"
             repl_dict['default'] = default
@@ -391,7 +391,7 @@ class LoggingDict(LoggingClass, dict):
         self.log_change(
             "the popitem removed the key %(key)s",
             repl_dict={
-                'key': six.text_type(pre_keys.difference(post_keys)),
+                'key': pre_keys.difference(post_keys),
             },
         )
         return status
@@ -399,8 +399,8 @@ class LoggingDict(LoggingClass, dict):
     def setdefault(self, key, default=None):
         value = self.get(key, default)
         repl_dict = {
-            'key': six.text_type(key),
-            'default': six.text_type(default),
+            'key': key,
+            'default': default,
             'value': value
         }
         self.log_change(

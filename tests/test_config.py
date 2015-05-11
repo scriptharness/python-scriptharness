@@ -37,7 +37,7 @@ RO_CONTROL_DICT = {
         'turtles': ['turtle1', 'turtle2', 'turtle3'],
     },
     'e': ['5', '6', {
-            'turtles': ['turtle4', 'turtle5', 'turtle6'],
+        'turtles': ['turtle4', 'turtle5', 'turtle6'],
     }],
 }
 # Can contain scalars, lists, dicts, and tuples
@@ -51,12 +51,10 @@ LOGGING_CONTROL_DICT = {
         'turtles': ['turtle1', 'turtle2', 'turtle3'],
         'yurts': ('yurt1', 'yurt2', 'yurt3'),
     },
-    'e': [
-        '5', '6', {
-            'turtles': ['turtle4', 'turtle5', 'turtle6'],
-            'yurts': ('yurt4', 'yurt5', 'yurt6'),
-        },
-    ],
+    'e': ['5', '6', {
+        'turtles': ['turtle4', 'turtle5', 'turtle6'],
+        'yurts': ('yurt4', 'yurt5', 'yurt6'),
+    }],
 }
 SECONDARY_DICT = {
     'A': 1,
@@ -87,29 +85,6 @@ UNICODE_STRINGS = [
     'ру́сский язы́к',
     'ខេមរភាសា',
 ]
-
-
-# Test add_logging_to_obj() {{{1
-class TestAddLogging(unittest.TestCase):
-    """Test the portions of add_logging_to_class() that we're not testing
-    in other ways
-    """
-    def test_recursion(self):
-        """Known issue: recursion in add_logging_to_obj raises RuntimeError
-        Rewrite test when this is fixed.
-        """
-        one = {}
-        two = {}
-        one['two'] = two
-        two['one'] = one
-        three = []
-        four = []
-        three.append(four)
-        four.append(three)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, one)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, two)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, three)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, four)
 
 
 # Test LoggingDict {{{1
@@ -181,6 +156,18 @@ class TestFullNames(unittest.TestCase):
         self.assertEqual(logd['e'][2]['yurts'].full_name(),
                          "%s['e'][2]['yurts']" % DICT_NAME)
 
+    def test_unicode_names(self):
+        """Try unicode names!
+        """
+        logd = get_logging_dict()
+        for string in UNICODE_STRINGS:
+            logd[string] = {}
+            self.assertEqual(logd[string].full_name(),
+                             "%s['%s']" % (DICT_NAME, string))
+#            logd[sh.to_unicode(string)] = {}
+#            self.assertEqual(logd[string].full_name(),
+#                             "%s['%s']" % (DICT_NAME, sh.to_unicode(string)))
+
 
 # TestLoggingDict {{{2
 class TestLoggingDict(unittest.TestCase):
@@ -212,6 +199,29 @@ class TestLoggingDict(unittest.TestCase):
         logd = get_logging_dict()
         del logd['d']
         self.verify_log(["{}: __delitem__ d".format(DICT_NAME)])
+
+
+# Test add_logging_to_obj() {{{2
+class TestAddLogging(unittest.TestCase):
+    """Test the portions of add_logging_to_class() that we're not testing
+    in other ways
+    """
+    def test_recursion(self):
+        """Known issue: recursion in add_logging_to_obj raises RuntimeError
+        Rewrite test when this is fixed.
+        """
+        one = {}
+        two = {}
+        one['two'] = two
+        two['one'] = one
+        three = []
+        four = []
+        three.append(four)
+        four.append(three)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, one)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, two)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, three)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, four)
 
 
 # Test ReadOnlyDict {{{1
