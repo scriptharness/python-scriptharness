@@ -172,6 +172,25 @@ class TestFullNames(unittest.TestCase):
                 "%s['%s']['%s'][0]['%s']" % (DICT_NAME, string, string, string)
             )
 
+    def test_quotes(self):
+        """Try names with quotes in them.
+
+        Expected behavior: use the quotes in config.QUOTES in preferred order,
+        moving on to the next if all the preceding quote types are in the name.
+        If all quote types are in the name, don't use any quotes.
+        """
+        name = ''
+        logd = get_logging_dict()
+        for position, value in enumerate(config.QUOTES):
+            name += value
+            expected = name
+            if position + 1 < len(config.QUOTES):
+                expected = "%s%s%s" % (config.QUOTES[position + 1], name,
+                                       config.QUOTES[position + 1])
+            logd[name] = []
+            self.assertEqual(logd[name].full_name(),
+                             "%s[%s]" % (DICT_NAME, expected))
+
 
 # TestLoggingDict {{{2
 class TestLoggingDict(unittest.TestCase):
