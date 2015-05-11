@@ -13,6 +13,8 @@ Attributes:
   DEFAULT_LEVEL (int): the default logging level to set
   DEFAULT_LOGGER_NAME (str): the default logger name to use
   QUOTES (tuple): the order of quotes to use for key logging
+  LOGGING_STRINGS (dict): a dict of strings to use for logging, for easier
+    unittesting and potentially for future localization.
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not currently supporting sets or collections.
 """
@@ -29,6 +31,14 @@ import six
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_LOGGER_NAME = 'scriptharness.log'
 QUOTES = ("'", '"', "'''", '"""')
+LOGGING_STRINGS = {
+    "list": {
+        "delitem": "__delitem__ %(item)s",
+        "log_self": "now looks like %(self)s",
+    },
+    "dict": {
+    },
+}
 
 
 # LoggingDict and helpers {{{1
@@ -169,9 +179,12 @@ class LoggingList(LoggingClass, list):
     Attributes:
       level (int): the logging level for changes
       logger_name (str): the logger name to use
+      strings (dict): a dict of strings to use for messages
     """
     level = None
     logger_name = None
+    strings = deepcopy(LOGGING_STRINGS["list"])
+
     def __init__(self, items, level=DEFAULT_LEVEL,
                  logger_name=DEFAULT_LOGGER_NAME):
         self.level = level
@@ -186,15 +199,14 @@ class LoggingList(LoggingClass, list):
         return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
 
     def __delitem__(self, item):
-        self.log_change("__delitem__ %(item)s",
+        self.log_change(self.strings['delitem'],
                         repl_dict={'item': item})
         if isinstance(item, slice):
             position = item.start
         else:
             position = self.index(item)
         super(LoggingList, self).__delitem__(item)
-        self.log_change("now looks like %(self)s",
-                        repl_dict={'self': pprint.pformat(self)})
+        self.log_self()
         if position < len(self):
             self.child_set_parent(position)
 
@@ -206,8 +218,7 @@ class LoggingList(LoggingClass, list):
         value = add_logging_to_obj(value, logger_name=self.logger_name,
                                    level=self.level)
         super(LoggingList, self).__setitem__(position, value)
-        self.log_change("now looks like %(self)s",
-                        repl_dict={'self': pprint.pformat(self)})
+        self.log_self()
         self.child_set_parent(position)
 
     def child_set_parent(self, position=0):
@@ -224,7 +235,7 @@ class LoggingList(LoggingClass, list):
         Since some methods insert values or rearrange them, it'll be easier to
         debug things if we log the list after those operations.
         """
-        self.log_change("now looks like %(self)s",
+        self.log_change(self.strings['log_self'],
                         repl_dict={'self': pprint.pformat(self)})
 
     def append(self, item):

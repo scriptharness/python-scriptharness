@@ -4,7 +4,7 @@
 
 Attributes:
   TEST_LOG (str): the path to log to
-  DICT_NAME (str): the logging dict's name
+  TEST_NAME (str): the logging dict/list's name
   RO_CONTROL_DICT (dict): used to prepopulate ReadOnlyDict
   LOGGING_CONTROL_DICT (dict): used to prepopulate LoggingDict
   SECONDARY_DICT (dict): used to add to the LoggingDict
@@ -16,6 +16,7 @@ Attributes:
 """
 from copy import deepcopy
 import mock
+import pprint
 import scriptharness as sh
 import scriptharness.config as config
 import unittest
@@ -24,7 +25,7 @@ import unittest
 # Constants {{{1
 TEST_LOG = "_test_config_log"
 LOGGER_NAME = "scriptharness.test_config"
-DICT_NAME = 'LOGD'
+NAME = 'LOG'
 # Can only contain scalars, lists, and dicts, or the deepcopy tests will fail
 RO_CONTROL_DICT = {
     'a': 1,
@@ -55,6 +56,12 @@ LOGGING_CONTROL_DICT = {
         'yurts': ('yurt4', 'yurt5', 'yurt6'),
     }],
 }
+LOGGING_CONTROL_LIST = [
+    1,
+    2,
+    'five',
+    ['1', 2, 'three'],
+]
 SECONDARY_DICT = {
     'A': 1,
     'B': [1, 2, 3, 'four', (5, 6, 7), 'eight'],
@@ -88,13 +95,23 @@ UNICODE_STRINGS = [
 
 # Test LoggingDict {{{1
 # helper methods {{{2
-def get_logging_dict():
+def get_logging_dict(name=NAME):
     """Helper function to set up logging for the logging dict
     """
-    logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
-    logd.logger_name = LOGGER_NAME
-    logd.recursively_set_parent(name=DICT_NAME)
-    return logd
+    logdict = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
+    logdict.logger_name = LOGGER_NAME
+    logdict.recursively_set_parent(name=name)
+    return logdict
+
+def get_logging_list(name=NAME):
+    """Helper function to set up logging for the logging dict
+
+    Don't set name, for easier log testing
+    """
+    loglist = config.LoggingList(deepcopy(LOGGING_CONTROL_LIST))
+    loglist.recursively_set_parent(name=name)
+    return loglist
+
 
 class LoggerReplacement(object):
     """A replacement logging.Logger to more easily test
@@ -119,12 +136,26 @@ class LoggerReplacement(object):
         """pylint complains about too few public methods"""
         pass
 
-def get_logger_replacement(mock_logging):
-    """Replace logging.getLogger() with LoggerReplacement
+
+class TestLoggingClass(unittest.TestCase):
+    """Test LoggingDict's logging methods
+
+    Attributes:
+      logger (LoggerReplacement): the LoggerReplacement for the running test
     """
-    logger = LoggerReplacement()
-    mock_logging.getLogger.return_value = logger
-    return logger
+    logger = None
+
+    def get_logger_replacement(self, mock_logging):
+        """Replace logging.getLogger() with LoggerReplacement
+        """
+        self.logger = LoggerReplacement()
+        mock_logging.getLogger.return_value = self.logger
+        return self.logger
+
+    def verify_log(self, expected):
+        """Helper function to compare the log vs expected output
+        """
+        self.assertEqual(self.logger.all_messages, expected)
 
 
 # TestFullNames {{{2
@@ -134,42 +165,41 @@ class TestFullNames(unittest.TestCase):
     def test_no_name(self):
         """The name should be None if not set explicitly
         """
-        logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
-        logd.recursively_set_parent()
-        self.assertEqual(logd.full_name(), "")
+        logdict = get_logging_dict(name=None)
+        self.assertEqual(logdict.full_name(), "")
 
-    def test_logd_names(self):
-        """get_logging_dict() should return a logd with name DICT_NAME
+    def test_logdict_names(self):
+        """get_logging_dict() should return a logdict with name NAME
         """
-        logd = get_logging_dict()
-        self.assertEqual(logd.full_name(), DICT_NAME)
-        self.assertEqual(logd['e'].full_name(), "%s['e']" % DICT_NAME)
-        self.assertEqual(logd['d']['turtles'].full_name(),
-                         "%s['d']['turtles']" % DICT_NAME)
-        self.assertEqual(logd['d']['yurts'].full_name(),
-                         "%s['d']['yurts']" % DICT_NAME)
-        self.assertEqual(logd['e'][2].full_name(),
-                         "%s['e'][2]" % DICT_NAME)
-        self.assertEqual(logd['e'][2]['turtles'].full_name(),
-                         "%s['e'][2]['turtles']" % DICT_NAME)
-        self.assertEqual(logd['e'][2]['yurts'].full_name(),
-                         "%s['e'][2]['yurts']" % DICT_NAME)
+        logdict = get_logging_dict()
+        self.assertEqual(logdict.full_name(), NAME)
+        self.assertEqual(logdict['e'].full_name(), "%s['e']" % NAME)
+        self.assertEqual(logdict['d']['turtles'].full_name(),
+                         "%s['d']['turtles']" % NAME)
+        self.assertEqual(logdict['d']['yurts'].full_name(),
+                         "%s['d']['yurts']" % NAME)
+        self.assertEqual(logdict['e'][2].full_name(),
+                         "%s['e'][2]" % NAME)
+        self.assertEqual(logdict['e'][2]['turtles'].full_name(),
+                         "%s['e'][2]['turtles']" % NAME)
+        self.assertEqual(logdict['e'][2]['yurts'].full_name(),
+                         "%s['e'][2]['yurts']" % NAME)
 
     def test_unicode_names(self):
         """Try unicode names!
         """
-        logd = get_logging_dict()
+        logdict = get_logging_dict()
         for string in UNICODE_STRINGS:
-            logd[string] = {}
-            self.assertEqual(logd[string].full_name(),
-                             "%s['%s']" % (DICT_NAME, string))
-            logd[string][string] = []
-            self.assertEqual(logd[string][string].full_name(),
-                             "%s['%s']['%s']" % (DICT_NAME, string, string))
-            logd[string][string].append({string: []})
+            logdict[string] = {}
+            self.assertEqual(logdict[string].full_name(),
+                             "%s['%s']" % (NAME, string))
+            logdict[string][string] = []
+            self.assertEqual(logdict[string][string].full_name(),
+                             "%s['%s']['%s']" % (NAME, string, string))
+            logdict[string][string].append({string: []})
             self.assertEqual(
-                logd[string][string][0][string].full_name(),
-                "%s['%s']['%s'][0]['%s']" % (DICT_NAME, string, string, string)
+                logdict[string][string][0][string].full_name(),
+                "%s['%s']['%s'][0]['%s']" % (NAME, string, string, string)
             )
 
     def test_quotes(self):
@@ -180,49 +210,64 @@ class TestFullNames(unittest.TestCase):
         If all quote types are in the name, don't use any quotes.
         """
         name = ''
-        logd = get_logging_dict()
+        logdict = get_logging_dict()
         for position, value in enumerate(config.QUOTES):
             name += value
             expected = name
             if position + 1 < len(config.QUOTES):
                 expected = "%s%s%s" % (config.QUOTES[position + 1], name,
                                        config.QUOTES[position + 1])
-            logd[name] = []
-            self.assertEqual(logd[name].full_name(),
-                             "%s[%s]" % (DICT_NAME, expected))
+            logdict[name] = []
+            self.assertEqual(logdict[name].full_name(),
+                             "%s[%s]" % (NAME, expected))
 
 
 # TestLoggingDict {{{2
-class TestLoggingDict(unittest.TestCase):
+class TestLoggingDict(TestLoggingClass):
     """Test LoggingDict's logging methods
 
     Attributes:
       logger (LoggerReplacement): the LoggerReplacement for the running test
     """
-    logger = None
-    def verify_log(self, expected):
-        """Helper function to compare the log vs expected output
-        """
-        self.assertEqual(self.logger.all_messages, expected)
-
     @mock.patch('scriptharness.config.logging')
     def test_setitem(self, mock_logging):
         """Test logging dict setitem
         """
-        self.logger = get_logger_replacement(mock_logging)
-        logd = get_logging_dict()
-        logd['d'] = 3
-        self.verify_log(["{}: __setitem__ d to 3".format(DICT_NAME)])
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict()
+        logdict['d'] = 3
+        self.verify_log(["{}: __setitem__ d to 3".format(NAME)])
 
     @mock.patch('scriptharness.config.logging')
     def test_delitem(self, mock_logging):
         """Test logging dict delitem
         """
-        self.logger = get_logger_replacement(mock_logging)
-        logd = get_logging_dict()
-        del logd['d']
-        self.verify_log(["{}: __delitem__ d".format(DICT_NAME)])
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict()
+        del logdict['d']
+        self.verify_log(["{}: __delitem__ d".format(NAME)])
 
+
+# TestLoggingList {{{2
+class TestLoggingList(TestLoggingClass):
+    """Test LoggingList's logging methods
+
+    Attributes:
+      strings (dict): strings to test with
+    """
+    strings = deepcopy(config.LOGGING_STRINGS['list'])
+    @mock.patch('scriptharness.config.logging')
+    def test_delitem(self, mock_logging):
+        """Test logging list delitem
+        """
+        for item in 2, 1:
+            self.get_logger_replacement(mock_logging)
+            loglist = get_logging_list(name=None)
+            del loglist[item]
+            self.verify_log([
+                self.strings['delitem'] % {"item": item},
+                self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+            ])
 
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
