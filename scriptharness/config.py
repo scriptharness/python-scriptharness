@@ -35,13 +35,14 @@ LOGGING_STRINGS = {
     "list": {
         "delitem": "__delitem__ %(item)s",
         "log_self": "now looks like %(self)s",
+        "setitem": "__setitem__ %(position)d to %(value)s",
     },
     "dict": {
     },
 }
 
 
-# LoggingDict and helpers {{{1
+# LoggingClasses and helpers {{{1
 # LoggingClass {{{2
 class LoggingClass(object):
     """General logging methods for the Logging* classes to subclass.
@@ -212,7 +213,7 @@ class LoggingList(LoggingClass, list):
 
     def __setitem__(self, position, value):
         self.log_change(
-            "__setitem__ %(position)d to %(value)s",
+            self.strings['setitem'],
             repl_dict={'position': position, 'value': value}
         )
         value = add_logging_to_obj(value, logger_name=self.logger_name,

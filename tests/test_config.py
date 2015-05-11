@@ -256,6 +256,7 @@ class TestLoggingList(TestLoggingClass):
       strings (dict): strings to test with
     """
     strings = deepcopy(config.LOGGING_STRINGS['list'])
+
     @mock.patch('scriptharness.config.logging')
     def test_delitem(self, mock_logging):
         """Test logging list delitem
@@ -266,6 +267,22 @@ class TestLoggingList(TestLoggingClass):
             del loglist[item]
             self.verify_log([
                 self.strings['delitem'] % {"item": item},
+                self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+            ])
+
+    @mock.patch('scriptharness.config.logging')
+    def test_setitem(self, mock_logging):
+        """Test logging list setitem
+        """
+        for position in 2, 1:
+            self.get_logger_replacement(mock_logging)
+            loglist = get_logging_list(name=None)
+            loglist[position] = "value"
+            self.verify_log([
+                self.strings['setitem'] % {
+                    "position": position,
+                    "value": "value",
+                },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
 
