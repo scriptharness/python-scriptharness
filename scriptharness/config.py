@@ -6,7 +6,7 @@ There are two config dict models here:: one is to recursively lock the
 dictionary.  This is to aid in debugging; one can assume the config hasn't
 changed from the moment of locking.  This is the original mozharness model.
 
-The other model is to log any changes to the dict or its children.  When
+The second model is to log any changes to the dict or its children.  When
 debugging, config changes will be marked in the log.
 
 Attributes:
@@ -14,7 +14,7 @@ Attributes:
   DEFAULT_LOGGER_NAME (str): the default logger name to use
   QUOTES (tuple): the order of quotes to use for key logging
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
-    dict: LoggingDict.  Not yet supporting collections / OrderedDicts.
+    dict: LoggingDict.  Not currently supporting sets or collections.
 """
 
 from __future__ import absolute_import, division, print_function
