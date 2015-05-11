@@ -11,13 +11,10 @@ Attributes:
   SECONDARY_LIST (dict): used to add to the LoggingDict
   UNICODE_STRINGS (list): a list of strings to test for unicode support
 """
-from contextlib import contextmanager
 from copy import deepcopy
-import logging
-import os
+import mock
 import scriptharness as sh
 import scriptharness.config as config
-import scriptharness.log as shlog
 import unittest
 
 
@@ -92,54 +89,77 @@ UNICODE_STRINGS = [
 
 # Test LoggingDict {{{1
 # helper methods {{{2
-@contextmanager
 def get_logging_dict():
     """Helper function to set up logging for the logging dict
     """
-    formatter = shlog.UnicodeFormatter(fmt='%(message)s')
-    logger = logging.getLogger(LOGGER_NAME)
-    logger.setLevel(logging.INFO)
-    handler = shlog.get_file_handler(
-        TEST_LOG, mode='w', level=logging.INFO, formatter=formatter
-    )
-    logger.handlers = []
-    logger.addHandler(handler)
     logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
     logd.logger_name = LOGGER_NAME
     logd.recursively_set_parent(name=DICT_NAME)
-    try:
-        yield logd
-    finally:
-        logger.removeHandler(handler)
+    return logd
+
+class LoggerReplacement(object):
+    """A replacement logging.Logger to more easily test
+
+    Attributes:
+        all_messages (list): a list of all messages sent to log()
+    """
+    def __init__(self):
+        super(LoggerReplacement, self).__init__()
+        self.all_messages = []
+
+    def log(self, _, msg, *args):
+        """Keep track of all calls to logger.log()
+
+        self.all_messages gets a list of all (msg, *args).
+        """
+        if args:
+            msg = msg % args[0]
+        self.all_messages.append(msg)
+
+    def silence_pylint(self):
+        """pylint complains about too few public methods"""
+        pass
+
+def get_logger_replacement(mock_logging):
+    """Replace logging.getLogger() with LoggerReplacement
+    """
+    logger = LoggerReplacement()
+    mock_logging.getLogger.return_value = logger
+    return logger
 
 
 # {{{2
 # TODO test names, including unicode
 class TestLoggingDict(unittest.TestCase):
     """Test LoggingDict's logging methods
-    """
-    def tearDown(self):
-        assert self  # silence pylint
-        if os.path.exists(TEST_LOG):
-            os.remove(TEST_LOG)
 
-    def verify_log(self, expected, to_unicode=False):
+    Attributes:
+      logger (LoggerReplacement): the LoggerReplacement for the running test
+    """
+    logger = None
+    def verify_log(self, expected):
         """Helper function to compare the log vs expected output
         """
-        with open(TEST_LOG) as log_fh:
-            contents = log_fh.read().rstrip()
-        if to_unicode:
-            contents = to_unicode(contents)
-            expected = to_unicode(expected)
-        self.assertEqual(contents, expected)
+        self.assertEqual(self.logger.all_messages, expected)
 
     # TODO get these strings in LOGGING_STRINGS
-    def test_setitem(self):
+    @mock.patch('scriptharness.config.logging')
+    def test_setitem(self, mock_logging):
         """Test logging dict setitem
         """
-        with get_logging_dict() as logd:
-            logd['d'] = 3
-        self.verify_log("{}: __setitem__ d to 3".format(DICT_NAME))
+        self.logger = get_logger_replacement(mock_logging)
+        logd = get_logging_dict()
+        logd['d'] = 3
+        self.verify_log(["{}: __setitem__ d to 3".format(DICT_NAME)])
+
+    @mock.patch('scriptharness.config.logging')
+    def test_delitem(self, mock_logging):
+        """Test logging dict delitem
+        """
+        self.logger = get_logger_replacement(mock_logging)
+        logd = get_logging_dict()
+        del logd['d']
+        self.verify_log(["{}: __delitem__ d".format(DICT_NAME)])
 
 
 # Test ReadOnlyDict {{{1

@@ -459,7 +459,7 @@ class LoggingDict(LoggingClass, dict):
                 changed_keys.append(self.log_update(key, value))
         else:
             # odd values are keys, even values are values
-            for key, value in zip(a[::2], a[1::2]):
+            for key, value in zip(args[::2], args[1::2]):
                 changed_keys.append(self.log_update(key, value))
         super(LoggingDict, self).update(args)
         for key in changed_keys:
