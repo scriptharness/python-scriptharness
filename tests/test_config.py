@@ -167,10 +167,10 @@ class TestFullNames(unittest.TestCase):
             self.assertEqual(logd[string][string].full_name(),
                              "%s['%s']['%s']" % (DICT_NAME, string, string))
             logd[string][string].append({string: []})
-            self.assertEqual(logd[string][string][0][string].full_name(),
-                             "%s['%s']['%s'][0]['%s']" % (
-                                 DICT_NAME, string, string, string)
-                             )
+            self.assertEqual(
+                logd[string][string][0][string].full_name(),
+                "%s['%s']['%s'][0]['%s']" % (DICT_NAME, string, string, string)
+            )
 
 
 # TestLoggingDict {{{2
