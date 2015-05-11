@@ -12,7 +12,6 @@ Attributes:
   UNICODE_STRINGS (list): a list of strings to test for unicode support
 
   TODO fix add_logging_to_obj recursion
-  TODO test LoggingDict names, including unicode
   TODO move config strings to a dict for easier testing
 """
 from copy import deepcopy
@@ -164,9 +163,14 @@ class TestFullNames(unittest.TestCase):
             logd[string] = {}
             self.assertEqual(logd[string].full_name(),
                              "%s['%s']" % (DICT_NAME, string))
-#            logd[sh.to_unicode(string)] = {}
-#            self.assertEqual(logd[string].full_name(),
-#                             "%s['%s']" % (DICT_NAME, sh.to_unicode(string)))
+            logd[string][string] = []
+            self.assertEqual(logd[string][string].full_name(),
+                             "%s['%s']['%s']" % (DICT_NAME, string, string))
+            logd[string][string].append({string: []})
+            self.assertEqual(logd[string][string][0][string].full_name(),
+                             "%s['%s']['%s'][0]['%s']" % (
+                                 DICT_NAME, string, string, string)
+                             )
 
 
 # TestLoggingDict {{{2

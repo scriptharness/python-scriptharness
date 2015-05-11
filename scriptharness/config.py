@@ -216,8 +216,6 @@ class LoggingList(LoggingClass, list):
         [position:]
         """
         for count, elem in enumerate(self, start=position):
-            add_logging_to_obj(elem, logger_name=self.logger_name,
-                               level=self.level)
             self._child_set_parent(elem, int(count))
 
     def log_self(self):
@@ -232,7 +230,10 @@ class LoggingList(LoggingClass, list):
     def append(self, item):
         self.log_change("appending %(item)s",
                         repl_dict={'item': item})
-        super(LoggingList, self).append(item)
+        super(LoggingList, self).append(
+            add_logging_to_obj(item, logger_name=self.logger_name,
+                               level=self.level)
+        )
         self.log_self()
         self.child_set_parent(len(self) - 1)
 
@@ -240,7 +241,10 @@ class LoggingList(LoggingClass, list):
         position = len(self)
         self.log_change("extending with %(items)s",
                         repl_dict={'items': pprint.pformat(items)})
-        super(LoggingList, self).extend(items)
+        super(LoggingList, self).extend(
+            add_logging_to_obj(items, logger_name=self.logger_name,
+                               level=self.level)
+        )
         self.log_self()
         self.child_set_parent(position)
 
@@ -252,7 +256,10 @@ class LoggingList(LoggingClass, list):
                 'position': six.text_type(position)
             }
         )
-        super(LoggingList, self).insert(position, item)
+        super(LoggingList, self).insert(
+            position, add_logging_to_obj(item, logger_name=self.logger_name,
+                                         level=self.level)
+        )
         self.log_self()
         self.child_set_parent(position)
 
