@@ -15,31 +15,20 @@ Attributes:
   QUOTES (tuple): the order of quotes to use for key logging
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not yet supporting collections / OrderedDicts.
-  LOGGING_STRINGS (dict): a dict of logging strings.  This is for easier
-    unit testing, but could help lead to localizing scriptharness.
 """
 
 from __future__ import absolute_import, division, print_function
 from copy import deepcopy
 from scriptharness import ScriptHarnessException
 import logging
+import pprint
 import six
 
-
-# TODO use memo like deepcopy to prevent loop recursion
-# TODO logging strings dict
 
 # Constants {{{1
 DEFAULT_LEVEL = logging.INFO
 DEFAULT_LOGGER_NAME = 'scriptharness.log'
 QUOTES = ("'", '"', "'''", '"""')
-# This may move to a strings file later.
-LOGGING_STRINGS = {
-    "list": {
-    },
-    "dict": {
-    }
-}
 
 
 # LoggingDict and helpers {{{1
@@ -187,9 +176,9 @@ class LoggingList(LoggingClass, list):
                  logger_name=DEFAULT_LOGGER_NAME):
         self.level = level
         self.logger_name = logger_name
-        for item in items:
-            add_logging_to_obj(item, logger_name, level)
-        super(LoggingList, self).__init__(items)
+        super(LoggingList, self).__init__(
+            [add_logging_to_obj(x) for x in items]
+        )
 
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
@@ -238,7 +227,7 @@ class LoggingList(LoggingClass, list):
         debug things if we log the list after those operations.
         """
         self.log_change("now looks like %(self)s",
-                        repl_dict={'self': six.text_type(self)})
+                        repl_dict={'self': pprint.pformat(self)})
 
     def append(self, item):
         self.log_change("appending %(item)s",

@@ -10,6 +10,10 @@ Attributes:
   SECONDARY_DICT (dict): used to add to the LoggingDict
   SECONDARY_LIST (dict): used to add to the LoggingDict
   UNICODE_STRINGS (list): a list of strings to test for unicode support
+
+  TODO fix add_logging_to_obj recursion
+  TODO test LoggingDict names, including unicode
+  TODO move config strings to a dict for easier testing
 """
 from copy import deepcopy
 import mock
@@ -20,7 +24,7 @@ import unittest
 
 # Constants {{{1
 TEST_LOG = "_test_config_log"
-LOGGER_NAME = "_test_log"
+LOGGER_NAME = "scriptharness.test_config"
 DICT_NAME = 'LOGD'
 # Can only contain scalars, lists, and dicts, or the deepcopy tests will fail
 RO_CONTROL_DICT = {
@@ -32,11 +36,9 @@ RO_CONTROL_DICT = {
     'd': {
         'turtles': ['turtle1', 'turtle2', 'turtle3'],
     },
-    'e': [
-        '5', '6', {
+    'e': ['5', '6', {
             'turtles': ['turtle4', 'turtle5', 'turtle6'],
-        },
-    ],
+    }],
 }
 # Can contain scalars, lists, dicts, and tuples
 LOGGING_CONTROL_DICT = {
@@ -87,6 +89,29 @@ UNICODE_STRINGS = [
 ]
 
 
+# Test add_logging_to_obj() {{{1
+class TestAddLogging(unittest.TestCase):
+    """Test the portions of add_logging_to_class() that we're not testing
+    in other ways
+    """
+    def test_recursion(self):
+        """Known issue: recursion in add_logging_to_obj raises RuntimeError
+        Rewrite test when this is fixed.
+        """
+        one = {}
+        two = {}
+        one['two'] = two
+        two['one'] = one
+        three = []
+        four = []
+        three.append(four)
+        four.append(three)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, one)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, two)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, three)
+        self.assertRaises(RuntimeError, config.add_logging_to_obj, four)
+
+
 # Test LoggingDict {{{1
 # helper methods {{{2
 def get_logging_dict():
@@ -128,8 +153,36 @@ def get_logger_replacement(mock_logging):
     return logger
 
 
-# {{{2
-# TODO test names, including unicode
+# TestFullNames {{{2
+class TestFullNames(unittest.TestCase):
+    """Test LoggingClass.full_name()
+    """
+    def test_no_name(self):
+        """The name should be None if not set explicitly
+        """
+        logd = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT))
+        logd.recursively_set_parent()
+        self.assertEqual(logd.full_name(), "")
+
+    def test_logd_names(self):
+        """get_logging_dict() should return a logd with name DICT_NAME
+        """
+        logd = get_logging_dict()
+        self.assertEqual(logd.full_name(), DICT_NAME)
+        self.assertEqual(logd['e'].full_name(), "%s['e']" % DICT_NAME)
+        self.assertEqual(logd['d']['turtles'].full_name(),
+                         "%s['d']['turtles']" % DICT_NAME)
+        self.assertEqual(logd['d']['yurts'].full_name(),
+                         "%s['d']['yurts']" % DICT_NAME)
+        self.assertEqual(logd['e'][2].full_name(),
+                         "%s['e'][2]" % DICT_NAME)
+        self.assertEqual(logd['e'][2]['turtles'].full_name(),
+                         "%s['e'][2]['turtles']" % DICT_NAME)
+        self.assertEqual(logd['e'][2]['yurts'].full_name(),
+                         "%s['e'][2]['yurts']" % DICT_NAME)
+
+
+# TestLoggingDict {{{2
 class TestLoggingDict(unittest.TestCase):
     """Test LoggingDict's logging methods
 
@@ -142,7 +195,6 @@ class TestLoggingDict(unittest.TestCase):
         """
         self.assertEqual(self.logger.all_messages, expected)
 
-    # TODO get these strings in LOGGING_STRINGS
     @mock.patch('scriptharness.config.logging')
     def test_setitem(self, mock_logging):
         """Test logging dict setitem
