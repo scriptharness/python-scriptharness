@@ -406,7 +406,7 @@ class TestLoggingDict(TestLoggingClass):
             self.strings['setdefault']['muted_message'] % {
                 'key': 'new', 'default': value
             },
-            self.strings['setdefault']['changed_muted'] % {
+            self.strings['setdefault']['muted_changed'] % {
                 'key': 'new', 'value': value
             },
         ])

@@ -67,7 +67,7 @@ LOGGING_STRINGS = {
             "muted_message": "setdefault %(key)s to ********",
             "unchanged": "setdefault: %(key)s unchanged",
             "changed": "setdefault: %(key)s now %(value)s",
-            "changed_muted": "setdefault: %(key)s changed",
+            "muted_changed": "setdefault: %(key)s changed",
         },
     },
 }
@@ -470,7 +470,7 @@ class LoggingDict(LoggingClass, dict):
         else:
             repl_dict['value'] = status
             message = self.strings['setdefault']['changed']
-            muted_message = self.strings['setdefault']['changed_muted']
+            muted_message = self.strings['setdefault']['muted_changed']
         self.log_change(message, repl_dict=repl_dict,
                         muted_message=muted_message)
         self.child_set_parent(key)
