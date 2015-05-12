@@ -39,6 +39,7 @@ LOGGING_STRINGS = {
         "append": "appending %(item)s",
         "extend": "extending with %(item)s",
         "insert": "inserting %(item)s at position %(position)s",
+        "remove": "removing %(item)s",
     },
     "dict": {
     },

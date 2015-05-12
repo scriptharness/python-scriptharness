@@ -371,6 +371,21 @@ class TestLoggingList(TestLoggingClass):
             ])
             self.assertTrue(isinstance(loglist[position], config.LoggingClass))
 
+    @mock.patch('scriptharness.config.logging')
+    def test_remove(self, mock_logging):
+        """Test logging list remove
+        """
+        for item in (1, 2, "finally"):
+            self.get_logger_replacement(mock_logging)
+            loglist = get_logging_list(name=None)
+            loglist.remove(item)
+            self.verify_log([
+                self.strings['remove'] % {
+                    "item": item,
+                },
+                self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+            ])
+
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
     """Test the portions of add_logging_to_class() that we're not testing
