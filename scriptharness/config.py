@@ -45,7 +45,10 @@ LOGGING_STRINGS = {
         "sort": "sorting",
         "reverse": "reversing",
     },
+    # key, value
     "dict": {
+        "delitem": "__delitem__ %(key)s",
+        "setitem": "__setitem__ %(key)s to %(value)s",
     },
 }
 
@@ -346,8 +349,11 @@ class LoggingDict(LoggingClass, dict):
       muted_keys (list): a list of keys that should be muted in logs, e.g.
         ['credentials', 'binary_blobs'].  The values of these keys should
         be muted in logs.
+      strings (dict): a dict of strings to use for messages
     """
     muted_keys = []
+    strings = deepcopy(LOGGING_STRINGS["dict"])
+
     def __init__(self, items, muted_keys=None, level=DEFAULT_LEVEL,
                  logger_name=DEFAULT_LOGGER_NAME):
         self.muted_keys = muted_keys or self.muted_keys
@@ -362,7 +368,7 @@ class LoggingDict(LoggingClass, dict):
     def __setitem__(self, key, value):
         repl_dict = {'key': key, 'value': value}
         self.log_change(
-            "__setitem__ %(key)s to %(value)s",
+            self.strings['setitem'],
             muted_message="__setitem__ %(key)s to ********",
             repl_dict=repl_dict,
         )
@@ -372,7 +378,7 @@ class LoggingDict(LoggingClass, dict):
         self.child_set_parent(key)
 
     def __delitem__(self, key):
-        self.log_change("__delitem__ %(key)s",
+        self.log_change(self.strings['delitem'],
                         repl_dict={'key': key})
         super(LoggingDict, self).__delitem__(key)
 

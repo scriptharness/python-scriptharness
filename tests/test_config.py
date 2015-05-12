@@ -263,26 +263,32 @@ class TestLoggingDict(TestLoggingClass):
     """Test LoggingDict's logging methods
 
     Attributes:
-      logger (LoggerReplacement): the LoggerReplacement for the running test
+      strings (dict): strings to test with
     """
+    strings = deepcopy(config.LOGGING_STRINGS['dict'])
+
     @mock.patch('scriptharness.config.logging')
     def test_setitem(self, mock_logging):
         """Test logging dict setitem
         """
-        # TODO verify setitem becomes loggingclass
         self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict()
-        logdict['d'] = 3
-        self.verify_log(["{}: __setitem__ d to 3".format(NAME)])
+        logdict = get_logging_dict(name=None)
+        logdict['d'] = {}
+        self.verify_log([
+            self.strings['setitem'] % {'key': 'd', 'value': {}},
+        ])
+        self.assertTrue(isinstance(logdict['d'], config.LoggingClass))
 
     @mock.patch('scriptharness.config.logging')
     def test_delitem(self, mock_logging):
         """Test logging dict delitem
         """
         self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict()
+        logdict = get_logging_dict(name=None)
         del logdict['d']
-        self.verify_log(["{}: __delitem__ d".format(NAME)])
+        self.verify_log([
+            self.strings['delitem'] % {'key': 'd'}
+        ])
 
 
 # TestLoggingList {{{2
