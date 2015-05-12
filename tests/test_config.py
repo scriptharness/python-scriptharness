@@ -109,12 +109,14 @@ def get_logging_dict(name=NAME):
     logdict.recursively_set_parent(name=name)
     return logdict
 
-def get_logging_list(name=NAME):
+def get_logging_list(name=NAME, values=None):
     """Helper function to set up logging for the logging dict
 
     Don't set name, for easier log testing
     """
-    loglist = config.LoggingList(deepcopy(LOGGING_CONTROL_LIST))
+    if values is None:
+        values = LOGGING_CONTROL_LIST
+    loglist = config.LoggingList(deepcopy(values))
     loglist.recursively_set_parent(name=name)
     return loglist
 
@@ -412,6 +414,32 @@ class TestLoggingList(TestLoggingClass):
                 },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
+
+    @mock.patch('scriptharness.config.logging')
+    def test_sort(self, mock_logging):
+        """Test logging list sort
+        """
+        self.get_logger_replacement(mock_logging)
+        loglist = get_logging_list(name=None, values=[9, 3, 4, 0])
+        loglist.sort()
+        self.verify_log([
+            self.strings['sort'],
+            self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+        ])
+        self.assertEqual(loglist[-1], 9)
+
+    @mock.patch('scriptharness.config.logging')
+    def test_reverse(self, mock_logging):
+        """Test logging list reverse
+        """
+        self.get_logger_replacement(mock_logging)
+        loglist = get_logging_list(name=None)
+        loglist.reverse()
+        self.verify_log([
+            self.strings['reverse'],
+            self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+        ])
+        self.assertEqual(loglist[0], "finally")
 
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):

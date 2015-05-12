@@ -42,6 +42,8 @@ LOGGING_STRINGS = {
         "remove": "removing %(item)s",
         "pop_no_args": "popping",
         "pop_args": "popping position %(position)s",
+        "sort": "sorting",
+        "reverse": "reversing",
     },
     "dict": {
     },
@@ -305,13 +307,13 @@ class LoggingList(LoggingClass, list):
         return value
 
     def sort(self, *args, **kwargs):
-        self.log_change("sorting")
+        self.log_change(self.strings['sort'])
         super(LoggingList, self).sort(*args, **kwargs)
         self.log_self()
         self.child_set_parent()
 
     def reverse(self):
-        self.log_change("reversing")
+        self.log_change(self.strings['reverse'])
         super(LoggingList, self).reverse()
         self.log_self()
         self.child_set_parent()
