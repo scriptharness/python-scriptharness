@@ -316,7 +316,7 @@ class TestLoggingList(TestLoggingClass):
             self.verify_log([
                 self.strings['setitem'] % {
                     "position": position,
-                    "value": [],
+                    "item": [],
                 },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
@@ -332,6 +332,23 @@ class TestLoggingList(TestLoggingClass):
         self.verify_log([
             self.strings['append'] % {
                 "item": {},
+            },
+            self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+        ])
+        self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
+
+    @mock.patch('scriptharness.config.logging')
+    def test_extend(self, mock_logging):
+        """Test logging list extend
+        """
+        self.get_logger_replacement(mock_logging)
+        loglist = get_logging_list(name=None)
+        start = len(loglist)
+        extend = ['a', 'b', {}]
+        loglist.extend(extend)
+        self.verify_log([
+            self.strings['extend'] % {
+                "item": pprint.pformat(extend)
             },
             self.strings['log_self'] % {"self": pprint.pformat(loglist)}
         ])

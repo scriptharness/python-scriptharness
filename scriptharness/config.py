@@ -32,11 +32,13 @@ DEFAULT_LEVEL = logging.INFO
 DEFAULT_LOGGER_NAME = 'scriptharness.log'
 QUOTES = ("'", '"', "'''", '"""')
 LOGGING_STRINGS = {
+    # position, self, item
     "list": {
         "delitem": "__delitem__ %(item)s",
         "log_self": "now looks like %(self)s",
-        "setitem": "__setitem__ %(position)d to %(value)s",
+        "setitem": "__setitem__ %(position)d to %(item)s",
         "append": "appending %(item)s",
+        "extend": "extending with %(item)s",
     },
     "dict": {
     },
@@ -211,14 +213,14 @@ class LoggingList(LoggingClass, list):
         if position < len(self):
             self.child_set_parent(position)
 
-    def __setitem__(self, position, value):
+    def __setitem__(self, position, item):
         self.log_change(
             self.strings['setitem'],
-            repl_dict={'position': position, 'value': value}
+            repl_dict={'position': position, 'item': item}
         )
-        value = add_logging_to_obj(value, logger_name=self.logger_name,
-                                   level=self.level)
-        super(LoggingList, self).__setitem__(position, value)
+        item = add_logging_to_obj(item, logger_name=self.logger_name,
+                                  level=self.level)
+        super(LoggingList, self).__setitem__(position, item)
         self.log_self()
         self.child_set_parent(position)
 
@@ -249,12 +251,12 @@ class LoggingList(LoggingClass, list):
         self.log_self()
         self.child_set_parent(len(self) - 1)
 
-    def extend(self, items):
+    def extend(self, item):
         position = len(self)
-        self.log_change("extending with %(items)s",
-                        repl_dict={'items': pprint.pformat(items)})
+        self.log_change(self.strings['extend'],
+                        repl_dict={'item': pprint.pformat(item)})
         super(LoggingList, self).extend(
-            add_logging_to_obj(items, logger_name=self.logger_name,
+            add_logging_to_obj(item, logger_name=self.logger_name,
                                level=self.level)
         )
         self.log_self()
