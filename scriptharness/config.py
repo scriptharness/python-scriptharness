@@ -39,6 +39,7 @@ LOGGING_STRINGS = {
         "setitem": "__setitem__ %(position)d to %(item)s",
         "append": "appending %(item)s",
         "extend": "extending with %(item)s",
+        "insert": "inserting %(item)s at position %(position)s",
     },
     "dict": {
     },
@@ -264,10 +265,10 @@ class LoggingList(LoggingClass, list):
 
     def insert(self, position, item):
         self.log_change(
-            "inserting %(item)s at position %(position)s",
+            self.strings['insert'],
             repl_dict={
                 'item': item,
-                'position': six.text_type(position)
+                'position': position
             }
         )
         super(LoggingList, self).insert(

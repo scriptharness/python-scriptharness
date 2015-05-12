@@ -354,6 +354,24 @@ class TestLoggingList(TestLoggingClass):
         ])
         self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
 
+    @mock.patch('scriptharness.config.logging')
+    def test_insert(self, mock_logging):
+        """Test logging list insert
+        """
+        for position in (0, 3, len(LOGGING_CONTROL_LIST)):
+            self.get_logger_replacement(mock_logging)
+            loglist = get_logging_list(name=None)
+            item = ['a']
+            loglist.insert(position, item)
+            self.verify_log([
+                self.strings['insert'] % {
+                    "position": position,
+                    "item": item,
+                },
+                self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+            ])
+            self.assertTrue(isinstance(loglist[position], config.LoggingClass))
+
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
     """Test the portions of add_logging_to_class() that we're not testing
