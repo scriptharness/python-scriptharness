@@ -45,10 +45,13 @@ LOGGING_STRINGS = {
         "sort": "sorting",
         "reverse": "reversing",
     },
-    # key, value
+    # key, value, default
     "dict": {
         "delitem": "__delitem__ %(key)s",
-        "setitem": "__setitem__ %(key)s to %(value)s",
+        "setitem": {
+            "message": "__setitem__ %(key)s to %(value)s",
+            "muted_message": "__setitem__ %(key)s to ********",
+        },
         "clear": "clearing dict",
         "pop": {
             "message_no_default": "popping dict key %(key)s",
@@ -57,7 +60,14 @@ LOGGING_STRINGS = {
         },
         "popitem": {
             "message": "popitem",
-            "post": "the popitem removed the key %(key)s",
+            "changed": "the popitem removed the key %(key)s",
+        },
+        "setdefault": {
+            "message": "setdefault %(key)s to %(default)s",
+            "muted_message": "setdefault %(key)s to ********",
+            "unchanged": "setdefault: %(key)s unchanged",
+            "changed": "setdefault: %(key)s now %(value)s",
+            "changed_muted": "setdefault: %(key)s changed",
         },
     },
 }
@@ -361,14 +371,12 @@ class LoggingDict(LoggingClass, dict):
         be muted in logs.
       strings (dict): a dict of strings to use for messages
     """
-    muted_keys = []
-    strings = deepcopy(LOGGING_STRINGS["dict"])
-
     def __init__(self, items, muted_keys=None, level=DEFAULT_LEVEL,
                  logger_name=DEFAULT_LOGGER_NAME):
-        self.muted_keys = muted_keys or self.muted_keys
         self.level = level
         self.logger_name = logger_name
+        self.muted_keys = muted_keys or []
+        self.strings = deepcopy(LOGGING_STRINGS["dict"])
         for key, value in items.items():
             items[key] = add_logging_to_obj(
                 value, logger_name=logger_name, level=level
@@ -378,8 +386,8 @@ class LoggingDict(LoggingClass, dict):
     def __setitem__(self, key, value):
         repl_dict = {'key': key, 'value': value}
         self.log_change(
-            self.strings['setitem'],
-            muted_message="__setitem__ %(key)s to ********",
+            self.strings['setitem']['message'],
+            muted_message=self.strings['setitem']['muted_message'],
             repl_dict=repl_dict,
         )
         value = add_logging_to_obj(value, logger_name=self.logger_name,
@@ -435,32 +443,36 @@ class LoggingDict(LoggingClass, dict):
         post_keys = set(self.keys())
         key = list(pre_keys.difference(post_keys))
         self.log_change(
-            self.strings['popitem']['post'],
+            self.strings['popitem']['changed'],
             repl_dict={'key': key[0]},
         )
         return status
 
     def setdefault(self, key, default=None):
-        value = self.get(key, default)
+        changed = True
+        if key in self:
+            changed = False
         repl_dict = {
             'key': key,
             'default': default,
-            'value': value
         }
         self.log_change(
-            "setdefault %(key)s to %(default)s",
+            self.strings['setdefault']['message'],
             repl_dict=repl_dict,
-            muted_message="setdefault %(key)s to ********"
+            muted_message=self.strings['setdefault']['muted_message'],
         )
-        if key in self and value == default:
-            changed_message = "setdefault: %(key)s unchanged."
-            changed_muted_message = None
+        default = add_logging_to_obj(default, logger_name=self.logger_name,
+                                     level=self.level)
+        status = super(LoggingDict, self).setdefault(key, default)
+        if not changed:
+            message = self.strings['setdefault']['unchanged']
+            muted_message = None
         else:
-            changed_message = "setdefault: %(key)s now %(value)s"
-            changed_muted_message = "setdefault: %(key)s changed."
-            status = super(LoggingDict, self).setdefault(key, default)
-        self.log_change(changed_message, repl_dict=repl_dict,
-                        muted_message=changed_muted_message)
+            repl_dict['value'] = status
+            message = self.strings['setdefault']['changed']
+            muted_message = self.strings['setdefault']['changed_muted']
+        self.log_change(message, repl_dict=repl_dict,
+                        muted_message=muted_message)
         self.child_set_parent(key)
         return status
 

@@ -273,8 +273,11 @@ class TestLoggingDict(TestLoggingClass):
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
         logdict['d'] = {}
+        logdict.muted_keys.append('a')
+        logdict['a'] = 2
         self.verify_log([
-            self.strings['setitem'] % {'key': 'd', 'value': {}},
+            self.strings['setitem']['message'] % {'key': 'd', 'value': {}},
+            self.strings['setitem']['muted_message'] % {'key': 'a'},
         ])
         self.assertTrue(isinstance(logdict['d'], config.LoggingClass))
 
@@ -341,8 +344,73 @@ class TestLoggingDict(TestLoggingClass):
         self.assertFalse(key[0] in logdict)
         self.verify_log([
             self.strings['popitem']['message'],
-            self.strings['popitem']['post'] % {'key': key[0]},
+            self.strings['popitem']['changed'] % {'key': key[0]},
         ])
+
+    @mock.patch('scriptharness.config.logging')
+    def test_setdefault_unmuted(self, mock_logging):
+        """Test logging dict setdefault, unmuted
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        # setdefault, no default, no change
+        value = logdict.setdefault('a')
+        self.assertEqual(value, 1)
+        # setdefault, no change
+        value = logdict.setdefault('a', 1)
+        self.assertEqual(value, 1)
+        # setdefault, change
+        value = logdict.setdefault('new', {})
+        self.assertEqual(value, {})
+        self.verify_log([
+            self.strings['setdefault']['message'] % {
+                'key': 'a', 'default': None
+            },
+            self.strings['setdefault']['unchanged'] % {'key': 'a'},
+            self.strings['setdefault']['message'] % {'key': 'a', 'default': 1},
+            self.strings['setdefault']['unchanged'] % {'key': 'a'},
+            self.strings['setdefault']['message'] % {
+                'key': 'new', 'default': value
+            },
+            self.strings['setdefault']['changed'] % {
+                'key': 'new', 'value': value
+            },
+        ])
+        self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
+
+    @mock.patch('scriptharness.config.logging')
+    def test_setdefault_muted(self, mock_logging):
+        """Test logging dict setdefault, muted
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        logdict.muted_keys.extend(['a', 'new'])
+        # setdefault, no default, no change
+        value = logdict.setdefault('a')
+        self.assertEqual(value, 1)
+        # setdefault, no change
+        value = logdict.setdefault('a', 1)
+        self.assertEqual(value, 1)
+        # setdefault, change
+        value = logdict.setdefault('new', {})
+        self.assertEqual(value, {})
+        self.verify_log([
+            self.strings['setdefault']['muted_message'] % {
+                'key': 'a', 'default': None
+            },
+            self.strings['setdefault']['unchanged'] % {'key': 'a'},
+            self.strings['setdefault']['muted_message'] % {
+                'key': 'a', 'default': 1
+            },
+            self.strings['setdefault']['unchanged'] % {'key': 'a'},
+            self.strings['setdefault']['muted_message'] % {
+                'key': 'new', 'default': value
+            },
+            self.strings['setdefault']['changed_muted'] % {
+                'key': 'new', 'value': value
+            },
+        ])
+        self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
 
 
 # TestLoggingList {{{2
