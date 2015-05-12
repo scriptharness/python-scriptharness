@@ -291,6 +291,16 @@ class TestLoggingDict(TestLoggingClass):
         ])
         self.assertEqual(logdict.get('d'), None)
 
+    @mock.patch('scriptharness.config.logging')
+    def test_clear(self, mock_logging):
+        """Test logging dict clear
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        logdict.clear()
+        self.verify_log([self.strings['clear']])
+        self.assertEqual(logdict, {})
+
 
 # TestLoggingList {{{2
 class TestLoggingList(TestLoggingClass):

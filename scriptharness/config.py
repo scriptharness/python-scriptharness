@@ -49,6 +49,7 @@ LOGGING_STRINGS = {
     "dict": {
         "delitem": "__delitem__ %(key)s",
         "setitem": "__setitem__ %(key)s to %(value)s",
+        "clear": "clearing dict",
     },
 }
 
@@ -401,7 +402,7 @@ class LoggingDict(LoggingClass, dict):
         self._child_set_parent(self[key], key)
 
     def clear(self):
-        self.log_change("clearing dict")
+        self.log_change(self.strings['clear'])
         super(LoggingDict, self).clear()
 
     def pop(self, key, default=None):
