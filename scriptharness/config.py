@@ -414,12 +414,14 @@ class LoggingDict(LoggingClass, dict):
         message = self.strings['pop']['message']
         muted_message = self.strings['pop']['muted_message']
         repl_dict = {'key': key}
+        args = []
         if default:
             message = self.strings['pop']['message_default']
             repl_dict['default'] = default
+            args.append(default)
         self.log_change(message, repl_dict=repl_dict,
                         muted_message=muted_message)
-        return super(LoggingDict, self).pop(key, default)
+        return super(LoggingDict, self).pop(key, *args)
 
     def popitem(self):
         pre_keys = set(self.keys())

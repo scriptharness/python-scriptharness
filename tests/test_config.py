@@ -13,7 +13,6 @@ Attributes:
   UNICODE_STRINGS (list): a list of strings to test for unicode support
 
   TODO fix add_logging_to_obj recursion
-  TODO TestMutedMessage
 """
 from copy import deepcopy
 import mock
@@ -307,9 +306,15 @@ class TestLoggingDict(TestLoggingClass):
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
+        # pop() existing
         value = logdict.pop('a')
         self.assertEqual(value, LOGGING_CONTROL_DICT['a'])
         self.assertFalse('a' in logdict)
+        # nonexistent pop() with default
+        value = logdict.pop('a', default="foo")
+        self.assertEqual(value, "foo")
+        # muted_message pop() test
+        logdict.muted_keys.append('a')
         value = logdict.pop('a', default="foo")
         self.assertEqual(value, "foo")
         self.verify_log([
@@ -317,10 +322,11 @@ class TestLoggingDict(TestLoggingClass):
             self.strings['pop']['message_default'] % {
                 'key': 'a', 'default': 'foo'
             },
+            self.strings['pop']['muted_message'] % {'key': 'a'},
         ])
+        # nonexistent pop() without default should raise
+        self.assertRaises(KeyError, logdict.pop, 'a')
 
-
-# TestMutedMessage {{{2
 
 # TestLoggingList {{{2
 class TestLoggingList(TestLoggingClass):
