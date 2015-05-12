@@ -51,9 +51,13 @@ LOGGING_STRINGS = {
         "setitem": "__setitem__ %(key)s to %(value)s",
         "clear": "clearing dict",
         "pop": {
-            "message": "popping dict key %(key)s",
+            "message_no_default": "popping dict key %(key)s",
             "message_default": "popping dict key %(key)s (default %(default)s)",
             "muted_message": "popping dict key %(key)s",
+        },
+        "popitem": {
+            "message": "popitem",
+            "post": "the popitem removed the key %(key)s",
         },
     },
 }
@@ -411,7 +415,6 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).clear()
 
     def pop(self, key, default=None):
-        message = self.strings['pop']['message']
         muted_message = self.strings['pop']['muted_message']
         repl_dict = {'key': key}
         args = []
@@ -419,20 +422,21 @@ class LoggingDict(LoggingClass, dict):
             message = self.strings['pop']['message_default']
             repl_dict['default'] = default
             args.append(default)
+        else:
+            message = self.strings['pop']['message_no_default']
         self.log_change(message, repl_dict=repl_dict,
                         muted_message=muted_message)
         return super(LoggingDict, self).pop(key, *args)
 
     def popitem(self):
         pre_keys = set(self.keys())
-        self.log_change("popitem")
+        self.log_change(self.strings["popitem"]["message"])
         status = super(LoggingDict, self).popitem()
         post_keys = set(self.keys())
+        key = list(pre_keys.difference(post_keys))
         self.log_change(
-            "the popitem removed the key %(key)s",
-            repl_dict={
-                'key': pre_keys.difference(post_keys),
-            },
+            self.strings['popitem']['post'],
+            repl_dict={'key': key[0]},
         )
         return status
 

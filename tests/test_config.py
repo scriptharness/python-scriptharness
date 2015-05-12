@@ -318,7 +318,7 @@ class TestLoggingDict(TestLoggingClass):
         value = logdict.pop('a', default="foo")
         self.assertEqual(value, "foo")
         self.verify_log([
-            self.strings['pop']['message'] % {'key': 'a'},
+            self.strings['pop']['message_no_default'] % {'key': 'a'},
             self.strings['pop']['message_default'] % {
                 'key': 'a', 'default': 'foo'
             },
@@ -326,6 +326,23 @@ class TestLoggingDict(TestLoggingClass):
         ])
         # nonexistent pop() without default should raise
         self.assertRaises(KeyError, logdict.pop, 'a')
+
+    @mock.patch('scriptharness.config.logging')
+    def test_popitem(self, mock_logging):
+        """Test logging dict popitem
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        pre_keys = set(logdict.keys())
+        logdict.popitem()
+        post_keys = set(logdict.keys())
+        key = list(pre_keys.difference(post_keys))
+        self.assertEqual(len(key), 1)
+        self.assertFalse(key[0] in logdict)
+        self.verify_log([
+            self.strings['popitem']['message'],
+            self.strings['popitem']['post'] % {'key': key[0]},
+        ])
 
 
 # TestLoggingList {{{2
