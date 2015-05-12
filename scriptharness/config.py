@@ -202,10 +202,9 @@ class LoggingList(LoggingClass, list):
     def __delitem__(self, item):
         self.log_change(self.strings['delitem'],
                         repl_dict={'item': item})
+        position = item
         if isinstance(item, slice):
             position = item.start
-        else:
-            position = self.index(item)
         super(LoggingList, self).__delitem__(item)
         self.log_self()
         if position < len(self):

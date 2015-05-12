@@ -7,6 +7,7 @@ Attributes:
   TEST_NAME (str): the logging dict/list's name
   RO_CONTROL_DICT (dict): used to prepopulate ReadOnlyDict
   LOGGING_CONTROL_DICT (dict): used to prepopulate LoggingDict
+  LOGGING_CONTROL_LIST (list): used to prepopulate LoggingList
   SECONDARY_DICT (dict): used to add to the LoggingDict
   SECONDARY_LIST (dict): used to add to the LoggingDict
   UNICODE_STRINGS (list): a list of strings to test for unicode support
@@ -59,8 +60,13 @@ LOGGING_CONTROL_DICT = {
 LOGGING_CONTROL_LIST = [
     1,
     2,
+    3,
+    4,
     'five',
+    6,
+    7,
     ['1', 2, 'three'],
+    'finally',
 ]
 SECONDARY_DICT = {
     'A': 1,
@@ -261,9 +267,9 @@ class TestLoggingList(TestLoggingClass):
     def test_delitem(self, mock_logging):
         """Test logging list delitem
         """
-        for item in 2, 1:
-            self.get_logger_replacement(mock_logging)
+        for item in (2, 1, slice(0, 3), len(LOGGING_CONTROL_LIST) - 1):
             loglist = get_logging_list(name=None)
+            self.get_logger_replacement(mock_logging)
             del loglist[item]
             self.verify_log([
                 self.strings['delitem'] % {"item": item},
