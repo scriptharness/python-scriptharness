@@ -40,6 +40,8 @@ LOGGING_STRINGS = {
         "extend": "extending with %(item)s",
         "insert": "inserting %(item)s at position %(position)s",
         "remove": "removing %(item)s",
+        "pop_no_args": "popping",
+        "pop_args": "popping position %(position)s",
     },
     "dict": {
     },
@@ -289,11 +291,11 @@ class LoggingList(LoggingClass, list):
 
     def pop(self, position=None):
         if position is None:
-            self.log_change("popping")
+            self.log_change(self.strings['pop_no_args'])
             value = super(LoggingList, self).pop()
         else:
             self.log_change(
-                "popping position %(position)d",
+                self.strings['pop_args'],
                 repl_dict={'position': position}
             )
             value = super(LoggingList, self).pop(position)

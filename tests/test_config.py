@@ -386,6 +386,33 @@ class TestLoggingList(TestLoggingClass):
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
 
+    @mock.patch('scriptharness.config.logging')
+    def test_pop_no_args(self, mock_logging):
+        """Test logging list pop with no args
+        """
+        self.get_logger_replacement(mock_logging)
+        loglist = get_logging_list(name=None)
+        loglist.pop()
+        self.verify_log([
+            self.strings['pop_no_args'],
+            self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+        ])
+
+    @mock.patch('scriptharness.config.logging')
+    def test_pop_args(self, mock_logging):
+        """Test logging list pop with args
+        """
+        for position in (0, 3, len(LOGGING_CONTROL_LIST) - 1):
+            self.get_logger_replacement(mock_logging)
+            loglist = get_logging_list(name=None)
+            loglist.pop(position)
+            self.verify_log([
+                self.strings['pop_args'] % {
+                    "position": position,
+                },
+                self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+            ])
+
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
     """Test the portions of add_logging_to_class() that we're not testing
