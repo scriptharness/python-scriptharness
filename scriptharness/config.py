@@ -69,6 +69,13 @@ LOGGING_STRINGS = {
             "changed": "setdefault: %(key)s now %(value)s",
             "muted_changed": "setdefault: %(key)s changed",
         },
+        "update": {
+            "message": "update %(key)s to %(value)s",
+            "muted_message": "update %(key)s to ********",
+            "changed": "update: %(key)s now %(value)s",
+            "muted_changed": "update: %(key)s changed.",
+            "unchanged": "update: %(key)s unchanged",
+        },
     },
 }
 
@@ -490,30 +497,44 @@ class LoggingDict(LoggingClass, dict):
             'key': key, 'value': value,
         }
         self.log_change(
-            "update %(key)s to %(value)s",
+            self.strings['update']['message'],
             repl_dict=repl_dict,
-            muted_message="update %(key)s to ********",
+            muted_message=self.strings['update']['muted_message']
         )
-        if key not in self:
-            return key
+        status = [key, None]
+        if key not in self or self[key] != value:
+            status = [key, value]
+        return status
 
     def update(self, args):
         changed_keys = []
         if isinstance(args, dict):
             for key, value in args.items():
                 changed_keys.append(self.log_update(key, value))
+                args[key] = add_logging_to_obj(
+                    value, logger_name=self.logger_name, level=self.level
+                )
         else:
+            new_args = {}
             # odd values are keys, even values are values
             for key, value in zip(args[::2], args[1::2]):
                 changed_keys.append(self.log_update(key, value))
+                new_args[key] = add_logging_to_obj(
+                    value, logger_name=self.logger_name, level=self.level
+                )
+            args = new_args
         super(LoggingDict, self).update(args)
-        for key in changed_keys:
-            if key is None:
-                continue
+        for key, value in changed_keys:
+            if value is not None:
+                message = self.strings['update']['changed']
+                muted_message = self.strings['update']['muted_changed']
+            else:
+                message = self.strings['update']['unchanged']
+                muted_message = None
             self.log_change(
-                "%(key)s is now %(value)s",
+                message,
                 repl_dict={'key': key, 'value': self[key]},
-                muted_message="%(key)s changed."
+                muted_message=muted_message
             )
             self.child_set_parent(key)
 

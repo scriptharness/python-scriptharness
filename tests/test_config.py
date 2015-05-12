@@ -394,6 +394,9 @@ class TestLoggingDict(TestLoggingClass):
         # setdefault, change
         value = logdict.setdefault('new', {})
         self.assertEqual(value, {})
+        # setdefault, verify unmuted still works
+        value = logdict.setdefault('new2', 1)
+        self.assertEqual(value, 1)
         self.verify_log([
             self.strings['setdefault']['muted_message'] % {
                 'key': 'a', 'default': None
@@ -404,13 +407,78 @@ class TestLoggingDict(TestLoggingClass):
             },
             self.strings['setdefault']['unchanged'] % {'key': 'a'},
             self.strings['setdefault']['muted_message'] % {
-                'key': 'new', 'default': value
+                'key': 'new', 'default': {}
             },
             self.strings['setdefault']['muted_changed'] % {
-                'key': 'new', 'value': value
+                'key': 'new', 'value': {}
+            },
+            self.strings['setdefault']['message'] % {
+                'key': 'new2', 'default': 1
+            },
+            self.strings['setdefault']['changed'] % {
+                'key': 'new2', 'value': 1
             },
         ])
         self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
+
+    @mock.patch('scriptharness.config.logging')
+    def test_update_unmuted(self, mock_logging):
+        """Test logging dict setdefault, unmuted
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        # update, no change
+        logdict.update({'a': 1})
+        # update, change.
+        # When we test multiple key/value pairs, we need to send an ordered
+        # data structure
+        logdict.update(['a', {}, 'b', '2'])
+        self.assertEqual(logdict['a'], {})
+        self.verify_log([
+            self.strings['update']['message'] % {
+                'key': 'a', 'value': 1
+            },
+            self.strings['update']['unchanged'] % {'key': 'a'},
+            self.strings['update']['message'] % {
+                'key': 'a', 'value': {}
+            },
+            self.strings['update']['message'] % {
+                'key': 'b', 'value': '2'
+            },
+            self.strings['update']['changed'] % {'key': 'a', 'value': {}},
+            self.strings['update']['unchanged'] % {'key': 'b'},
+        ])
+        self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
+
+    @mock.patch('scriptharness.config.logging')
+    def test_update_muted(self, mock_logging):
+        """Test logging dict setdefault, muted
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        logdict.muted_keys.append('a')
+        # update, no change
+        logdict.update({'a': 1})
+        # update, change.
+        # When we test multiple key/value pairs, we need to send an ordered
+        # data structure
+        logdict.update(['a', {}, 'b', '3'])
+        self.assertEqual(logdict['a'], {})
+        self.verify_log([
+            self.strings['update']['muted_message'] % {
+                'key': 'a', 'value': 1
+            },
+            self.strings['update']['unchanged'] % {'key': 'a'},
+            self.strings['update']['muted_message'] % {
+                'key': 'a', 'value': {}
+            },
+            self.strings['update']['message'] % {
+                'key': 'b', 'value': '3'
+            },
+            self.strings['update']['muted_changed'] % {'key': 'a', 'value': {}},
+            self.strings['update']['changed'] % {'key': 'b', 'value': '3'},
+        ])
+        self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
 
 
 # TestLoggingList {{{2
