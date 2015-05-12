@@ -343,7 +343,6 @@ class TestLoggingList(TestLoggingClass):
         """
         self.get_logger_replacement(mock_logging)
         loglist = get_logging_list(name=None)
-        start = len(loglist)
         extend = ['a', 'b', {}]
         loglist.extend(extend)
         self.verify_log([

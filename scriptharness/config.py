@@ -24,7 +24,6 @@ from copy import deepcopy
 from scriptharness import ScriptHarnessException
 import logging
 import pprint
-import six
 
 
 # Constants {{{1
