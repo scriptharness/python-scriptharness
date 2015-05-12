@@ -289,6 +289,7 @@ class TestLoggingDict(TestLoggingClass):
         self.verify_log([
             self.strings['delitem'] % {'key': 'd'}
         ])
+        self.assertEqual(logdict.get('d'), None)
 
 
 # TestLoggingList {{{2
@@ -393,6 +394,7 @@ class TestLoggingList(TestLoggingClass):
                 },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
+            self.assertRaises(ValueError, loglist.index, item)
 
     @mock.patch('scriptharness.config.logging')
     def test_pop_no_args(self, mock_logging):
@@ -400,11 +402,13 @@ class TestLoggingList(TestLoggingClass):
         """
         self.get_logger_replacement(mock_logging)
         loglist = get_logging_list(name=None)
+        length = len(loglist)
         loglist.pop()
         self.verify_log([
             self.strings['pop_no_args'],
             self.strings['log_self'] % {"self": pprint.pformat(loglist)}
         ])
+        self.assertEqual(length - 1, len(loglist))
 
     @mock.patch('scriptharness.config.logging')
     def test_pop_args(self, mock_logging):
@@ -413,6 +417,7 @@ class TestLoggingList(TestLoggingClass):
         for position in (0, 3, len(LOGGING_CONTROL_LIST) - 1):
             self.get_logger_replacement(mock_logging)
             loglist = get_logging_list(name=None)
+            length = len(loglist)
             loglist.pop(position)
             self.verify_log([
                 self.strings['pop_args'] % {
@@ -420,6 +425,7 @@ class TestLoggingList(TestLoggingClass):
                 },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
+            self.assertEqual(length - 1, len(loglist))
 
     @mock.patch('scriptharness.config.logging')
     def test_sort(self, mock_logging):
