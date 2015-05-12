@@ -50,6 +50,11 @@ LOGGING_STRINGS = {
         "delitem": "__delitem__ %(key)s",
         "setitem": "__setitem__ %(key)s to %(value)s",
         "clear": "clearing dict",
+        "pop": {
+            "message": "popping dict key %(key)s",
+            "message_default": "popping dict key %(key)s (default %(default)s)",
+            "muted_message": "popping dict key %(key)s",
+        },
     },
 }
 
@@ -406,11 +411,11 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).clear()
 
     def pop(self, key, default=None):
-        message = "popping dict key %(key)s"
-        muted_message = message
+        message = self.strings['pop']['message']
+        muted_message = self.strings['pop']['muted_message']
         repl_dict = {'key': key}
         if default:
-            message += " (default %(default)s)"
+            message = self.strings['pop']['message_default']
             repl_dict['default'] = default
         self.log_change(message, repl_dict=repl_dict,
                         muted_message=muted_message)

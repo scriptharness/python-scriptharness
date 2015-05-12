@@ -13,7 +13,7 @@ Attributes:
   UNICODE_STRINGS (list): a list of strings to test for unicode support
 
   TODO fix add_logging_to_obj recursion
-  TODO move config strings to a dict for easier testing
+  TODO TestMutedMessage
 """
 from copy import deepcopy
 import mock
@@ -301,6 +301,26 @@ class TestLoggingDict(TestLoggingClass):
         self.verify_log([self.strings['clear']])
         self.assertEqual(logdict, {})
 
+    @mock.patch('scriptharness.config.logging')
+    def test_pop(self, mock_logging):
+        """Test logging dict pop
+        """
+        self.get_logger_replacement(mock_logging)
+        logdict = get_logging_dict(name=None)
+        value = logdict.pop('a')
+        self.assertEqual(value, LOGGING_CONTROL_DICT['a'])
+        self.assertFalse('a' in logdict)
+        value = logdict.pop('a', default="foo")
+        self.assertEqual(value, "foo")
+        self.verify_log([
+            self.strings['pop']['message'] % {'key': 'a'},
+            self.strings['pop']['message_default'] % {
+                'key': 'a', 'default': 'foo'
+            },
+        ])
+
+
+# TestMutedMessage {{{2
 
 # TestLoggingList {{{2
 class TestLoggingList(TestLoggingClass):
