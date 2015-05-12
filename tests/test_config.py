@@ -227,6 +227,34 @@ class TestFullNames(unittest.TestCase):
             self.assertEqual(logdict[name].full_name(),
                              "%s[%s]" % (NAME, expected))
 
+# TestLoggingDeepcopy {{{2
+class TestLoggingDeepcopy(unittest.TestCase):
+    """Test deepcopy of the various Logging* classes
+    """
+    def test_list(self):
+        """deepcopy(LoggingList) should return a non-logging list
+        """
+        loglist = get_logging_list()
+        dup = deepcopy(loglist)
+        self.assertEqual(LOGGING_CONTROL_LIST, dup)
+
+    def test_dict(self):
+        """deepcopy(LoggingDict) should return a non-logging dict
+        """
+        logdict = get_logging_dict()
+        dup = deepcopy(logdict)
+        self.assertEqual(LOGGING_CONTROL_DICT, dup)
+
+    def test_tuple(self):
+        """deepcopy(LoggingTuple) should return a non-logging tuple
+        """
+        logtuple = config.add_logging_to_obj(
+            tuple(LOGGING_CONTROL_LIST)
+        )
+        self.assertTrue(isinstance(logtuple, config.LoggingClass))
+        dup = deepcopy(logtuple)
+        self.assertEqual(tuple(LOGGING_CONTROL_LIST), dup)
+
 
 # TestLoggingDict {{{2
 class TestLoggingDict(TestLoggingClass):
