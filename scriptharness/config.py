@@ -36,6 +36,7 @@ LOGGING_STRINGS = {
         "delitem": "__delitem__ %(item)s",
         "log_self": "now looks like %(self)s",
         "setitem": "__setitem__ %(position)d to %(value)s",
+        "append": "appending %(item)s",
     },
     "dict": {
     },
@@ -239,7 +240,7 @@ class LoggingList(LoggingClass, list):
                         repl_dict={'self': pprint.pformat(self)})
 
     def append(self, item):
-        self.log_change("appending %(item)s",
+        self.log_change(self.strings['append'],
                         repl_dict={'item': item})
         super(LoggingList, self).append(
             add_logging_to_obj(item, logger_name=self.logger_name,

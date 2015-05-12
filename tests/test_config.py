@@ -267,6 +267,7 @@ class TestLoggingDict(TestLoggingClass):
     def test_setitem(self, mock_logging):
         """Test logging dict setitem
         """
+        # TODO verify setitem becomes loggingclass
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict()
         logdict['d'] = 3
@@ -311,14 +312,30 @@ class TestLoggingList(TestLoggingClass):
         for position in 2, 1:
             self.get_logger_replacement(mock_logging)
             loglist = get_logging_list(name=None)
-            loglist[position] = "value"
+            loglist[position] = []
             self.verify_log([
                 self.strings['setitem'] % {
                     "position": position,
-                    "value": "value",
+                    "value": [],
                 },
                 self.strings['log_self'] % {"self": pprint.pformat(loglist)}
             ])
+            self.assertTrue(isinstance(loglist[position], config.LoggingClass))
+
+    @mock.patch('scriptharness.config.logging')
+    def test_append(self, mock_logging):
+        """Test logging list append
+        """
+        self.get_logger_replacement(mock_logging)
+        loglist = get_logging_list(name=None)
+        loglist.append({})
+        self.verify_log([
+            self.strings['append'] % {
+                "item": {},
+            },
+            self.strings['log_self'] % {"self": pprint.pformat(loglist)}
+        ])
+        self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
 
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
