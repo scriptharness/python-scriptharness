@@ -29,7 +29,7 @@ This is in the same spirit of other frameworks that allow for discrete targets, 
 
 ## Secondary goals
 
-* python 2.6 - python 3.x compatible
+* python 2.7 - python 3.x compatible
 * full test coverage
 * rethink `mozharness`' monolithic object + mixin dependencies
  * allow for easier usage and adoption.
@@ -38,7 +38,7 @@ This is in the same spirit of other frameworks that allow for discrete targets, 
 
 
 ## Running unit tests
-    # By default, this will look for all minor versions of python between 2.6 and 3.5
+    # By default, this will look for python 2.7 + 3.{3,4,5}.
     # You can run |tox -e ENV| to run a specific env, e.g. |tox -e py27|
     pip install tox
     tox

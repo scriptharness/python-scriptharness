@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Test scriptharness.config
+"""Test scriptharness.structures
 
 Attributes:
   TEST_LOG (str): the path to log to
@@ -18,7 +18,7 @@ from copy import deepcopy
 import mock
 import pprint
 import scriptharness as sh
-import scriptharness.config as config
+import scriptharness.structures as structures
 import unittest
 
 
@@ -103,7 +103,7 @@ UNICODE_STRINGS = [
 def get_logging_dict(name=NAME, muted=False):
     """Helper function to set up logging for the logging dict
     """
-    logdict = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT), muted=muted)
+    logdict = structures.LoggingDict(deepcopy(LOGGING_CONTROL_DICT), muted=muted)
     logdict.logger_name = LOGGER_NAME
     logdict.recursively_set_parent(name=name)
     return logdict
@@ -115,7 +115,7 @@ def get_logging_list(name=NAME, values=None, muted=False):
     """
     if values is None:
         values = LOGGING_CONTROL_LIST
-    loglist = config.LoggingList(deepcopy(values), muted=muted)
+    loglist = structures.LoggingList(deepcopy(values), muted=muted)
     loglist.recursively_set_parent(name=name)
     return loglist
 
@@ -165,6 +165,61 @@ class TestLoggingClass(unittest.TestCase):
         self.assertEqual(self.logger.all_messages, expected)
 
 
+# TestGetStrings {{{2
+class TestGetStrings(unittest.TestCase):
+    """Test structures.get_strings()
+    """
+    def test_list_unmuted_string(self):
+        """test get_strings('list')"""
+        strings = structures.get_strings('list')
+        self.assertEqual(structures.LOGGING_STRINGS['list'], strings)
+
+    def test_list_muted_string(self):
+        """test muted get_strings('list')"""
+        strings = structures.get_strings('list', muted=True)
+        self.assertEqual(structures.MUTED_LOGGING_STRINGS['list'], strings)
+
+    def test_list_unmuted_object(self):
+        """test get_strings(LoggingList)"""
+        loglist = get_logging_list()
+        strings = structures.get_strings(loglist)
+        self.assertEqual(structures.LOGGING_STRINGS['list'], strings)
+
+    def test_list_muted_object(self):
+        """test muted get_strings(LoggingList)"""
+        loglist = get_logging_list()
+        strings = structures.get_strings(loglist, muted=True)
+        self.assertEqual(structures.MUTED_LOGGING_STRINGS['list'], strings)
+
+    def test_dict_unmuted_string(self):
+        """test get_strings('dict')"""
+        strings = structures.get_strings('dict')
+        self.assertEqual(structures.LOGGING_STRINGS['dict'], strings)
+
+    def test_dict_muted_string(self):
+        """test muted get_strings('dict')"""
+        strings = structures.get_strings('dict', muted=True)
+        self.assertEqual(structures.MUTED_LOGGING_STRINGS['dict'], strings)
+
+    def test_dict_unmuted_object(self):
+        """test get_strings(LoggingDict)"""
+        logdict = get_logging_dict()
+        strings = structures.get_strings(logdict)
+        self.assertEqual(structures.LOGGING_STRINGS['dict'], strings)
+
+    def test_dict_muted_object(self):
+        """test muted get_strings(LoggingDict)"""
+        logdict = get_logging_dict()
+        strings = structures.get_strings(logdict, muted=True)
+        self.assertEqual(structures.MUTED_LOGGING_STRINGS['dict'], strings)
+
+    def test_unknown(self):
+        """100% coverage"""
+        self.assertRaises(sh.ScriptHarnessException, structures.get_strings,
+                          'unknown_type')
+        self.assertRaises(sh.ScriptHarnessException, structures.get_strings,
+                          {})
+
 # TestFullNames {{{2
 class TestFullNames(unittest.TestCase):
     """Test LoggingClass.full_name()
@@ -212,18 +267,18 @@ class TestFullNames(unittest.TestCase):
     def test_quotes(self):
         """Try names with quotes in them.
 
-        Expected behavior: use the quotes in config.QUOTES in preferred order,
+        Expected behavior: use the quotes in structures.QUOTES in preferred order,
         moving on to the next if all the preceding quote types are in the name.
         If all quote types are in the name, don't use any quotes.
         """
         name = ''
         logdict = get_logging_dict()
-        for position, value in enumerate(config.QUOTES):
+        for position, value in enumerate(structures.QUOTES):
             name += value
             expected = name
-            if position + 1 < len(config.QUOTES):
-                expected = "%s%s%s" % (config.QUOTES[position + 1], name,
-                                       config.QUOTES[position + 1])
+            if position + 1 < len(structures.QUOTES):
+                expected = "%s%s%s" % (structures.QUOTES[position + 1], name,
+                                       structures.QUOTES[position + 1])
             logdict[name] = []
             self.assertEqual(logdict[name].full_name(),
                              "%s[%s]" % (NAME, expected))
@@ -249,10 +304,10 @@ class TestLoggingDeepcopy(unittest.TestCase):
     def test_tuple(self):
         """deepcopy(LoggingTuple) should return a non-logging tuple
         """
-        logtuple = config.add_logging_to_obj(
+        logtuple = structures.add_logging_to_obj(
             tuple(LOGGING_CONTROL_LIST)
         )
-        self.assertTrue(isinstance(logtuple, config.LoggingClass))
+        self.assertTrue(isinstance(logtuple, structures.LoggingClass))
         dup = deepcopy(logtuple)
         self.assertEqual(tuple(LOGGING_CONTROL_LIST), dup)
 
@@ -264,10 +319,10 @@ class TestLoggingDict(TestLoggingClass):
     Attributes:
       strings (dict): strings to test with
     """
-    strings = config.get_strings('dict')
-    muted_strings = config.get_strings('dict', muted=True)
+    strings = structures.get_strings('dict')
+    muted_strings = structures.get_strings('dict', muted=True)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_setitem(self, mock_logging):
         """Test logging dict setitem
         """
@@ -280,11 +335,11 @@ class TestLoggingDict(TestLoggingClass):
             self.strings['setitem'] % {'key': 'd', 'value': {}},
             self.muted_strings['setitem'] % {'key': 'a'},
         ])
-        self.assertTrue(isinstance(logdict['d'], config.LoggingClass))
-        self.assertTrue(isinstance(muted_logdict['a'], config.LoggingClass))
+        self.assertTrue(isinstance(logdict['d'], structures.LoggingClass))
+        self.assertTrue(isinstance(muted_logdict['a'], structures.LoggingClass))
         self.assertTrue(muted_logdict['a'].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_delitem(self, mock_logging):
         """Test logging dict delitem
         """
@@ -296,7 +351,7 @@ class TestLoggingDict(TestLoggingClass):
         ])
         self.assertEqual(logdict.get('d'), None)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_clear(self, mock_logging):
         """Test logging dict clear
         """
@@ -306,7 +361,7 @@ class TestLoggingDict(TestLoggingClass):
         self.verify_log([self.strings['clear']])
         self.assertEqual(logdict, {})
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_pop(self, mock_logging):
         """Test logging dict pop
         """
@@ -337,7 +392,7 @@ class TestLoggingDict(TestLoggingClass):
         self.assertRaises(KeyError, logdict.pop, 'a')
         self.assertRaises(KeyError, muted_logdict.pop, 'b')
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_popitem(self, mock_logging):
         """Test logging dict popitem
         """
@@ -354,7 +409,7 @@ class TestLoggingDict(TestLoggingClass):
             self.strings['popitem']['changed'] % {'key': key[0]},
         ])
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_setdefault(self, mock_logging):
         """Test logging dict setdefault
         """
@@ -386,10 +441,10 @@ class TestLoggingDict(TestLoggingClass):
                     'key': 'new', 'value': value
                 },
             ])
-            self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
+            self.assertTrue(isinstance(logdict['new'], structures.LoggingClass))
             self.assertEqual(logdict.muted, logdict['new'].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_update(self, mock_logging):
         """Test logging dict setdefault
         """
@@ -413,7 +468,7 @@ class TestLoggingDict(TestLoggingClass):
                 strings['update']['changed'] % {'key': 'a', 'value': {}},
                 strings['update']['unchanged'] % {'key': 'b'},
             ])
-            self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
+            self.assertTrue(isinstance(logdict['a'], structures.LoggingClass))
             self.assertEqual(logdict.muted, logdict['a'].muted)
 
 
@@ -425,8 +480,8 @@ class TestLoggingList(TestLoggingClass):
       strings (dict): strings to test with
       muted_strings (dict): muted strings to test with
     """
-    strings = config.get_strings('list')
-    muted_strings = config.get_strings('list', muted=True)
+    strings = structures.get_strings('list')
+    muted_strings = structures.get_strings('list', muted=True)
 
     @staticmethod
     def add_log_self(loglist, strings):
@@ -439,7 +494,7 @@ class TestLoggingList(TestLoggingClass):
             )
         return log_contents
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_delitem(self, mock_logging):
         """Test logging list delitem
         """
@@ -453,7 +508,7 @@ class TestLoggingList(TestLoggingClass):
                 self.verify_log([strings['delitem'] % {"item": item}] + \
                                 self.add_log_self(loglist, strings))
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_setitem(self, mock_logging):
         """Test logging list setitem
         """
@@ -471,10 +526,10 @@ class TestLoggingList(TestLoggingClass):
                     }] + self.add_log_self(loglist, strings)
                 )
                 self.assertTrue(isinstance(loglist[position],
-                                           config.LoggingClass))
+                                           structures.LoggingClass))
                 self.assertEqual(loglist.muted, loglist[position].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_append(self, mock_logging):
         """Test logging list append
         """
@@ -486,10 +541,10 @@ class TestLoggingList(TestLoggingClass):
             loglist.append([])
             self.verify_log([strings['append'] % {"item": []}] + \
                             self.add_log_self(loglist, strings))
-            self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
+            self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
             self.assertEqual(loglist.muted, loglist[-1].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_extend(self, mock_logging):
         """Test logging list extend
         """
@@ -504,10 +559,10 @@ class TestLoggingList(TestLoggingClass):
                 [strings['extend'] % {"item": pprint.pformat(extend)}] + \
                 self.add_log_self(loglist, strings)
             )
-            self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
+            self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
             self.assertEqual(loglist.muted, loglist[-1].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_insert(self, mock_logging):
         """Test logging list insert
         """
@@ -526,10 +581,10 @@ class TestLoggingList(TestLoggingClass):
                     }] + self.add_log_self(loglist, strings)
                 )
                 self.assertTrue(isinstance(loglist[position],
-                                           config.LoggingClass))
+                                           structures.LoggingClass))
                 self.assertEqual(loglist.muted, loglist[position].muted)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_remove(self, mock_logging):
         """Test logging list remove
         """
@@ -544,7 +599,7 @@ class TestLoggingList(TestLoggingClass):
                                 self.add_log_self(loglist, strings))
                 self.assertRaises(ValueError, loglist.index, item)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_pop_no_args(self, mock_logging):
         """Test logging list pop with no args
         """
@@ -559,7 +614,7 @@ class TestLoggingList(TestLoggingClass):
                             self.add_log_self(loglist, strings))
             self.assertEqual(length - 1, len(loglist))
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_pop_args(self, mock_logging):
         """Test logging list pop with args
         """
@@ -577,7 +632,7 @@ class TestLoggingList(TestLoggingClass):
                 )
                 self.assertEqual(length - 1, len(loglist))
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_sort(self, mock_logging):
         """Test logging list sort
         """
@@ -592,7 +647,7 @@ class TestLoggingList(TestLoggingClass):
                             self.add_log_self(loglist, strings))
             self.assertEqual(loglist[-1], 9)
 
-    @mock.patch('scriptharness.config.logging')
+    @mock.patch('scriptharness.structures.logging')
     def test_reverse(self, mock_logging):
         """Test logging list reverse
         """
@@ -623,10 +678,10 @@ class TestAddLogging(unittest.TestCase):
         four = []
         three.append(four)
         four.append(three)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, one)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, two)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, three)
-        self.assertRaises(RuntimeError, config.add_logging_to_obj, four)
+        self.assertRaises(RuntimeError, structures.add_logging_to_obj, one)
+        self.assertRaises(RuntimeError, structures.add_logging_to_obj, two)
+        self.assertRaises(RuntimeError, structures.add_logging_to_obj, three)
+        self.assertRaises(RuntimeError, structures.add_logging_to_obj, four)
 
 
 # Test ReadOnlyDict {{{1
@@ -634,12 +689,12 @@ class TestAddLogging(unittest.TestCase):
 def get_unlocked_rod():
     """Helper function to create a known unlocked ReadOnlyDict
     """
-    return config.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
+    return structures.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
 
 def get_locked_rod():
     """Helper function to create a known locked ReadOnlyDict
     """
-    rod = config.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
+    rod = structures.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
     rod.lock()
     return rod
 
@@ -705,7 +760,7 @@ class TestUnlockedROD(unittest.TestCase):
     def test_set_default(self):
         """setdefault() when unlocked
         """
-        rod = config.ReadOnlyDict()
+        rod = structures.ReadOnlyDict()
         for key in RO_CONTROL_DICT.keys():
             rod.setdefault(key, RO_CONTROL_DICT[key])
         self.assertEqual(rod, RO_CONTROL_DICT,
