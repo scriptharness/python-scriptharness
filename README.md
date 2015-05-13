@@ -29,7 +29,7 @@ This is in the same spirit of other frameworks that allow for discrete targets, 
 
 ## Secondary goals
 
-* python 2.7 - python 3.x compatible
+* python 2.7, python 3.3+ compatible
 * full test coverage
 * rethink `mozharness`' monolithic object + mixin dependencies
  * allow for easier usage and adoption.
