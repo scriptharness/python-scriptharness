@@ -500,10 +500,9 @@ class TestLoggingList(TestLoggingClass):
             self.get_logger_replacement(mock_logging)
             extend = ['a', 'b', []]
             loglist.extend(extend)
-            self.verify_log([
-                strings['extend'] % {
-                    "item": pprint.pformat(extend)
-                }] + self.add_log_self(loglist, strings)
+            self.verify_log(
+                [strings['extend'] % {"item": pprint.pformat(extend)}] + \
+                self.add_log_self(loglist, strings)
             )
             self.assertTrue(isinstance(loglist[-1], config.LoggingClass))
             self.assertEqual(loglist.muted, loglist[-1].muted)
@@ -520,14 +519,14 @@ class TestLoggingList(TestLoggingClass):
                 self.get_logger_replacement(mock_logging)
                 item = ['a']
                 loglist.insert(position, item)
-                self.verify_log([
-                    strings['insert'] % {
+                self.verify_log(
+                    [strings['insert'] % {
                         "position": position,
                         "item": item,
                     }] + self.add_log_self(loglist, strings)
                 )
                 self.assertTrue(isinstance(loglist[position],
-                                config.LoggingClass))
+                                           config.LoggingClass))
                 self.assertEqual(loglist.muted, loglist[position].muted)
 
     @mock.patch('scriptharness.config.logging')
@@ -541,10 +540,8 @@ class TestLoggingList(TestLoggingClass):
                                      (muted_loglist, self.muted_strings)):
                 self.get_logger_replacement(mock_logging)
                 loglist.remove(item)
-                self.verify_log([
-                    strings['remove'] % {"item": item}] + \
-                        self.add_log_self(loglist, strings)
-                )
+                self.verify_log([strings['remove'] % {"item": item}] + \
+                                self.add_log_self(loglist, strings))
                 self.assertRaises(ValueError, loglist.index, item)
 
     @mock.patch('scriptharness.config.logging')
@@ -559,8 +556,7 @@ class TestLoggingList(TestLoggingClass):
             length = len(loglist)
             loglist.pop()
             self.verify_log([self.strings['pop_no_args']] + \
-                self.add_log_self(loglist, strings)
-            )
+                            self.add_log_self(loglist, strings))
             self.assertEqual(length - 1, len(loglist))
 
     @mock.patch('scriptharness.config.logging')
@@ -575,10 +571,9 @@ class TestLoggingList(TestLoggingClass):
                 self.get_logger_replacement(mock_logging)
                 length = len(loglist)
                 loglist.pop(position)
-                self.verify_log([
-                    self.strings['pop_args'] % {
-                        "position": position,
-                    }] + self.add_log_self(loglist, strings)
+                self.verify_log(
+                    [self.strings['pop_args'] % {"position": position}] + \
+                    self.add_log_self(loglist, strings)
                 )
                 self.assertEqual(length - 1, len(loglist))
 
