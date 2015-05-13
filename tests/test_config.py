@@ -108,6 +108,14 @@ def get_logging_dict(name=NAME):
     logdict.recursively_set_parent(name=name)
     return logdict
 
+def get_muted_logging_dict(name=NAME):
+    """Helper function to set up logging for the logging dict
+    """
+    logdict = config.LoggingDict(deepcopy(LOGGING_CONTROL_DICT), muted=True)
+    logdict.logger_name = LOGGER_NAME
+    logdict.recursively_set_parent(name=name)
+    return logdict
+
 def get_logging_list(name=NAME, values=None):
     """Helper function to set up logging for the logging dict
 
@@ -116,6 +124,17 @@ def get_logging_list(name=NAME, values=None):
     if values is None:
         values = LOGGING_CONTROL_LIST
     loglist = config.LoggingList(deepcopy(values))
+    loglist.recursively_set_parent(name=name)
+    return loglist
+
+def get_muted_logging_list(name=NAME, values=None):
+    """Helper function to set up logging for the logging dict
+
+    Don't set name, for easier log testing
+    """
+    if values is None:
+        values = LOGGING_CONTROL_LIST
+    loglist = config.LoggingList(deepcopy(values), muted=True)
     loglist.recursively_set_parent(name=name)
     return loglist
 
@@ -264,7 +283,8 @@ class TestLoggingDict(TestLoggingClass):
     Attributes:
       strings (dict): strings to test with
     """
-    strings = deepcopy(config.LOGGING_STRINGS['dict'])
+    strings = config.get_strings('dict')
+    muted_strings = config.get_strings('dict', muted=True)
 
     @mock.patch('scriptharness.config.logging')
     def test_setitem(self, mock_logging):
@@ -273,13 +293,14 @@ class TestLoggingDict(TestLoggingClass):
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
         logdict['d'] = {}
-        logdict.muted_keys.append('a')
-        logdict['a'] = 2
+        muted_logdict = get_muted_logging_dict(name=None)
+        muted_logdict['a'] = []
         self.verify_log([
-            self.strings['setitem']['message'] % {'key': 'd', 'value': {}},
-            self.strings['setitem']['muted_message'] % {'key': 'a'},
+            self.strings['setitem'] % {'key': 'd', 'value': {}},
+            self.muted_strings['setitem'] % {'key': 'a'},
         ])
         self.assertTrue(isinstance(logdict['d'], config.LoggingClass))
+        self.assertTrue(isinstance(muted_logdict['a'], config.LoggingClass))
 
     @mock.patch('scriptharness.config.logging')
     def test_delitem(self, mock_logging):
@@ -309,6 +330,7 @@ class TestLoggingDict(TestLoggingClass):
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
+        muted_logdict = get_muted_logging_dict(name=None)
         # pop() existing
         value = logdict.pop('a')
         self.assertEqual(value, LOGGING_CONTROL_DICT['a'])
@@ -317,18 +339,21 @@ class TestLoggingDict(TestLoggingClass):
         value = logdict.pop('a', default="foo")
         self.assertEqual(value, "foo")
         # muted_message pop() test
-        logdict.muted_keys.append('a')
-        value = logdict.pop('a', default="foo")
+        value = muted_logdict.pop('b')
+        self.assertEqual(value, LOGGING_CONTROL_DICT['b'])
+        value = muted_logdict.pop('b', default="foo")
         self.assertEqual(value, "foo")
         self.verify_log([
             self.strings['pop']['message_no_default'] % {'key': 'a'},
             self.strings['pop']['message_default'] % {
                 'key': 'a', 'default': 'foo'
             },
-            self.strings['pop']['muted_message'] % {'key': 'a'},
+            self.muted_strings['pop']['message_no_default'] % {'key': 'b'},
+            self.muted_strings['pop']['message_default'] % {'key': 'b'},
         ])
         # nonexistent pop() without default should raise
         self.assertRaises(KeyError, logdict.pop, 'a')
+        self.assertRaises(KeyError, muted_logdict.pop, 'b')
 
     @mock.patch('scriptharness.config.logging')
     def test_popitem(self, mock_logging):
@@ -348,137 +373,64 @@ class TestLoggingDict(TestLoggingClass):
         ])
 
     @mock.patch('scriptharness.config.logging')
-    def test_setdefault_unmuted(self, mock_logging):
-        """Test logging dict setdefault, unmuted
+    def test_setdefault(self, mock_logging):
+        """Test logging dict setdefault
         """
-        self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict(name=None)
-        # setdefault, no default, no change
-        value = logdict.setdefault('a')
-        self.assertEqual(value, 1)
-        # setdefault, no change
-        value = logdict.setdefault('a', 1)
-        self.assertEqual(value, 1)
-        # setdefault, change
-        value = logdict.setdefault('new', {})
-        self.assertEqual(value, {})
-        self.verify_log([
-            self.strings['setdefault']['message'] % {
-                'key': 'a', 'default': None
-            },
-            self.strings['setdefault']['unchanged'] % {'key': 'a'},
-            self.strings['setdefault']['message'] % {'key': 'a', 'default': 1},
-            self.strings['setdefault']['unchanged'] % {'key': 'a'},
-            self.strings['setdefault']['message'] % {
-                'key': 'new', 'default': value
-            },
-            self.strings['setdefault']['changed'] % {
-                'key': 'new', 'value': value
-            },
-        ])
-        self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
+        unmuted_logdict = get_logging_dict(name=None)
+        muted_logdict = get_muted_logging_dict(name=None)
+        for logdict, strings in ((unmuted_logdict, self.strings),
+                                 (muted_logdict, self.muted_strings)):
+            self.get_logger_replacement(mock_logging)
+            # setdefault, no default, no change
+            value = logdict.setdefault('a')
+            self.assertEqual(value, 1)
+            # setdefault, no change
+            value = logdict.setdefault('a', 1)
+            self.assertEqual(value, 1)
+            # setdefault, change
+            value = logdict.setdefault('new', {})
+            self.assertEqual(value, {})
+            self.verify_log([
+                strings['setdefault']['message'] % {
+                    'key': 'a', 'default': None
+                },
+                strings['setdefault']['unchanged'] % {'key': 'a'},
+                strings['setdefault']['message'] % {'key': 'a', 'default': 1},
+                strings['setdefault']['unchanged'] % {'key': 'a'},
+                strings['setdefault']['message'] % {
+                    'key': 'new', 'default': value
+                },
+                strings['setdefault']['changed'] % {
+                    'key': 'new', 'value': value
+                },
+            ])
+            self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
 
     @mock.patch('scriptharness.config.logging')
-    def test_setdefault_muted(self, mock_logging):
-        """Test logging dict setdefault, muted
+    def test_update(self, mock_logging):
+        """Test logging dict setdefault
         """
-        self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict(name=None)
-        logdict.muted_keys.extend(['a', 'new'])
-        # setdefault, no default, no change
-        value = logdict.setdefault('a')
-        self.assertEqual(value, 1)
-        # setdefault, no change
-        value = logdict.setdefault('a', 1)
-        self.assertEqual(value, 1)
-        # setdefault, change
-        value = logdict.setdefault('new', {})
-        self.assertEqual(value, {})
-        # setdefault, verify unmuted still works
-        value = logdict.setdefault('new2', 1)
-        self.assertEqual(value, 1)
-        self.verify_log([
-            self.strings['setdefault']['muted_message'] % {
-                'key': 'a', 'default': None
-            },
-            self.strings['setdefault']['unchanged'] % {'key': 'a'},
-            self.strings['setdefault']['muted_message'] % {
-                'key': 'a', 'default': 1
-            },
-            self.strings['setdefault']['unchanged'] % {'key': 'a'},
-            self.strings['setdefault']['muted_message'] % {
-                'key': 'new', 'default': {}
-            },
-            self.strings['setdefault']['muted_changed'] % {
-                'key': 'new', 'value': {}
-            },
-            self.strings['setdefault']['message'] % {
-                'key': 'new2', 'default': 1
-            },
-            self.strings['setdefault']['changed'] % {
-                'key': 'new2', 'value': 1
-            },
-        ])
-        self.assertTrue(isinstance(logdict['new'], config.LoggingClass))
-
-    @mock.patch('scriptharness.config.logging')
-    def test_update_unmuted(self, mock_logging):
-        """Test logging dict setdefault, unmuted
-        """
-        self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict(name=None)
-        # update, no change
-        logdict.update({'a': 1})
-        # update, change.
-        # When we test multiple key/value pairs, we need to send an ordered
-        # data structure
-        logdict.update(['a', {}, 'b', '2'])
-        self.assertEqual(logdict['a'], {})
-        self.verify_log([
-            self.strings['update']['message'] % {
-                'key': 'a', 'value': 1
-            },
-            self.strings['update']['unchanged'] % {'key': 'a'},
-            self.strings['update']['message'] % {
-                'key': 'a', 'value': {}
-            },
-            self.strings['update']['message'] % {
-                'key': 'b', 'value': '2'
-            },
-            self.strings['update']['changed'] % {'key': 'a', 'value': {}},
-            self.strings['update']['unchanged'] % {'key': 'b'},
-        ])
-        self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
-
-    @mock.patch('scriptharness.config.logging')
-    def test_update_muted(self, mock_logging):
-        """Test logging dict setdefault, muted
-        """
-        self.get_logger_replacement(mock_logging)
-        logdict = get_logging_dict(name=None)
-        logdict.muted_keys.append('a')
-        # update, no change
-        logdict.update({'a': 1})
-        # update, change.
-        # When we test multiple key/value pairs, we need to send an ordered
-        # data structure
-        logdict.update(['a', {}, 'b', '3'])
-        self.assertEqual(logdict['a'], {})
-        self.verify_log([
-            self.strings['update']['muted_message'] % {
-                'key': 'a', 'value': 1
-            },
-            self.strings['update']['unchanged'] % {'key': 'a'},
-            self.strings['update']['muted_message'] % {
-                'key': 'a', 'value': {}
-            },
-            self.strings['update']['message'] % {
-                'key': 'b', 'value': '3'
-            },
-            self.strings['update']['muted_changed'] % {'key': 'a', 'value': {}},
-            self.strings['update']['changed'] % {'key': 'b', 'value': '3'},
-        ])
-        self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
+        unmuted_logdict = get_logging_dict(name=None)
+        muted_logdict = get_muted_logging_dict(name=None)
+        for logdict, strings in ((unmuted_logdict, self.strings),
+                                 (muted_logdict, self.muted_strings)):
+            self.get_logger_replacement(mock_logging)
+            # update, no change
+            logdict.update({'a': 1})
+            # update, change.
+            # When we test multiple key/value pairs, we need to send an ordered
+            # data structure
+            logdict.update(['a', {}, 'b', '2'])
+            self.assertEqual(logdict['a'], {})
+            self.verify_log([
+                strings['update']['message'] % {'key': 'a', 'value': 1},
+                strings['update']['unchanged'] % {'key': 'a'},
+                strings['update']['message'] % {'key': 'a', 'value': {}},
+                strings['update']['message'] % {'key': 'b', 'value': '2'},
+                strings['update']['changed'] % {'key': 'a', 'value': {}},
+                strings['update']['unchanged'] % {'key': 'b'},
+            ])
+            self.assertTrue(isinstance(logdict['a'], config.LoggingClass))
 
 
 # TestLoggingList {{{2
@@ -488,7 +440,7 @@ class TestLoggingList(TestLoggingClass):
     Attributes:
       strings (dict): strings to test with
     """
-    strings = deepcopy(config.LOGGING_STRINGS['list'])
+    strings = config.get_strings('list')
 
     @mock.patch('scriptharness.config.logging')
     def test_delitem(self, mock_logging):

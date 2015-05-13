@@ -2,7 +2,6 @@
 """
 setup.py for scriptharness
 """
-# TODO use versioneer?
 
 from setuptools import setup, find_packages
 import sys
@@ -10,6 +9,7 @@ import sys
 import scriptharness
 
 dependencies = [
+    'requests',
     'six',
 ]
 

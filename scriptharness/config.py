@@ -15,6 +15,8 @@ Attributes:
   QUOTES (tuple): the order of quotes to use for key logging
   LOGGING_STRINGS (dict): a dict of strings to use for logging, for easier
     unittesting and potentially for future localization.
+  MUTED_LOGGING_STRINGS (dict): a dict of strings to use for logging when
+    the values in the list/dict shouldn't be logged
   SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not currently supporting sets or collections.
 """
@@ -48,15 +50,11 @@ LOGGING_STRINGS = {
     # key, value, default
     "dict": {
         "delitem": "__delitem__ %(key)s",
-        "setitem": {
-            "message": "__setitem__ %(key)s to %(value)s",
-            "muted_message": "__setitem__ %(key)s to ********",
-        },
+        "setitem": "__setitem__ %(key)s to %(value)s",
         "clear": "clearing dict",
         "pop": {
             "message_no_default": "popping dict key %(key)s",
             "message_default": "popping dict key %(key)s (default %(default)s)",
-            "muted_message": "popping dict key %(key)s",
         },
         "popitem": {
             "message": "popitem",
@@ -64,16 +62,51 @@ LOGGING_STRINGS = {
         },
         "setdefault": {
             "message": "setdefault %(key)s to %(default)s",
-            "muted_message": "setdefault %(key)s to ********",
             "unchanged": "setdefault: %(key)s unchanged",
             "changed": "setdefault: %(key)s now %(value)s",
-            "muted_changed": "setdefault: %(key)s changed",
         },
         "update": {
             "message": "update %(key)s to %(value)s",
-            "muted_message": "update %(key)s to ********",
             "changed": "update: %(key)s now %(value)s",
-            "muted_changed": "update: %(key)s changed.",
+            "unchanged": "update: %(key)s unchanged",
+        },
+    },
+}
+MUTED_LOGGING_STRINGS = {
+    # position, self, item
+    "list": {
+        "delitem": "__delitem__ %(item)s",
+        "setitem": "__setitem__ %(position)d ...",
+        "append": "appending ...",
+        "extend": "extending ...",
+        "insert": "inserting at position %(position)s",
+        "remove": "removing ...",
+        "pop_no_args": "popping",
+        "pop_args": "popping position %(position)s",
+        "sort": "sorting",
+        "reverse": "reversing",
+    },
+    # key, value, default
+    "dict": {
+        "delitem": "__delitem__ %(key)s",
+        "setitem": "__setitem__ %(key)s ...",
+        "clear": "clearing dict",
+        "pop": {
+            "message_no_default": "popping dict key %(key)s",
+            "message_default": "popping dict key %(key)s with default ...",
+        },
+        "popitem": {
+            "message": "popitem",
+            "changed": "the popitem removed the key %(key)s",
+        },
+        "setdefault": {
+            "message": "setdefault %(key)s ...",
+            "unchanged": "setdefault: %(key)s unchanged",
+            "changed": "setdefault: %(key)s changed",
+        },
+        "update": {
+            "message": "update %(key)s ...",
+            "changed": "update: %(key)s changed",
             "unchanged": "update: %(key)s unchanged",
         },
     },
@@ -94,6 +127,7 @@ class LoggingClass(object):
     name = None
     parent = None
     level = None
+    logger_name = None
     logger_name = None
 
     def items(self):
@@ -218,18 +252,18 @@ class LoggingList(LoggingClass, list):
     Attributes:
       level (int): the logging level for changes
       logger_name (str): the logger name to use
+      muted (bool): whether our logging messages are muted
       strings (dict): a dict of strings to use for messages
     """
-    level = None
-    logger_name = None
-    strings = deepcopy(LOGGING_STRINGS["list"])
-
-    def __init__(self, items, level=DEFAULT_LEVEL,
+    def __init__(self, items, level=DEFAULT_LEVEL, muted=False,
                  logger_name=DEFAULT_LOGGER_NAME):
         self.level = level
         self.logger_name = logger_name
+        self.muted = muted
+        self.strings = get_strings(self, muted=self.muted)
         super(LoggingList, self).__init__(
-            [add_logging_to_obj(x) for x in items]
+            [add_logging_to_obj(x, logger_name=self.logger_name,
+                                level=level, muted=self.muted) for x in items]
         )
 
     def __deepcopy__(self, memo):
@@ -254,7 +288,7 @@ class LoggingList(LoggingClass, list):
             repl_dict={'position': position, 'item': item}
         )
         item = add_logging_to_obj(item, logger_name=self.logger_name,
-                                  level=self.level)
+                                  level=self.level, muted=self.muted)
         super(LoggingList, self).__setitem__(position, item)
         self.log_self()
         self.child_set_parent(position)
@@ -273,15 +307,16 @@ class LoggingList(LoggingClass, list):
         Since some methods insert values or rearrange them, it'll be easier to
         debug things if we log the list after those operations.
         """
-        self.log_change(self.strings['log_self'],
-                        repl_dict={'self': pprint.pformat(self)})
+        if self.strings.get('log_self'):
+            self.log_change(self.strings['log_self'],
+                            repl_dict={'self': pprint.pformat(self)})
 
     def append(self, item):
         self.log_change(self.strings['append'],
                         repl_dict={'item': item})
         super(LoggingList, self).append(
             add_logging_to_obj(item, logger_name=self.logger_name,
-                               level=self.level)
+                               level=self.level, muted=self.muted)
         )
         self.log_self()
         self.child_set_parent(len(self) - 1)
@@ -292,7 +327,7 @@ class LoggingList(LoggingClass, list):
                         repl_dict={'item': pprint.pformat(item)})
         super(LoggingList, self).extend(
             add_logging_to_obj(item, logger_name=self.logger_name,
-                               level=self.level)
+                               level=self.level, muted=self.muted)
         )
         self.log_self()
         self.child_set_parent(position)
@@ -307,7 +342,7 @@ class LoggingList(LoggingClass, list):
         )
         super(LoggingList, self).insert(
             position, add_logging_to_obj(item, logger_name=self.logger_name,
-                                         level=self.level)
+                                         level=self.level, muted=self.muted)
         )
         self.log_self()
         self.child_set_parent(position)
@@ -373,32 +408,29 @@ class LoggingDict(LoggingClass, dict):
     Attributes:
       level (int): the logging level for changes
       logger_name (str): the logger name to use
-      muted_keys (list): a list of keys that should be muted in logs, e.g.
-        ['credentials', 'binary_blobs'].  The values of these keys should
-        be muted in logs.
+      muted (bool): whether our logging messages are muted
       strings (dict): a dict of strings to use for messages
     """
-    def __init__(self, items, muted_keys=None, level=DEFAULT_LEVEL,
+    def __init__(self, items, level=DEFAULT_LEVEL, muted=False,
                  logger_name=DEFAULT_LOGGER_NAME):
         self.level = level
         self.logger_name = logger_name
-        self.muted_keys = muted_keys or []
-        self.strings = deepcopy(LOGGING_STRINGS["dict"])
+        self.muted = muted
+        self.strings = get_strings(self, muted=muted)
         for key, value in items.items():
             items[key] = add_logging_to_obj(
-                value, logger_name=logger_name, level=level
+                value, logger_name=logger_name, level=level, muted=self.muted
             )
         super(LoggingDict, self).__init__(items)
 
     def __setitem__(self, key, value):
         repl_dict = {'key': key, 'value': value}
         self.log_change(
-            self.strings['setitem']['message'],
-            muted_message=self.strings['setitem']['muted_message'],
+            self.strings['setitem'],
             repl_dict=repl_dict,
         )
         value = add_logging_to_obj(value, logger_name=self.logger_name,
-                                   level=self.level)
+                                   level=self.level, muted=self.muted)
         super(LoggingDict, self).__setitem__(key, value)
         self.child_set_parent(key)
 
@@ -406,15 +438,6 @@ class LoggingDict(LoggingClass, dict):
         self.log_change(self.strings['delitem'],
                         repl_dict={'key': key})
         super(LoggingDict, self).__delitem__(key)
-
-    def log_change(self, message, muted_message=None, repl_dict=None, **kwargs):
-        if repl_dict:
-            if muted_message and 'key' in repl_dict and \
-                    repl_dict['key'] in self.muted_keys:
-                message = muted_message
-        super(LoggingDict, self).log_change(
-            message, repl_dict=repl_dict, **kwargs
-        )
 
     def child_set_parent(self, key):
         """When the dict changes, we can just target the specific changed
@@ -430,7 +453,6 @@ class LoggingDict(LoggingClass, dict):
         super(LoggingDict, self).clear()
 
     def pop(self, key, default=None):
-        muted_message = self.strings['pop']['muted_message']
         repl_dict = {'key': key}
         args = []
         if default:
@@ -439,8 +461,7 @@ class LoggingDict(LoggingClass, dict):
             args.append(default)
         else:
             message = self.strings['pop']['message_no_default']
-        self.log_change(message, repl_dict=repl_dict,
-                        muted_message=muted_message)
+        self.log_change(message, repl_dict=repl_dict)
         return super(LoggingDict, self).pop(key, *args)
 
     def popitem(self):
@@ -466,20 +487,16 @@ class LoggingDict(LoggingClass, dict):
         self.log_change(
             self.strings['setdefault']['message'],
             repl_dict=repl_dict,
-            muted_message=self.strings['setdefault']['muted_message'],
         )
         default = add_logging_to_obj(default, logger_name=self.logger_name,
-                                     level=self.level)
+                                     level=self.level, muted=self.muted)
         status = super(LoggingDict, self).setdefault(key, default)
         if not changed:
             message = self.strings['setdefault']['unchanged']
-            muted_message = None
         else:
             repl_dict['value'] = status
             message = self.strings['setdefault']['changed']
-            muted_message = self.strings['setdefault']['muted_changed']
-        self.log_change(message, repl_dict=repl_dict,
-                        muted_message=muted_message)
+        self.log_change(message, repl_dict=repl_dict)
         self.child_set_parent(key)
         return status
 
@@ -499,7 +516,6 @@ class LoggingDict(LoggingClass, dict):
         self.log_change(
             self.strings['update']['message'],
             repl_dict=repl_dict,
-            muted_message=self.strings['update']['muted_message']
         )
         status = [key, None]
         if key not in self or self[key] != value:
@@ -512,7 +528,8 @@ class LoggingDict(LoggingClass, dict):
             for key, value in args.items():
                 changed_keys.append(self.log_update(key, value))
                 args[key] = add_logging_to_obj(
-                    value, logger_name=self.logger_name, level=self.level
+                    value, logger_name=self.logger_name, level=self.level,
+                    muted=self.muted
                 )
         else:
             new_args = {}
@@ -520,28 +537,24 @@ class LoggingDict(LoggingClass, dict):
             for key, value in zip(args[::2], args[1::2]):
                 changed_keys.append(self.log_update(key, value))
                 new_args[key] = add_logging_to_obj(
-                    value, logger_name=self.logger_name, level=self.level
+                    value, logger_name=self.logger_name, level=self.level,
+                    muted=self.muted
                 )
             args = new_args
         super(LoggingDict, self).update(args)
         for key, value in changed_keys:
             if value is not None:
                 message = self.strings['update']['changed']
-                muted_message = self.strings['update']['muted_changed']
             else:
                 message = self.strings['update']['unchanged']
-                muted_message = None
             self.log_change(
                 message,
                 repl_dict={'key': key, 'value': self[key]},
-                muted_message=muted_message
             )
             self.child_set_parent(key)
 
     def __deepcopy__(self, memo):
         """Return a dict on deepcopy()
-
-        TODO needed?
         """
         result = {}
         memo[id(self)] = result
@@ -562,7 +575,7 @@ def is_logging_class(item):
     """
     return issubclass(item.__class__, LoggingClass)
 
-def add_logging_to_obj(item, logger_name=None, level=logging.INFO):
+def add_logging_to_obj(item, **kwargs):
     """Recursively add logging to all contents of a LoggingDict.
 
     Any children of supported types will also have logging enabled.
@@ -577,8 +590,21 @@ def add_logging_to_obj(item, logger_name=None, level=logging.INFO):
     result = item
     for key, value in SUPPORTED_LOGGING_TYPES.items():
         if isinstance(item, key):
-            result = value(item, logger_name=logger_name, level=level)
+            result = value(item, **kwargs)
     return result
+
+def get_strings(instance_type, muted=False):
+    """Get the strings for LoggingClass instance, muted or unmuted
+
+    Args:
+      instance (obj): LoggingClass instance or 'list' or 'dict'
+      muted (bool, optional): return the MUTED_LOGGING_STRINGS strings if True
+    """
+    strings = MUTED_LOGGING_STRINGS if muted else LOGGING_STRINGS
+    if isinstance(instance_type, LoggingList) or instance_type == 'list':
+        return strings['list']
+    elif isinstance(instance_type, LoggingDict) or instance_type == 'dict':
+        return strings['dict']
 
 
 # ReadOnlyDict {{{1
