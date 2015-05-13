@@ -348,7 +348,7 @@ class LoggingList(LoggingClass, list):
         self.child_set_parent(position)
 
     def remove(self, item):
-        self.log_change("removing %(item)s",
+        self.log_change(self.strings['remove'],
                         repl_dict={'item': item})
         position = self.index(item)
         super(LoggingList, self).remove(item)
