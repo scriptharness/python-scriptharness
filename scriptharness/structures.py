@@ -269,7 +269,7 @@ class LoggingList(LoggingClass, list):
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
         """
-        return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
+        return [deepcopy(elem, memo) for elem in self]
 
     def __delitem__(self, item):
         self.log_change(self.strings['delitem'],
@@ -396,7 +396,7 @@ class LoggingTuple(LoggingClass, tuple):
     def __deepcopy__(self, memo):
         """Return a tuple on deepcopy.
         """
-        return tuple(  # pragma: no branch
+        return tuple(
             [deepcopy(elem, memo) for elem in self]
         )
 
@@ -650,7 +650,7 @@ class LockedTuple(tuple):
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
         """
-        return [deepcopy(elem, memo) for elem in self]  # pragma: no branch
+        return [deepcopy(elem, memo) for elem in self]
 
 
 class ReadOnlyDict(dict):
