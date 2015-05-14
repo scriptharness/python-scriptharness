@@ -19,7 +19,7 @@ import scriptharness as sh
 import scriptharness.log as log
 import sys
 import unittest
-from scriptharness import ScriptHarnessException, ScriptHarnessFailure
+from scriptharness import ScriptHarnessException, ScriptHarnessError
 
 
 UNICODE_STRINGS = [
@@ -372,18 +372,19 @@ class TestLogMethodFunction(unittest.TestCase):
             self.assertEqual(repl_dict['return_value'], (args, kwargs))
 
     @mock.patch('scriptharness.log.logging')
-    def test_raise_on_error(self, mock_logging):
+    def test_exception(self, mock_logging):
         """Use @LogMethod detect_error_cb, function, raise
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
-        @log.LogMethod(detect_error_cb=always_fail_cb, raise_on_error=True)
+        @log.LogMethod(detect_error_cb=always_fail_cb,
+                       exception=ScriptHarnessError)
         def test_func(*args, **kwargs):
             """test method"""
             return args, kwargs
-        self.assertRaises(ScriptHarnessFailure, test_func, *args, **kwargs)
+        self.assertRaises(ScriptHarnessError, test_func, *args, **kwargs)
         self.assertEqual(2, len(logger.all_messages))
         self.assertEqual(
             log.LogMethod.default_config['error_level'],
@@ -408,7 +409,8 @@ class TestLogMethodFunction(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
-        @log.LogMethod(detect_error_cb=always_succeed_cb, raise_on_error=True)
+        @log.LogMethod(detect_error_cb=always_succeed_cb,
+                       exception=ScriptHarnessException)
         def test_func(*args, **kwargs):
             """test method"""
             return args, kwargs
@@ -439,7 +441,7 @@ class TestLogMethodClass(unittest.TestCase):
     decorators work at all.
     """
     @mock.patch('scriptharness.log.logging')
-    def test_raise_on_error(self, mock_logging):
+    def test_exception(self, mock_logging):
         """Use @LogMethod detect_error_cb, class method, raise
         """
         logger = LoggerReplacement()
@@ -448,7 +450,8 @@ class TestLogMethodClass(unittest.TestCase):
         kwargs = {'c': 1, 'd': 2}
         class TestClass(object):
             """test class"""
-            @log.LogMethod(detect_error_cb=always_fail_cb, raise_on_error=True)
+            @log.LogMethod(detect_error_cb=always_fail_cb,
+                           exception=ScriptHarnessError)
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs
@@ -456,7 +459,7 @@ class TestLogMethodClass(unittest.TestCase):
                 """pylint complains about too few public methods"""
                 pass
         test_instance = TestClass()
-        self.assertRaises(ScriptHarnessFailure, test_instance.test_func,
+        self.assertRaises(ScriptHarnessError, test_instance.test_func,
                           *args, **kwargs)
         self.assertEqual(2, len(logger.all_messages))
         self.assertEqual(
@@ -488,7 +491,8 @@ class TestLogMethodClass(unittest.TestCase):
         kwargs = {'c': 1, 'd': 2}
         class TestClass(object):
             """test class"""
-            @log.LogMethod(detect_error_cb=always_succeed_cb, raise_on_error=True)
+            @log.LogMethod(detect_error_cb=always_succeed_cb,
+                           exception=ScriptHarnessError)
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs

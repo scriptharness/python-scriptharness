@@ -46,13 +46,21 @@ class ScriptHarnessException(ScriptHarnessBaseException):
     catch ScriptHarnessException.
     """
 
-class ScriptHarnessFailure(ScriptHarnessBaseException):
+class ScriptHarnessError(ScriptHarnessBaseException):
     """User-facing exception.
 
-    Scriptharness has detected a failure in the running process.
+    Scriptharness has detected an error in the running process.
+    """
+
+class ScriptHarnessFatal(SystemExit, ScriptHarnessBaseException):
+    """User-facing exception.
+
+    Scriptharness has detected a fatal failure in the running process.
     This exception should result in program termination; using try/except may
     result in unexpected or dangerous behavior.
     """
+    def __str__(self):
+        return ScriptHarnessBaseException.__str__(self)
 
 # py2 unicode help.  This may move into a separate file later.
 def to_unicode(obj, encoding='utf-8'):

@@ -16,7 +16,7 @@ import logging
 import os
 import six
 
-from scriptharness import ScriptHarnessException, ScriptHarnessFailure
+from scriptharness import ScriptHarnessException
 
 
 DEFAULT_DATEFMT = '%H:%M:%S'
@@ -151,7 +151,7 @@ class LogMethod(object):
         'pre_msg': '%(func_name)s arguments were: %(args)s %(kwargs)s',
         'post_success_msg': '%(func_name)s completed.',
         'post_failure_msg': '%(func_name)s failed.',
-        'raise_on_error': False,
+        'exception': None,
         'detect_error_cb': None,
     }
 
@@ -275,7 +275,7 @@ class LogMethod(object):
             msg = self.config['post_success_msg']
             level = self.config['level']
         log.log(level, msg, self.repl_dict)
-        if self.detected_errors and self.config['raise_on_error']:
-            raise ScriptHarnessFailure(
+        if self.detected_errors and self.config['exception']:
+            raise self.config['exception'](
                 self.config['post_failure_msg'].format(**self.repl_dict)
             )
