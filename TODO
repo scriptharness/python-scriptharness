@@ -1,4 +1,8 @@
-* mozharness.base.script
+* exceptions -> scriptharness.exceptions?
+* scriptharness.config
+ * build config from parser + config files
+ * don't hardcode parsing commandline args (can pass in other args, for multi-scripts)
+* script
  * run_command
  * get_output_from_command
  * actions
