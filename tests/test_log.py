@@ -17,6 +17,7 @@ import mock
 import os
 import scriptharness as sh
 import scriptharness.log as log
+import six
 import sys
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessError
@@ -548,16 +549,11 @@ class TestUnicode(unittest.TestCase):
         file_handler = log.get_file_handler(
             file_log, formatter=formatter, mode='w'
         )
-        console_handler = log.get_console_handler(
-            formatter=formatter, level=logging.CRITICAL
-        )
         logger = logging.getLogger(TEST_LOGGER_NAME)
-        logger.addHandler(console_handler)
         logger.addHandler(file_handler)
         try:
             yield logger
         finally:
-            logger.removeHandler(console_handler)
             logger.removeHandler(file_handler)
             file_handler.close()
 
@@ -594,7 +590,7 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
                 console_line = console_fh.read().rstrip()
-                self.assertEqual(string, console_line)
+                self.assertEqual(six.u(string), six.u(console_line))
 
     def test_to_unicode_console(self):
         """Test logging scriptharness.to_unicode strings to a console
