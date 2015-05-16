@@ -173,6 +173,8 @@ class TestGetFileHandler(unittest.TestCase):
         handler = log.get_file_handler(log_file, mode='w', formatter=formatter)
         logger.addHandler(handler)
         logger.info(TEST_STRING)
+        logger.removeHandler(handler)
+        handler.close()
         with open(log_file) as filehandle:
             # not sure if it's best to rstrip() here or os.linesep
             line = filehandle.readline().rstrip()
@@ -534,6 +536,7 @@ class TestUnicode(unittest.TestCase):
         assert self  # silence pylint
 
     @staticmethod
+    @contextmanager
     def get_file_logger():
         """Create a logger with a file handler for testing.
 
@@ -549,10 +552,14 @@ class TestUnicode(unittest.TestCase):
             formatter=formatter, level=logging.CRITICAL
         )
         logger = logging.getLogger(TEST_LOGGER_NAME)
-        logger.handlers = []
         logger.addHandler(console_handler)
         logger.addHandler(file_handler)
-        return logger
+        try:
+            yield logger
+        finally:
+            logger.removeHandler(console_handler)
+            logger.removeHandler(file_handler)
+            file_handler.close()
 
     @staticmethod
     def get_console_logger():
@@ -572,8 +579,8 @@ class TestUnicode(unittest.TestCase):
         """Test logging unicode strings to a file
         """
         for string in UNICODE_STRINGS:
-            logger = self.get_file_logger()
-            logger.info(string)
+            with self.get_file_logger() as logger:
+                logger.info(string)
             with open(TEST_FILE) as filehandle:
                 line = filehandle.read().rstrip()
                 self.assertEqual(string, line)
