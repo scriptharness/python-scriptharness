@@ -59,4 +59,3 @@ def download_config_file(url, file_name):
             "Error writing downloaded contents to file %s" % file_name,
             exc_info
         )
->>>>>>> start script + actions + config

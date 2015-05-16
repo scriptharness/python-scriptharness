@@ -215,9 +215,11 @@ class TestFullNames(unittest.TestCase):
         self.assertEqual(logdict['e'][2]['yurts'].full_name(),
                          "%s['e'][2]['yurts']" % NAME)
 
-    def test_unicode_names(self):
+    @mock.patch('scriptharness.structures.logging')
+    def test_unicode_names(self, mock_logging):
         """Try unicode names!
         """
+        assert mock_logging  # silence pylint
         logdict = get_logging_dict()
         for string in UNICODE_STRINGS:
             logdict[string] = {}
@@ -232,13 +234,15 @@ class TestFullNames(unittest.TestCase):
                 "%s['%s']['%s'][0]['%s']" % (NAME, string, string, string)
             )
 
-    def test_quotes(self):
+    @mock.patch('scriptharness.structures.logging')
+    def test_quotes(self, mock_logging):
         """Try names with quotes in them.
 
         Expected behavior: use the quotes in structures.QUOTES in preferred order,
         moving on to the next if all the preceding quote types are in the name.
         If all quote types are in the name, don't use any quotes.
         """
+        assert mock_logging  # silence pylint
         name = ''
         logdict = get_logging_dict()
         for position, value in enumerate(structures.QUOTES):
