@@ -14,6 +14,8 @@ Attributes:
 
   TODO fix add_logging_to_obj recursion
 """
+from __future__ import absolute_import, division, print_function, \
+                       unicode_literals
 from copy import deepcopy
 import mock
 import pprint

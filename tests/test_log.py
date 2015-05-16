@@ -10,7 +10,8 @@ Attributes:
   TEST_LOGGER_NAME (str): the logger name to use for tests
   TEST_STRING (str): a sample ascii string to use to test log output
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, \
+                       unicode_literals
 from contextlib import contextmanager
 import logging
 import mock

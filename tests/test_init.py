@@ -5,7 +5,8 @@
 Attributes:
   UNICODE_STRINGS (list): a list of unicode strings to use for testing.
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, \
+                       unicode_literals
 
 import scriptharness as sh
 import six
