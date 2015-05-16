@@ -15,6 +15,7 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
+import six
 import scriptharness as sh
 import scriptharness.log as log
 import sys
@@ -570,6 +571,7 @@ class TestUnicode(unittest.TestCase):
         logger.addHandler(console_handler)
         return logger
 
+    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_file(self):
         """Test logging unicode strings to a file
         """
