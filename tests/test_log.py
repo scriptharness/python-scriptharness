@@ -3,11 +3,9 @@
 """Test scriptharness.log
 
 Attributes:
-  UNICODE_STRINGS (list): a list of strings to test unicode functionality
   TEST_FILE (str): the filename to use for test log files
   TEST_CONSOLE (str): the filename to use for testing console output
   TEST_FILE_CONTENTS (str): a string to prepopulate logs to test overwriting
-  TEST_LOGGER_NAME (str): the logger name to use for tests
   TEST_STRING (str): a sample ascii string to use to test log output
 """
 from __future__ import absolute_import, division, print_function, \
@@ -16,27 +14,17 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
-import six
 import scriptharness as sh
 import scriptharness.log as log
 import sys
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessError
+from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement
 
 
-UNICODE_STRINGS = [
-    'ascii',
-    '日本語',
-    '한국말',
-    'हिन्दी',
-    'العَرَبِيةُ',
-    'ру́сский язы́к',
-    'ខេមរភាសា',
-]
 TEST_FILE = '_test_log_file'
 TEST_CONSOLE = '_test_log_console'
 TEST_FILE_CONTENTS = "Newly initialized test file"
-TEST_LOGGER_NAME = "_test_logger"
 TEST_STRING = "This is a test string"
 
 # Helper methods {{{1
@@ -99,34 +87,6 @@ def stdstar_redirected(path):
             os.dup2(copied_out.fileno(), 1)  # $ exec >&copied
             os.dup2(copied_err.fileno(), 2)  # $ exec >&copied
 
-class LoggerReplacement(object):
-    """A replacement logging.Logger to more easily test
-
-    Attributes:
-        all_messages (list): a list of all args sent to log()
-        level_messages (dict): a list of all messages sent to log(), sorted
-          by level.
-    """
-    def __init__(self):
-        super(LoggerReplacement, self).__init__()
-        self.all_messages = []
-        self.level_messages = {}
-
-    def log(self, level, msg, *args):
-        """Keep track of all calls to logger.log()
-
-        self.all_messages gets a list of all (level, msg, *args).
-        self.level_messages is a dict, with level keys; the values are lists
-        containing tuples of (msg, args) per log() call.
-        """
-        self.all_messages.append((level, msg, args))
-        self.level_messages.setdefault(level, [])
-        self.level_messages[level].append((msg, args))
-
-    def silence_pylint(self):
-        """pylint complains about too few public methods"""
-        pass
-
 
 # TestPrepareSimpleLogging {{{1
 class TestPrepareSimpleLogging(unittest.TestCase):
@@ -170,7 +130,7 @@ class TestGetFileHandler(unittest.TestCase):
         """Verify that mode='w' deletes the existing file
         """
         log_file = _present_test_file()
-        logger = logging.getLogger(TEST_LOGGER_NAME)
+        logger = logging.getLogger(LOGGER_NAME)
         formatter = logging.Formatter(fmt='%(message)s')
         handler = log.get_file_handler(log_file, mode='w', formatter=formatter)
         logger.addHandler(handler)
@@ -550,7 +510,7 @@ class TestUnicode(unittest.TestCase):
         file_handler = log.get_file_handler(
             file_log, formatter=formatter, mode='w'
         )
-        logger = logging.getLogger(TEST_LOGGER_NAME)
+        logger = logging.getLogger(LOGGER_NAME)
         logger.addHandler(file_handler)
         try:
             yield logger
@@ -567,7 +527,7 @@ class TestUnicode(unittest.TestCase):
         """
         formatter = log.UnicodeFormatter(fmt='%(message)s')
         console_handler = log.get_console_handler(formatter=formatter)
-        logger = logging.getLogger(TEST_LOGGER_NAME)
+        logger = logging.getLogger(LOGGER_NAME)
         logger.handlers = []
         logger.addHandler(console_handler)
         return logger
@@ -577,11 +537,12 @@ class TestUnicode(unittest.TestCase):
         """Test logging unicode strings to a file
         """
         for string in UNICODE_STRINGS:
-            with self.get_file_logger() as logger:
-                logger.info(string)
+            with stdstar_redirected(TEST_CONSOLE):
+                with self.get_file_logger() as logger:
+                    logger.info(string)
             with open(TEST_FILE) as filehandle:
                 line = filehandle.read().rstrip()
-                self.assertEqual(string, line)
+                self.assertEqual(string, sh.to_unicode(line))
 
     @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_console(self):
@@ -593,17 +554,4 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
                 console_line = console_fh.read().rstrip()
-                self.assertEqual(string, console_line)
-
-    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
-    def test_to_unicode_console(self):
-        """Test logging scriptharness.to_unicode strings to a console
-        """
-        for string in UNICODE_STRINGS:
-            with stdstar_redirected(TEST_CONSOLE):
-                logger = self.get_console_logger()
-                logger.info(sh.to_unicode(string))
-            with open(TEST_CONSOLE) as console_fh:
-                console_line = console_fh.read().rstrip()
-                self.assertEqual(sh.to_unicode(string),
-                                 sh.to_unicode(console_line))
+                self.assertEqual(string, sh.to_unicode(console_line))

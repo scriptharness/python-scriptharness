@@ -10,7 +10,6 @@ Attributes:
   LOGGING_CONTROL_LIST (list): used to prepopulate LoggingList
   SECONDARY_DICT (dict): used to add to the LoggingDict
   SECONDARY_LIST (dict): used to add to the LoggingDict
-  UNICODE_STRINGS (list): a list of strings to test for unicode support
 
   TODO fix add_logging_to_obj recursion
 """
@@ -22,11 +21,11 @@ import pprint
 import scriptharness as sh
 import scriptharness.structures as structures
 import unittest
+from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement
 
 
 # Constants {{{1
 TEST_LOG = "_test_config_log"
-LOGGER_NAME = "scriptharness.test_config"
 NAME = 'LOG'
 # Can only contain scalars, lists, and dicts, or the deepcopy tests will fail
 RO_CONTROL_DICT = {
@@ -89,15 +88,6 @@ SECONDARY_LIST = [
         },
     )
 ]
-UNICODE_STRINGS = [
-    'ascii',
-    '日本語',
-    '한국말',
-    'हिन्दी',
-    'العَرَبِيةُ',
-    'ру́сский язы́к',
-    'ខេមរភាសា',
-]
 
 
 # Test LoggingDict {{{1
@@ -122,30 +112,6 @@ def get_logging_list(name=NAME, values=None, muted=False):
     return loglist
 
 
-class LoggerReplacement(object):
-    """A replacement logging.Logger to more easily test
-
-    Attributes:
-        all_messages (list): a list of all messages sent to log()
-    """
-    def __init__(self):
-        super(LoggerReplacement, self).__init__()
-        self.all_messages = []
-
-    def log(self, _, msg, *args):
-        """Keep track of all calls to logger.log()
-
-        self.all_messages gets a list of all (msg, *args).
-        """
-        if args:
-            msg = msg % args[0]
-        self.all_messages.append(msg)
-
-    def silence_pylint(self):
-        """pylint complains about too few public methods"""
-        pass
-
-
 class TestLoggingClass(unittest.TestCase):
     """Test LoggingDict's logging methods
 
@@ -157,7 +123,7 @@ class TestLoggingClass(unittest.TestCase):
     def get_logger_replacement(self, mock_logging):
         """Replace logging.getLogger() with LoggerReplacement
         """
-        self.logger = LoggerReplacement()
+        self.logger = LoggerReplacement(simple=True)
         mock_logging.getLogger.return_value = self.logger
         return self.logger
 

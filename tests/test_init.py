@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Test scriptharness/__init__.py
-
-Attributes:
-  UNICODE_STRINGS (list): a list of unicode strings to use for testing.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -11,19 +8,8 @@ from __future__ import absolute_import, division, print_function, \
 import scriptharness as sh
 import six
 import unittest
+from . import UNICODE_STRINGS
 
-
-UNICODE_STRINGS = [
-    '日本語',
-    '한국말',
-    'हिन्दी',
-    'العَرَبِيةُ',
-    'ру́сский язы́к',
-    'ខេមរភាសា',
-    six.u('uascii'),
-    six.u('ąćęłńóśźż'),
-    'ascii',
-]
 
 # TestVersionString {{{1
 class TestVersionString(unittest.TestCase):
