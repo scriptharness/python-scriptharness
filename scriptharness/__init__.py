@@ -31,11 +31,7 @@ class ScriptHarnessBaseException(Exception):
             string = super(ScriptHarnessBaseException, self).__str__()
         else:
             string = super(ScriptHarnessBaseException, self).message
-        try:
-            new_string = six.text_type(string, 'utf-8')
-            string = new_string
-        except TypeError:
-            pass
+        string = to_unicode(string, 'utf-8')
         return string
 
 class ScriptHarnessException(ScriptHarnessBaseException):
