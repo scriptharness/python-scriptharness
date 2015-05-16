@@ -6,8 +6,9 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-import argparse
+#import argparse
 import requests
+from six.moves import urllib as urllib
 try:
     import simplejson as json
 except ImportError:
@@ -24,6 +25,12 @@ def parse_config_file(file_path):
 
     Args:
       file_path (str): path to config file.
+
+    Returns:
+      config (dict)
+
+    Raises:
+      ScriptHarnessException on error
     """
     try:
         with open(file_path) as filehandle:
@@ -39,14 +46,42 @@ def parse_config_file(file_path):
     return config
 
 
-def download_config_file(url, file_name):
+def get_filename_from_url(url):
+    """Determine the filename of a file from its url.
+
+    Args:
+      url (str): the url to parse
+
+    Returns:
+      name (str): the name of the file
+    """
+    parsed = urllib.parse.urlparse(url)
+    if parsed.path != '':
+        return parsed.path.rstrip('/').rsplit('/', 1)[-1]
+    else:
+        return parsed.netloc
+
+def download_url(url, path=None, mode='wb'):
+    """Download a url to a path
+
+    Args:
+      url (str): the url to download
+      path (str, optional): the path to write to
+
+    Raises:
+      ScriptHarnessException on error
+    """
+    if path is None:
+        path = get_filename_from_url(url)
     try:
         session = requests.Session()
         session.mount(url, requests.adapters.HTTPAdapter(max_retries=5))
-        response = session.get(url, timeout=30)
-        contents = response.text
-        with open(file_name, 'w') as filehandle:
-            filehandle.write(contents)
+        response = session.get(url, timeout=30, stream=True)
+        with open(path, mode) as filehandle:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    filehandle.write(chunk)
+                    filehandle.flush()
         return
     except requests.exceptions.Timeout as exc_info:
         raise ScriptHarnessException("Time out accessing %s" % url,
@@ -56,6 +91,6 @@ def download_config_file(url, file_name):
                                      exc_info)
     except IOError as exc_info:
         raise ScriptHarnessException(
-            "Error writing downloaded contents to file %s" % file_name,
+            "Error writing downloaded contents to path %s" % path,
             exc_info
         )
