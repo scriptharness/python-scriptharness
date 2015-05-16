@@ -17,7 +17,6 @@ import mock
 import os
 import scriptharness as sh
 import scriptharness.log as log
-import six
 import sys
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessError
@@ -544,7 +543,7 @@ class TestUnicode(unittest.TestCase):
         The formatter is a UnicodeFormatter with a fmt of %(message)s for
         simplified message verification.
         """
-        file_log = _present_test_file(TEST_FILE)
+        file_log = _absent_test_file(TEST_FILE)
         formatter = log.UnicodeFormatter(fmt='%(message)s')
         file_handler = log.get_file_handler(
             file_log, formatter=formatter, mode='w'
@@ -581,6 +580,7 @@ class TestUnicode(unittest.TestCase):
                 line = filehandle.read().rstrip()
                 self.assertEqual(string, line)
 
+    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_console(self):
         """Test logging bare unicode strings to a console
         """
@@ -590,8 +590,9 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
                 console_line = console_fh.read().rstrip()
-                self.assertEqual(six.u(string), six.u(console_line))
+                self.assertEqual(string, console_line)
 
+    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_to_unicode_console(self):
         """Test logging scriptharness.to_unicode strings to a console
         """
