@@ -212,7 +212,7 @@ class LogMethod(object):
         Args:
           func (function): this is the decorated function.
           *args: the function's *args
-          *kwargs: the function's *kwargs
+          **kwargs: the function's *kwargs
         """
         self.func = func
         def wrapped_func(*args, **kwargs):
@@ -239,8 +239,8 @@ class LogMethod(object):
         Currently, set the following::
 
           func_name: self.func.__name__
-          args: the args passed to self.func()
-          kwargs: the kwargs passed to self.func()
+          *args: the args passed to self.func()
+          **kwargs: the kwargs passed to self.func()
 
         After running self.func, we'll also set return_value.
         """
