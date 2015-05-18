@@ -72,11 +72,13 @@ class TestUnicode(unittest.TestCase):
         """Verify ScriptHarnessBaseException works
         """
         for ustring in UNICODE_STRINGS:
-            exc = sh.ScriptHarnessBaseException(ustring)
-            if six.PY2:
-                if not isinstance(ustring, six.text_type):
-                    self.assertEqual(ustring, str(exc))
+            for exception in (sh.ScriptHarnessBaseException,
+                              sh.ScriptHarnessFatal):
+                exc = exception(ustring)
+                if six.PY2:
+                    if not isinstance(ustring, six.text_type):
+                        self.assertEqual(ustring, str(exc))
+                    else:
+                        self.assertEqual(ustring, six.text_type(exc))
                 else:
-                    self.assertEqual(ustring, six.text_type(exc))
-            else:
-                self.assertEqual(ustring, str(exc))
+                    self.assertEqual(ustring, str(exc))
