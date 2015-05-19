@@ -15,6 +15,7 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from collections import OrderedDict
 from copy import deepcopy
 import mock
 import pprint
@@ -89,6 +90,40 @@ SECONDARY_LIST = [
     )
 ]
 
+
+# Test iterate_pairs() {{{1
+class TestIteratePairs(unittest.TestCase):
+    """Test iterate_pairs()"""
+    pairs = (
+        ('a', 1),
+        (2, 'b'),
+        ('f', {}),
+        (4, []),
+        ('c', 3),
+    )
+    def test_dict(self):
+        """Test iterate_pairs(dict)
+        """
+        result = structures.iterate_pairs(OrderedDict(self.pairs))
+        for position, pair in enumerate(result):
+            self.assertEqual(pair, self.pairs[position])
+
+    def test_nested_tuples(self):
+        """Test iterate_pairs(tuple_of_pairs)
+        """
+        result = structures.iterate_pairs(self.pairs)
+        for position, pair in enumerate(result):
+            self.assertEqual(pair, self.pairs[position])
+
+    def test_flat_list(self):
+        """Test iterate_pairs(flat_list)
+        """
+        flat_list = []
+        for pair in self.pairs:
+            flat_list.extend(list(pair))
+        result = structures.iterate_pairs(flat_list)
+        for position, pair in enumerate(result):
+            self.assertEqual(pair, self.pairs[position])
 
 # Test LoggingDict {{{1
 # helper methods {{{2
