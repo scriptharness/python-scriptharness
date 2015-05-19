@@ -82,7 +82,9 @@ def is_url(resource):
       bool
     """
     parsed = urllib.parse.urlparse(resource)
-    return parsed.scheme is not ""
+    if parsed.scheme:
+        return True
+    return False
 
 
 def download_url(url, path=None, mode='wb'):

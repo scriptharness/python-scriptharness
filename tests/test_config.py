@@ -21,3 +21,15 @@ class TestUrlFunctionss(unittest.TestCase):
         """Filename from a url without a path"""
         url = "https://example.com"
         self.assertEqual(shconfig.get_filename_from_url(url), "example.com")
+
+    def test_is_url(self):
+        """Verify is_url(real_url)"""
+        for url in ("http://example.com", "https://example.com/foo/bar",
+                    "file:///home/example/.bashrc"):
+            self.assertTrue(shconfig.is_url(url))
+
+    def test_is_not_url(self):
+        """Verify not is_url(real_url)"""
+        for url in ("example.com", "/usr/local/bin/python"):
+            print(url)
+            self.assertFalse(shconfig.is_url(url))
