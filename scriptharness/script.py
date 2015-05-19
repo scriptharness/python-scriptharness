@@ -16,6 +16,7 @@ import logging
 import os
 from scriptharness import ScriptHarnessError, ScriptHarnessException, \
                           ScriptHarnessFatal
+import scriptharness.config as shconfig
 from scriptharness.structures import iterate_pairs, LoggingDict
 import sys
 import time
@@ -203,17 +204,40 @@ def get_actions(all_actions):
     """Build a tuple of Action objects for the script.
 
     Args:
-      all_actions (object): ordered mapping of action_name:enabled bool,
-        as accepted by iterate_pairs()
+      all_actions (data structure): ordered mapping of action_name:enabled
+        bool, as accepted by iterate_pairs()
 
     Returns:
-      action tuple
+      tuple of Action objects
     """
     action_list = []
     for action_name, value in iterate_pairs(all_actions):
         action = Action(action_name, enabled=value)
         action_list.append(action)
     return tuple(action_list)
+
+def get_actions_from_lists(all_actions, default_actions):
+    """Helper method to generate the ordered mapping for get_actions().
+
+    Args:
+      all_actions (list): ordered list of all action names
+      default_actions (list): list of all actions that are enabled by default
+
+    Returns:
+      tuple of Action objects
+    """
+    if not set(default_actions).issubset(set(all_actions)):
+        raise ScriptHarnessException(
+            "default_actions not a subset of all_actions!",
+            default_actions, all_actions
+        )
+    action_list = []
+    for action in all_actions:
+        if action in default_actions:
+            action_list.append((action, True))
+        else:
+            action_list.append((action, False))
+    return get_actions(action_list)
 
 
 # Script {{{1
@@ -236,7 +260,7 @@ class Script(object):
         """Script.__init__
 
         Args:
-          actions (object): tuple of Action objects.
+          actions (tuple): Action objects to run.
           parser (ArgumentParser): parser to use
         """
         self.actions = actions
@@ -267,7 +291,7 @@ class Script(object):
         """
         cmdln_args = cmdln_args or []
         (parsed_args, unknown_args) = parser.parse_known_args(*cmdln_args)
-        config = {}  # build it from the various files + options
+        config = shconfig.build_config(parser, parsed_args, initial_config)
         # TODO parsed_args_defaults - config files - commandline args
         # differentiate argparse defaults from cmdln set? - parser.get_default(arg)
         if unknown_args:

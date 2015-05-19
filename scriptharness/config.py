@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 #import argparse
 import requests
-from six.moves import urllib as urllib
+import six.moves.urllib as urllib
 try:
     import simplejson as json
 except ImportError:
@@ -18,13 +18,13 @@ from scriptharness import ScriptHarnessException
 
 
 # parse_config_file {{{1
-def parse_config_file(file_path):
+def parse_config_file(path):
     """Read a config file and return a dictionary.
 
     For now, only support json.
 
     Args:
-      file_path (str): path to config file.
+      path (str): path or url to config file.
 
     Returns:
       config (dict)
@@ -32,16 +32,18 @@ def parse_config_file(file_path):
     Raises:
       ScriptHarnessException on error
     """
+    if is_url(path):
+        path = download_url(path, mode='w')
     try:
-        with open(file_path) as filehandle:
+        with open(path) as filehandle:
             config = dict(json.load(filehandle))
     except IOError as exc_info:
         raise ScriptHarnessException(
-            "Can't open path %s!" % file_path, exc_info
+            "Can't open path %s!" % path, exc_info
         )
     except ValueError:
         raise ScriptHarnessException(
-            "Can't parse json in %s!" % file_path, exc_info
+            "Can't parse json in %s!" % path, exc_info
         )
     return config
 
@@ -60,6 +62,20 @@ def get_filename_from_url(url):
         return parsed.path.rstrip('/').rsplit('/', 1)[-1]
     else:
         return parsed.netloc
+
+
+def is_url(resource):
+    """Is it a url?
+
+    Args:
+      resource (str): possible url
+
+    Returns:
+      bool
+    """
+    parsed = urllib.parse.urlparse(resource)
+    return parsed.scheme is not ""
+
 
 def download_url(url, path=None, mode='wb'):
     """Download a url to a path
@@ -94,3 +110,47 @@ def download_url(url, path=None, mode='wb'):
             "Error writing downloaded contents to path %s" % path,
             exc_info
         )
+    return path
+
+
+def build_config(parser, parsed_args, initial_config=None):
+    """Build a configuration dict from the parser and initial config.
+
+    The configuration is built in this order::
+
+      * parser defaults
+      * initial_config
+      * parsed_args.config_files, in order
+      * non-default parser args (cmdln_args)
+
+    So the commandline args can override everything else, as long as there are
+    options to do so (commandline args will need to be a subset of the parser
+    args).  The final configuration file can override everything but the
+    commandline args, and its config isn't restricted as a subset of the
+    parser options.
+
+    Args:
+      parser (ArgumentParser): the parser used to parse_args()
+      parsed_args (argparse Namespace): the results of parse_args()
+      initial_config (dict, optional): initial configuration to set before
+        commandline args
+    """
+    config = {}
+    cmdln_config = {}
+    resources = []
+    initial_config = initial_config or {}
+    for key, value in parsed_args.__dict__.items():
+        if parser.get_default(key) == value:
+            config[key] = value
+        else:
+            cmdln_config = value
+    config.update(initial_config)
+    for obj in cmdln_config, config:
+        if 'config_files' in obj:
+            resources = obj['config_files']
+            break
+    for resource in resources:
+        config.update(parse_config_file(resource))
+    if cmdln_config:
+        config.update(cmdln_config)
+    return config
