@@ -14,8 +14,9 @@ import argparse
 from copy import deepcopy
 import logging
 import os
-from scriptharness import ScriptHarnessError, ScriptHarnessException, ScriptHarnessFatal
-from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict
+from scriptharness import ScriptHarnessError, ScriptHarnessException, \
+                          ScriptHarnessFatal
+from scriptharness.structures import iterate_pairs, LoggingDict
 import sys
 
 
@@ -54,8 +55,6 @@ class Action(object):
       return_value (variable): set to None or the return value of the function
       status (int): one of STATUSES
       config (dict): the configuration of the action
-
-    # TODO action dependencies?
     """
     default_config = {
         "args": [],
@@ -63,7 +62,7 @@ class Action(object):
         "exception": ScriptHarnessError,
     }
 
-    def __init__(self, name, enabled=False, config=None):
+    def __init__(self, name, function=None, enabled=False, config=None):
         self.name = name
         self.enabled = enabled
         self.return_value = None
@@ -72,7 +71,8 @@ class Action(object):
         for key, value in STRINGS['action'].items():
             self.config[key] = value
         self.config['logger_name'] = "scriptharness.script.%s" % self.name
-        self.config["function"] = globals().get(self.name)  # TODO s,-,_
+        self.config["function"] = function or \
+                                  globals().get(self.name.replace('-', '_'))
         config = config or {}
         messages = []
         for key, value in config.items():
@@ -166,13 +166,11 @@ def get_config_parser():
     return parser
 
 
-def get_parser(all_actions=None, parents=None, initial_config=None, **kwargs):
+def get_parser(all_actions=None, parents=None, **kwargs):
     """Create a script option parser.
 
     Args:
       parents (list, optional): ArgumentParsers to set as parents of the parser
-      initial_config (dict, optional): a config to use to override defaults of
-        the parser, or to set non-commandline config options, as appropriate
       **kwargs: additional kwargs for ArgumentParser
 
     Returns:
@@ -185,11 +183,10 @@ def get_parser(all_actions=None, parents=None, initial_config=None, **kwargs):
         parents.append(get_config_parser())
     parser = argparse.ArgumentParser(parents=parents, **kwargs)
     # TODO populate
-    #assert initial_config
     return parser
 
 
-def parse_args(parser, initial_config=None, cmdln_args=None):
+def parse_args(parser, cmdln_args=None):
     """Build the parser and parse the commandline args.
 
     Args:
@@ -212,7 +209,9 @@ def parse_args(parser, initial_config=None, cmdln_args=None):
 def get_actions(all_actions, parsed_args):
     """Build a tuple of Action objects for the script.
 
-    The simple
+    This function assumes we use all default actions, unless the 'actions'
+    option is set in parsed_args, in which case that is the enabled action
+    list.
 
     Args:
       all_actions (object): ordered mapping of action_name:enabled bool,
@@ -223,13 +222,15 @@ def get_actions(all_actions, parsed_args):
     Returns:
       action tuple
     """
-    # TODO raise if unknown action
     action_list = []
-    for action_name, value in all_actions.items():
-        if isinstance(value, Action):
-            action = value
-        else:
-            action = Action(action_name, enabled=value)
+    parsed_actions = None
+    if hasattr(parsed_args, 'actions'):
+        parsed_actions = parsed_args['actions']
+    for action_name, value in iterate_pairs(all_actions):
+        enabled = value
+        if parsed_actions is not None:
+            enabled = action_name in parsed_actions
+        action = Action(action_name, enabled=enabled)
         action_list.append(action)
     return tuple(action_list)
 
@@ -243,59 +244,60 @@ class Script(object):
     it makes sense.
 
     Attributes:
-      config (LoggingDict or ReadOnlyDict): the config for the script
+      config (LoggingDict): the config for the script
       strict (bool): In strict mode, warnings are fatal; config is read-only.
       actions (tuple): Action objects to run.
       listeners (dict): callbacks for run()
-
-    # TODO setitem config throws if config
     """
-    def __init__(self, actions, parser, strict=False, cmdln_args=None):
+    config = None
+
+    def __init__(self, all_actions, parser, **kwargs):
         """Script.__init__
 
         Args:
           actions (object): tuple of Action objects.
           parser (ArgumentParser): parser to use
-          cmdln_args (tuple, optional): override the commandline args
-          **kwargs: sent to ArgumentParser() in parse_args()
         """
-        self.strict = strict
-        self.actions = actions
         self.listeners = {}
         for timing in VALID_LISTENER_TIMING:
             self.listeners.setdefault(timing, [])
-        self.build_config(parser, initial_config=kwargs.get('initial_config'))
-        # TODO enable/disable actions based on parsed_args
+        parsed_args = self.build_config(parser, **kwargs)
+        self.actions = get_actions(all_actions, parsed_args)
         # TODO dump config
         # TODO dump actions
 
-    def pre_config_lock(self):
-        """Called before locking self.config, when we use a ReadOnlyDict.
+    def __setattr__(self, name, *args):
+        if name == 'config' and self.config:
+            raise ScriptHarnessException(
+                "Changing script config after config is already set!"
+            )
+        return super(Script, self).__setattr__(name, *args)
 
-        Here for subclassing.
-        """
-        pass
-
-    def build_config(self, parser, initial_config=None):
+    def build_config(self, parser, cmdln_args=None, initial_config=None):
         """Create self.config from the parsed args.
+
+        Args:
+          parser (ArgumentParser): parser to use
+          cmdln_args (tuple, optional): override the commandline args
+          initial_config (dict, optional): initial config dict to apply
+
+        Returns:
+          parsed_args from parse_known_args()
         """
+        cmdln_args = cmdln_args or []
+        (parsed_args, unknown_args) = parser.parse_known_args(*cmdln_args)
         config = {}  # build it from the various files + options
-        (parsed_args, unknown_args) = parser.parse_args()
         # TODO parsed_args_defaults - config files - commandline args
         # differentiate argparse defaults from cmdln set? - parser.get_default(arg)
-        if self.strict:
-            if unknown_args:
-                raise ScriptHarnessFatal(
-                    "Unknown arguments passed to script!", unknown_args
-                )
-            self.config = ReadOnlyDict(config)
-            self.pre_config_lock()
-            self.config.lock()
-        else:
-            self.config = self.get_logging_dict(config)
+        if unknown_args:
+            raise ScriptHarnessFatal(
+                "Unknown arguments passed to script!", unknown_args
+            )
+        self.config = self.dict_to_config(config)
+        return parsed_args
 
     @staticmethod
-    def get_logging_dict(config):
+    def dict_to_config(config):
         """Here for subclassing.
         """
         return LoggingDict(config, logger_name=LOGGER_NAME)
@@ -336,5 +338,5 @@ class Script(object):
         """Run all enabled actions.
         """
         # TODO listeners
-        # TODO run actions with try/except for postfatal
+        # TODO run actions with try/except for postfatal. send config as arg
         pass
