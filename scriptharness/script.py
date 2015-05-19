@@ -176,7 +176,6 @@ def get_parser(all_actions=None, parents=None, **kwargs):
             parents.append(get_action_parser(all_actions))
         parents.append(get_config_parser())
     parser = argparse.ArgumentParser(parents=parents, **kwargs)
-    # TODO populate
     return parser
 
 
@@ -185,19 +184,17 @@ def parse_args(parser, cmdln_args=None):
 
     Args:
       parser (ArgumentParser): specify the parser to use
-      initial_config (dict): specify a script-level config to set defaults
-        post-parser defaults, but pre-config files and commandline args
       cmdln_args (optional): override the commandline args with these
 
     Returns:
-      tuple(ArgumentParser, parsed_args, unknown_args)
+      tuple(ArgumentParser, parsed_args)
     """
     cmdln_args = cmdln_args or []
-    parsed_args, unknown_args = parser.parse_known_args(*cmdln_args)
+    parsed_args = parser.parse_args(*cmdln_args)
     if hasattr(parsed_args, 'list_actions') and \
             callable(parsed_args.list_actions):
         parsed_args.list_actions()
-    return (parser, parsed_args, unknown_args)
+    return (parser, parsed_args)
 
 
 def get_actions(all_actions):
@@ -287,17 +284,10 @@ class Script(object):
           initial_config (dict, optional): initial config dict to apply
 
         Returns:
-          parsed_args from parse_known_args()
+          parsed_args from parse_args()
         """
-        cmdln_args = cmdln_args or []
-        (parsed_args, unknown_args) = parser.parse_known_args(*cmdln_args)
+        parsed_args = parse_args(parser, cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
-        # TODO parsed_args_defaults - config files - commandline args
-        # differentiate argparse defaults from cmdln set? - parser.get_default(arg)
-        if unknown_args:
-            raise ScriptHarnessFatal(
-                "Unknown arguments passed to script!", unknown_args
-            )
         self.config = self.dict_to_config(config)
         self.enable_actions(parsed_args)
 
@@ -352,9 +342,41 @@ class Script(object):
                      listener.__qualname__, timing, action_names)
         self.listeners[timing].append((listener, action_names))
 
+    def run_action(self, action):
+        """Run a specific action.
+
+        Args:
+          action (Action object).
+        """
+        logger = logging.getLogger(LOGGER_NAME)
+        if not action.enabled:
+            logger.info(STRINGS['actions']['skip_message'])
+            return
+        for listener, actions in iterate_pairs(self.listeners['pre_action']):
+            if actions and action.name not in actions:
+                continue
+            listener()
+        logger.info(STRINGS['actions']['run_message'])
+        try:
+            action.run(self.config)
+        except ScriptHarnessFatal:
+            for listener, actions in \
+                    iterate_pairs(self.listeners['post_fatal']):
+                if actions and action.name not in actions:
+                    continue
+                listener()
+            raise
+        for listener, actions in iterate_pairs(self.listeners['post_action']):
+            if actions and action.name not in actions:
+                continue
+
     def run(self):
         """Run all enabled actions.
         """
-        # TODO listeners
-        # TODO run actions with try/except for postfatal. send config as arg
-        pass
+        # TODO some sort of log msg
+        for listener, _ in iterate_pairs(self.listeners['pre_run']):
+            listener()
+        for action in self.actions:
+            self.run_action(action)
+        for listener, _ in iterate_pairs(self.listeners['post_run']):
+            listener()
