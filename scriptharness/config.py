@@ -3,21 +3,29 @@
 """Allow for flexible configuration.
 
 Attributes:
+  LOGGER_NAME (str): logging.getLogger name
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-#import argparse
+import argparse
+import logging
+import os
 import requests
 import six.moves.urllib as urllib
+import sys
 try:
     import simplejson as json
 except ImportError:
     import json
 
 from scriptharness import ScriptHarnessException
+from scriptharness.structures import iterate_pairs
 
 
-# parse_config_file {{{1
+LOGGER_NAME = "scriptharness.config"
+
+
+# parse_config_file() {{{1
 def parse_config_file(path):
     """Read a config file and return a dictionary.
 
@@ -113,6 +121,101 @@ def download_url(url, path=None, mode='wb'):
     return path
 
 
+# get_parser() {{{1
+def get_action_parser(all_actions):
+    """Create an action option parser from the action list.
+
+    Actions to run are specified as the argparse.REMAINDER options.
+
+    Args:
+      all_actions (list): a list of all possible Action objects for the script
+      **kwargs: additional kwargs for ArgumentParser
+
+    Returns:
+      ArgumentParser with action options
+    """
+    parser = argparse.ArgumentParser(add_help=False)
+    message = []
+    for name, enabled in iterate_pairs(all_actions):
+        string = "  "
+        if enabled:
+            string = "* "
+        string += name
+        message.append(string)
+    def list_actions():
+        """Helper function to list all actions (enabled shown with a '*')"""
+        print(os.linesep.join(message))
+        sys.exit(0)
+    parser.add_argument(
+        "--list-actions", action='store_const', const=list_actions,
+        help="List all actions (default prepended with '*') and exit."
+    )
+    parser.add_argument(
+        "--actions", nargs='+', choices=all_actions.keys(), metavar="ACTION",
+        help="Specify the actions to run."
+    )
+    return parser
+
+def get_config_parser():
+    """Create a config option parser.
+
+    Args:
+      kwargs: additional kwargs for ArgumentParser
+
+    Returns:
+      ArgumentParser with config options
+    """
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        '--config-file', '--cfg', '-c', action='append', dest='config_files',
+        metavar="CONFIG_FILE", help="Specify required config files/urls"
+    )
+    parser.add_argument(
+        '--opt-config-file', '--opt-cfg', action='append',
+        dest='opt_config_files', metavar="CONFIG_FILE",
+        help="Specify optional config files/urls"
+    )
+    return parser
+
+
+def get_parser(all_actions=None, parents=None, **kwargs):
+    """Create a script option parser.
+
+    Args:
+      parents (list, optional): ArgumentParsers to set as parents of the parser
+      **kwargs: additional kwargs for ArgumentParser
+
+    Returns:
+      ArgumentParser with config options
+    """
+    if parents is None:
+        parents = []
+        if all_actions:
+            parents.append(get_action_parser(all_actions))
+        parents.append(get_config_parser())
+    parser = argparse.ArgumentParser(parents=parents, **kwargs)
+    return parser
+
+
+def parse_args(parser, cmdln_args=None):
+    """Build the parser and parse the commandline args.
+
+    Args:
+      parser (ArgumentParser): specify the parser to use
+      cmdln_args (optional): override the commandline args with these
+
+    Returns:
+      tuple(ArgumentParser, parsed_args)
+    """
+    cmdln_args = cmdln_args or []
+    parsed_args = parser.parse_args(*cmdln_args)
+    if hasattr(parsed_args, 'list_actions') and \
+            callable(parsed_args.list_actions):
+        parsed_args.list_actions()
+    return (parser, parsed_args)
+
+
+# build_config {{{1
 def build_config(parser, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
 
@@ -137,8 +240,9 @@ def build_config(parser, parsed_args, initial_config=None):
     """
     config = {}
     cmdln_config = {}
-    resources = []
+    resources = {}
     initial_config = initial_config or {}
+    logger = logging.getLogger(LOGGER_NAME)
     for key, value in parsed_args.__dict__.items():
         if parser.get_default(key) == value:
             config[key] = value
@@ -147,10 +251,17 @@ def build_config(parser, parsed_args, initial_config=None):
     config.update(initial_config)
     for obj in cmdln_config, config:
         if 'config_files' in obj:
-            resources = obj['config_files']
-            break
-    for resource in resources:
+            resources['config_files'].setdefault(obj['config_files'])
+        if 'opt_config_files' in obj:
+            resources['opt_config_files'].setdefault(obj['opt_config_files'])
+    for resource in resources.get('config_files', []):
         config.update(parse_config_file(resource))
+    for resource in resources.get('opt_config_files', []):
+        try:
+            config.update(parse_config_file(resource))
+        except ScriptHarnessException:
+            logger.info("Can't read optional config file %s; skipping.",
+                        resource)
     if cmdln_config:
         config.update(cmdln_config)
     return config

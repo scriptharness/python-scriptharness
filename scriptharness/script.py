@@ -10,15 +10,12 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-import argparse
 from copy import deepcopy
 import logging
-import os
 from scriptharness import ScriptHarnessError, ScriptHarnessException, \
                           ScriptHarnessFatal
 import scriptharness.config as shconfig
 from scriptharness.structures import iterate_pairs, LoggingDict
-import sys
 import time
 
 
@@ -108,95 +105,6 @@ class Action(object):
 
 
 # Helper functions {{{1
-def get_action_parser(all_actions):
-    """Create an action option parser from the action list.
-
-    Actions to run are specified as the argparse.REMAINDER options.
-
-    Args:
-      all_actions (list): a list of all possible Action objects for the script
-      **kwargs: additional kwargs for ArgumentParser
-
-    Returns:
-      ArgumentParser with action options
-    """
-    parser = argparse.ArgumentParser(add_help=False)
-    message = []
-    for name, enabled in iterate_pairs(all_actions):
-        string = "  "
-        if enabled:
-            string = "* "
-        string += name
-        message.append(string)
-    def list_actions():
-        """Helper function to list all actions (enabled shown with a '*')"""
-        print(os.linesep.join(message))
-        sys.exit(0)
-    parser.add_argument(
-        "--list-actions", action='store_const', const=list_actions,
-        help="List all actions (default prepended with '*') and exit."
-    )
-    parser.add_argument(
-        "--actions", nargs='+', choices=all_actions.keys(), metavar="ACTION",
-        help="Specify the actions to run."
-    )
-    return parser
-
-def get_config_parser():
-    """Create a config option parser.
-
-    Args:
-      kwargs: additional kwargs for ArgumentParser
-
-    Returns:
-      ArgumentParser with config options
-    """
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument(
-        '--config-file', '--cfg', '-c', action='append', dest='config_files',
-        metavar="CONFIG_FILE", help="Specify required config files/urls"
-    )
-    # TODO optional config files
-    return parser
-
-
-def get_parser(all_actions=None, parents=None, **kwargs):
-    """Create a script option parser.
-
-    Args:
-      parents (list, optional): ArgumentParsers to set as parents of the parser
-      **kwargs: additional kwargs for ArgumentParser
-
-    Returns:
-      ArgumentParser with config options
-    """
-    if parents is None:
-        parents = []
-        if all_actions:
-            parents.append(get_action_parser(all_actions))
-        parents.append(get_config_parser())
-    parser = argparse.ArgumentParser(parents=parents, **kwargs)
-    return parser
-
-
-def parse_args(parser, cmdln_args=None):
-    """Build the parser and parse the commandline args.
-
-    Args:
-      parser (ArgumentParser): specify the parser to use
-      cmdln_args (optional): override the commandline args with these
-
-    Returns:
-      tuple(ArgumentParser, parsed_args)
-    """
-    cmdln_args = cmdln_args or []
-    parsed_args = parser.parse_args(*cmdln_args)
-    if hasattr(parsed_args, 'list_actions') and \
-            callable(parsed_args.list_actions):
-        parsed_args.list_actions()
-    return (parser, parsed_args)
-
-
 def get_actions(all_actions):
     """Build a tuple of Action objects for the script.
 
@@ -288,7 +196,7 @@ class Script(object):
         Returns:
           parsed_args from parse_args()
         """
-        parsed_args = parse_args(parser, cmdln_args)
+        parsed_args = shconfig.parse_args(parser, cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
         self.config = self.dict_to_config(config)
         self.enable_actions(parsed_args)
