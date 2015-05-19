@@ -25,6 +25,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from copy import deepcopy
 from scriptharness import ScriptHarnessException
+import six
 import logging
 import pprint
 
@@ -112,6 +113,30 @@ MUTED_LOGGING_STRINGS = {
         },
     },
 }
+
+
+def iterate_pairs(data):
+    """Iterate over pairs of a data structure.
+
+    Usage::  for key, value in iterate_pairs(data_structure)::
+
+    Args:
+      data (data structure): a dict, iterable-of-iterable pairs (e.g.
+        ((1,2), (3,4)), or a flat iterable.
+    """
+    if isinstance(data, dict):
+        if six.PY2:
+            iterable = data.iteritems()
+        else:
+            iterable = data.items()
+    else:
+        assert len(data) >= 1
+        if isinstance(data[0], (tuple, list)):
+            iterable = data
+        else:
+            assert len(data) >= 2
+            iterable = zip(data[::2], data[1::2])
+    return iterable
 
 
 # LoggingClasses and helpers {{{1
@@ -525,22 +550,13 @@ class LoggingDict(LoggingClass, dict):
 
     def update(self, args):
         changed_keys = []
-        if isinstance(args, dict):
-            for key, value in args.items():
-                changed_keys.append(self.log_update(key, value))
-                args[key] = add_logging_to_obj(
-                    value, logger_name=self.logger_name, level=self.level,
-                    muted=self.muted
-                )
-        else:
-            new_args = {}
-            # odd values are keys, even values are values
-            for key, value in zip(args[::2], args[1::2]):
-                changed_keys.append(self.log_update(key, value))
-                new_args[key] = add_logging_to_obj(
-                    value, logger_name=self.logger_name, level=self.level,
-                    muted=self.muted
-                )
+        new_args = {}
+        for key, value in iterate_pairs(args):
+            changed_keys.append(self.log_update(key, value))
+            new_args[key] = add_logging_to_obj(
+                value, logger_name=self.logger_name, level=self.level,
+                muted=self.muted
+            )
             args = new_args
         super(LoggingDict, self).update(args)
         for key, value in changed_keys:

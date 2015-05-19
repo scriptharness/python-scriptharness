@@ -14,6 +14,8 @@ from copy import deepcopy
 import logging
 import os
 from scriptharness import ScriptHarnessError, ScriptHarnessFatal
+from scriptharness.structures import iterate_pairs
+import sys
 
 
 LOGGER_NAME = "scriptharness.script"
@@ -157,7 +159,7 @@ class Action(object):
 # TODO action dependencies
 
 
-def get_action_parser(actions, **kwargs):
+def get_action_parser(all_actions, **kwargs):
     """Create an action option parser from the action list.
 
     Args:
@@ -167,17 +169,24 @@ def get_action_parser(actions, **kwargs):
     Returns:
       ArgumentParser with action options
     """
-    all_actions = []
-    default_actions = []
     kwargs.setdefault("add_help", False)
     parser = argparse.ArgumentParser(**kwargs)
-    for action in actions:
-        all_actions.append(action.name)
-        if action.enabled:
-            default_actions.append(action.name)
-        parser.add_argument(
-            # TODO
-        )
+    message = []
+    for name, enabled in iterate_pairs(all_actions):
+        string = "  "
+        if enabled:
+            string = "* "
+        string += name
+        message.append(string)
+        # TODO
+    def list_actions():
+        """Helper function to list all actions (enabled shown with a '*')"""
+        print(os.linesep.join(message))
+        sys.exit(0)
+    parser.add_argument(
+        "--list-actions", action='store_const', const=list_actions,
+        help="List all actions (default prepended with '*') and exit."
+    )
     return parser
 
 def get_config_parser(**kwargs):
@@ -210,7 +219,7 @@ def get_parser(parents=None, initial_config=None, **kwargs):
     parents = parents or []
     parser = argparse.ArgumentParser(parents=parents, **kwargs)
     # TODO populate
-    assert initial_config
+    #assert initial_config
     return parser
 
 
@@ -250,7 +259,7 @@ class Script(object):
           action tuple
         """
         action_list = []
-        for action_name, value in all_actions:
+        for action_name, value in all_actions.items():
             if isinstance(value, Action):
                 action = value
             else:
@@ -283,7 +292,7 @@ class Script(object):
         """
         # TODO parsed_args_defaults - config files - commandline args
         # differentiate argparse defaults from cmdln set? - parser.get_default(arg)
-        pass
+        self.config = (parser, parsed_args, unknown_args)
 
     def run(self):
         """Run all enabled actions.
