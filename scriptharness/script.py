@@ -6,6 +6,7 @@ Attributes:
   STRINGS (dict): strings for actions.  In the future these may be in a
     function to allow for localization.
   STATUSES (dict): constants to use for action statuses
+  VALID_LISTENER_TIMING (tuple): valid timing for Script.add_listener()
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -13,7 +14,7 @@ import argparse
 from copy import deepcopy
 import logging
 import os
-from scriptharness import ScriptHarnessError, ScriptHarnessFatal
+from scriptharness import ScriptHarnessError, ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict
 import sys
 
@@ -28,13 +29,19 @@ STRINGS = {
         "success_message": "Action %(name)s: finished successfully",
     }
 }
-
 STATUSES = {
     'notrun': -1,
     'success': 0,
     'error': 1,
     'fatal': 10,
 }
+VALID_LISTENER_TIMING = (
+    "pre_run",
+    "post_run",
+    "pre_action",
+    "post_action",
+    "post_fatal",
+)
 
 # Action {{{1
 class Action(object):
@@ -158,6 +165,7 @@ def get_config_parser():
     # TODO optional config files
     return parser
 
+
 def get_parser(all_actions=None, parents=None, initial_config=None, **kwargs):
     """Create a script option parser.
 
@@ -180,12 +188,12 @@ def get_parser(all_actions=None, parents=None, initial_config=None, **kwargs):
     #assert initial_config
     return parser
 
-def parse_args(all_actions=None, parser=None, initial_config=None,
-               cmdln_args=None, **kwargs):
+
+def parse_args(parser, initial_config=None, cmdln_args=None):
     """Build the parser and parse the commandline args.
 
     Args:
-      parser (ArgumentParser, optional): specify the parser to use
+      parser (ArgumentParser): specify the parser to use
       initial_config (dict): specify a script-level config to set defaults
         post-parser defaults, but pre-config files and commandline args
       cmdln_args (optional): override the commandline args with these
@@ -193,15 +201,13 @@ def parse_args(all_actions=None, parser=None, initial_config=None,
     Returns:
       tuple(ArgumentParser, parsed_args, unknown_args)
     """
-    if parser is None:
-        parser = get_parser(all_actions=all_actions,
-                            initial_config=initial_config, **kwargs)
     cmdln_args = cmdln_args or []
     parsed_args, unknown_args = parser.parse_known_args(*cmdln_args)
     if hasattr(parsed_args, 'list_actions') and \
             callable(parsed_args.list_actions):
         parsed_args.list_actions()
     return (parser, parsed_args, unknown_args)
+
 
 def get_actions(all_actions, parsed_args):
     """Build a tuple of Action objects for the script.
@@ -240,40 +246,95 @@ class Script(object):
       config (LoggingDict or ReadOnlyDict): the config for the script
       strict (bool): In strict mode, warnings are fatal; config is read-only.
       actions (tuple): Action objects to run.
+      listeners (dict): callbacks for run()
 
     # TODO setitem config throws if config
-    # TODO preflight, postflight, postfatal listeners
     """
-    def __init__(self, actions, strict=False, cmdln_args=None, **kwargs):
+    def __init__(self, actions, parser, strict=False, cmdln_args=None):
         """Script.__init__
 
         Args:
           actions (object): tuple of Action objects.
+          parser (ArgumentParser): parser to use
           cmdln_args (tuple, optional): override the commandline args
           **kwargs: sent to ArgumentParser() in parse_args()
         """
         self.strict = strict
-        (parser, parsed_args, unknown_args) = parse_args(
-            all_actions=all_actions, cmdln_args=cmdln_args, **kwargs
-        )
-        if self.strict and unknown_args:
-            raise ScriptHarnessFatal(
-                "Unknown arguments passed to script!", unknown_args
-            )
-        self.config = self.build_config(parser, parsed_args, unknown_args)
         self.actions = actions
+        self.listeners = {}
+        for timing in VALID_LISTENER_TIMING:
+            self.listeners.setdefault(timing, [])
+        self.build_config(parser, initial_config=kwargs.get('initial_config'))
         # TODO enable/disable actions based on parsed_args
         # TODO dump config
         # TODO dump actions
 
-    def build_config(self, parser, parsed_args, unknown_args):
+    def pre_config_lock(self):
+        """Called before locking self.config, when we use a ReadOnlyDict.
+
+        Here for subclassing.
+        """
+        pass
+
+    def build_config(self, parser, initial_config=None):
         """Create self.config from the parsed args.
         """
+        config = {}  # build it from the various files + options
+        (parsed_args, unknown_args) = parser.parse_args()
         # TODO parsed_args_defaults - config files - commandline args
         # differentiate argparse defaults from cmdln set? - parser.get_default(arg)
-        self.config = (parser, parsed_args, unknown_args)
+        if self.strict:
+            if unknown_args:
+                raise ScriptHarnessFatal(
+                    "Unknown arguments passed to script!", unknown_args
+                )
+            self.config = ReadOnlyDict(config)
+            self.pre_config_lock()
+            self.config.lock()
+        else:
+            self.config = self.get_logging_dict(config)
+
+    @staticmethod
+    def get_logging_dict(config):
+        """Here for subclassing.
+        """
+        return LoggingDict(config, logger_name=LOGGER_NAME)
+
+    def add_listener(self, listener, timing, action_names=None):
+        """Add a callback for specific script timing.
+
+        For pre_ and post_run, run at the beginning and end of the script,
+        respectively.
+
+        For pre_ and post_action, run at the beginning and end of actions,
+        respectively.  If action_names are specified, only run before/after
+        those action(s).
+
+        Args:
+          listener (function): Function to call at the right time.
+          timing (str): When to run the function.  Choices in
+            VALID_LISTENER_TIMING.
+          action_names (iterable): for pre/post action timing listeners,
+            only run before/after these action(s).
+        """
+        if timing not in VALID_LISTENER_TIMING:
+            raise ScriptHarnessException(
+                "Invalid timing for add_listener!", listener.__qualname__,
+                timing, action_names
+            )
+        if action_names and 'action' not in timing:
+            raise ScriptHarnessException(
+                "Only specify action_names for pre/post action timing!",
+                listener.__qualname__, timing, action_names
+            )
+        logger = logging.getLogger(LOGGER_NAME)
+        logger.debug("Adding listener to script: %s %s %s.",
+                     listener.__qualname__, timing, action_names)
+        self.listeners[timing].append((listener, action_names))
 
     def run(self):
         """Run all enabled actions.
         """
+        # TODO listeners
+        # TODO run actions with try/except for postfatal
         pass
