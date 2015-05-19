@@ -213,17 +213,19 @@ def get_actions(all_actions):
         action_list.append(action)
     return tuple(action_list)
 
-def get_actions_from_lists(all_actions, default_actions):
+def get_actions_from_lists(all_actions, default_actions=None):
     """Helper method to generate the ordered mapping for get_actions().
 
     Args:
       all_actions (list): ordered list of all action names
-      default_actions (list): list of all actions that are enabled by default
+      default_actions (list, optional): actions that are enabled by default
 
     Returns:
       tuple of Action objects
     """
-    if not set(default_actions).issubset(set(all_actions)):
+    if default_actions is None:
+        default_actions = all_actions[:]
+    elif not set(default_actions).issubset(set(all_actions)):
         raise ScriptHarnessException(
             "default_actions not a subset of all_actions!",
             default_actions, all_actions
