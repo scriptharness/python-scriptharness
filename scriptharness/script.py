@@ -18,6 +18,7 @@ from scriptharness import ScriptHarnessError, ScriptHarnessException, \
                           ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict
 import sys
+import time
 
 
 LOGGER_NAME = "scriptharness.script"
@@ -31,10 +32,9 @@ STRINGS = {
     }
 }
 STATUSES = {
-    'notrun': -1,
     'success': 0,
     'error': 1,
-    'fatal': 10,
+    'fatal': -1,
 }
 VALID_LISTENER_TIMING = (
     "pre_run",
@@ -49,68 +49,61 @@ class Action(object):
     """Action object.
 
     Attributes:
-      default_config (dict): the default configuration to use
       name (str): action name for logging
       enabled (bool): skip if not enabled
-      return_value (variable): set to None or the return value of the function
-      status (int): one of STATUSES
-      config (dict): the configuration of the action
+      strings (dict): strings for log messages
+      logger_name (str): logger name
+      function (function): function to call
+      history (dict): history of the action (return_value, status, timestamps)
     """
-    default_config = {
-        "args": [],
-        "kwargs": {},
-        "exception": ScriptHarnessError,
-    }
 
-    def __init__(self, name, function=None, enabled=False, config=None):
+    def __init__(self, name, function=None, enabled=False):
         self.name = name
         self.enabled = enabled
-        self.return_value = None
-        self.status = STATUSES['notrun']
-        self.config = deepcopy(self.default_config)
-        for key, value in STRINGS['action'].items():
-            self.config[key] = value
-        self.config['logger_name'] = "scriptharness.script.%s" % self.name
-        self.config["function"] = function or \
-                                  globals().get(self.name.replace('-', '_'))
-        config = config or {}
-        messages = []
-        for key, value in config.items():
-            if key not in self.config:
-                messages.append("Illegal key %s!" % key)
-                continue
-            self.config[key] = value
-        if messages:
-            raise ScriptHarnessError(os.linesep.join(messages))
-        self.config.update(config)
-
-    def get_logger(self):
-        """Shortcut method with subclassing in mind.
-        """
-        return logging.getLogger(self.config['logger_name'])
-
-    def run(self):
-        """Run the action.
-        """
-        logger = self.get_logger()
-        try:
-            self.return_value = self.config['function'](
-                *self.config['args'], **self.config['kwargs']
+        self.strings = deepcopy(STRINGS['action'])
+        self.logger_name = "scriptharness.script.%s" % self.name
+        self.history = {'timestamps': {}}
+        self.function = function or \
+                        globals().get(self.name.replace('-', '_'))
+        if not callable(self.function):
+            raise ScriptHarnessException(
+                "No callable function for action %s!" % name
             )
-        except self.config['exception'] as exc_info:
-            self.status = STATUSES['error']
-            logger.error(self.config['error_message'], {"name": self.name})
+
+    def run_function(self, config):
+        """Run self.function.  Called from run() for subclassing purposes.
+
+        Args:
+          config (data structure): the config from the calling Script
+            (passed from run()).
+        """
+        self.history['return_value'] = self.function(config)
+
+    def run(self, config):
+        """Run the action.
+
+        Args:
+          config (data structure): the config from the calling Script.
+        """
+        self.history['timestamps']['start_time'] = time.time()
+        logger = logging.getLogger(self.logger_name)
+        try:
+            self.history['return_value'] = self.run_function(config)
+        except ScriptHarnessError as exc_info:
+            self.history['status'] = STATUSES['error']
+            logger.error(self.strings['error_message'], {"name": self.name})
         except ScriptHarnessFatal as exc_info:
-            self.status = STATUSES['fatal']
-            logger.critical(self.config['fatal_message'], {
+            self.history['status'] = STATUSES['fatal']
+            logger.critical(self.strings['fatal_message'], {
                 "name": self.name,
                 "exc_info": exc_info,
             })
             raise
         else:
-            self.status = STATUSES['success']
-            logger.info(self.config['success_message'], {"name": self.name})
-        return self.status
+            self.history['status'] = STATUSES['success']
+            logger.info(self.strings['success_message'], {"name": self.name})
+        self.history['timestamps']['end_time'] = time.time()
+        return self.history['status']
 
 
 # Helper functions {{{1
@@ -206,31 +199,19 @@ def parse_args(parser, cmdln_args=None):
     return (parser, parsed_args, unknown_args)
 
 
-def get_actions(all_actions, parsed_args):
+def get_actions(all_actions):
     """Build a tuple of Action objects for the script.
-
-    This function assumes we use all default actions, unless the 'actions'
-    option is set in parsed_args, in which case that is the enabled action
-    list.
 
     Args:
       all_actions (object): ordered mapping of action_name:enabled bool,
         as accepted by iterate_pairs()
-      parsed_args, unknown_args (Namespace): from argparse
-        parse_known_args()
 
     Returns:
       action tuple
     """
     action_list = []
-    parsed_actions = None
-    if hasattr(parsed_args, 'actions'):
-        parsed_actions = parsed_args['actions']
     for action_name, value in iterate_pairs(all_actions):
-        enabled = value
-        if parsed_actions is not None:
-            enabled = action_name in parsed_actions
-        action = Action(action_name, enabled=enabled)
+        action = Action(action_name, enabled=value)
         action_list.append(action)
     return tuple(action_list)
 
@@ -251,18 +232,18 @@ class Script(object):
     """
     config = None
 
-    def __init__(self, all_actions, parser, **kwargs):
+    def __init__(self, actions, parser, **kwargs):
         """Script.__init__
 
         Args:
           actions (object): tuple of Action objects.
           parser (ArgumentParser): parser to use
         """
+        self.actions = actions
         self.listeners = {}
         for timing in VALID_LISTENER_TIMING:
             self.listeners.setdefault(timing, [])
-        parsed_args = self.build_config(parser, **kwargs)
-        self.actions = get_actions(all_actions, parsed_args)
+        self.build_config(parser, **kwargs)
         # TODO dump config
         # TODO dump actions
 
@@ -294,13 +275,26 @@ class Script(object):
                 "Unknown arguments passed to script!", unknown_args
             )
         self.config = self.dict_to_config(config)
-        return parsed_args
+        self.enable_actions(parsed_args)
 
     @staticmethod
     def dict_to_config(config):
         """Here for subclassing.
         """
         return LoggingDict(config, logger_name=LOGGER_NAME)
+
+    def enable_actions(self, parsed_args):
+        """If parsed_args has 'actions' set, use those as the enabled actions.
+
+        Args:
+          parsed_args (argparse Namespace)
+        """
+        if hasattr(parsed_args, 'actions'):
+            for action in self.actions:
+                if action.name in parsed_args.actions:
+                    action.enabled = True
+                else:
+                    action.enabled = False
 
     def add_listener(self, listener, timing, action_names=None):
         """Add a callback for specific script timing.
