@@ -14,7 +14,7 @@ from copy import deepcopy
 import logging
 import os
 from scriptharness import ScriptHarnessError, ScriptHarnessFatal
-from scriptharness.structures import iterate_pairs
+from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict
 import sys
 
 
@@ -36,6 +36,7 @@ STATUSES = {
     'fatal': 10,
 }
 
+# Action {{{1
 class Action(object):
     """Action object.
 
@@ -46,6 +47,8 @@ class Action(object):
       return_value (variable): set to None or the return value of the function
       status (int): one of STATUSES
       config (dict): the configuration of the action
+
+    # TODO action dependencies?
     """
     default_config = {
         "args": [],
@@ -53,23 +56,16 @@ class Action(object):
         "exception": ScriptHarnessError,
     }
 
-    def __init__(self, name, script, enabled=False, config=None):
+    def __init__(self, name, enabled=False, config=None):
         self.name = name
         self.enabled = enabled
-        self.script = script
         self.return_value = None
         self.status = STATUSES['notrun']
         self.config = deepcopy(self.default_config)
         for key, value in STRINGS['action'].items():
             self.config[key] = value
         self.config['logger_name'] = "scriptharness.script.%s" % self.name
-        self.config["function"] = globals().get(self.name)
-#        for timing in ('preflight', 'postflight', 'postfatal'):
-#            functions = []
-#            func_name = '%s_%s' % (timing, self.name)
-#            if globals().get(func_name):
-#                functions.append(globals()[func_name])
-#            self.config['%s_functions' % timing] = functions
+        self.config["function"] = globals().get(self.name)  # TODO s,-,_
         config = config or {}
         messages = []
         for key, value in config.items():
@@ -86,54 +82,10 @@ class Action(object):
         """
         return logging.getLogger(self.config['logger_name'])
 
-#    def preflight(self):
-#        if hasattr(self.config['preflight_functions'], '__iter__'):
-#            functions = self.config['preflight_functions']
-#        else:
-#            functions = [self.config['preflight_functions']
-#        for func in functions:
-#            if callable(func):
-#                func()
-#            elif func is not None:
-#                raise ScriptHarnessException(
-#                    "%s preflight function is not callable!" % self.name,
-#                    func
-#                )
-#
-#    def postflight(self):
-#        if hasattr(self.config['postflight_functions'], '__iter__'):
-#            functions = self.config['postflight_functions']
-#        else:
-#            functions = [self.config['postflight_functions']
-#        for func in functions:
-#            if callable(func):
-#                func()
-#            elif func is not None:
-#                raise ScriptHarnessException(
-#                    "%s postflight function is not callable!" % self.name,
-#                    func
-#                )
-#
-#    def postfatal(self):
-#        if hasattr(self.config['postflight_functions'], '__iter__'):
-#            functions = self.config['postflight_functions']
-#        else:
-#            functions = [self.config['postflight_functions']
-#        for func in functions:
-#            if callable(func):
-#                func()
-#            elif func is not None:
-#                log = self.get_logger()
-#                log.critical(
-#                    "%s postfatal function is not callable!" % self.name,
-#                    func
-#                )
-
     def run(self):
         """Run the action.
         """
         logger = self.get_logger()
-#        self.preflight()
         try:
             self.return_value = self.config['function'](
                 *self.config['args'], **self.config['kwargs']
@@ -152,25 +104,22 @@ class Action(object):
             self.status = STATUSES['success']
             logger.info(self.config['success_message'], {"name": self.name})
         return self.status
-#        self.postflight()
-# TODO manager like logging
-    # get_script(name=?), get_config(name=?)
-# TODO preflight, postflight, postfatal in action manager (_listeners?)
-# TODO action dependencies
 
 
-def get_action_parser(all_actions, **kwargs):
+# Helper functions {{{1
+def get_action_parser(all_actions):
     """Create an action option parser from the action list.
 
+    Actions to run are specified as the argparse.REMAINDER options.
+
     Args:
-      actions (list): a list of all possible Action objects for the script
-      kwargs: additional kwargs for ArgumentParser
+      all_actions (list): a list of all possible Action objects for the script
+      **kwargs: additional kwargs for ArgumentParser
 
     Returns:
       ArgumentParser with action options
     """
-    kwargs.setdefault("add_help", False)
-    parser = argparse.ArgumentParser(**kwargs)
+    parser = argparse.ArgumentParser(add_help=False)
     message = []
     for name, enabled in iterate_pairs(all_actions):
         string = "  "
@@ -178,7 +127,6 @@ def get_action_parser(all_actions, **kwargs):
             string = "* "
         string += name
         message.append(string)
-        # TODO
     def list_actions():
         """Helper function to list all actions (enabled shown with a '*')"""
         print(os.linesep.join(message))
@@ -187,9 +135,13 @@ def get_action_parser(all_actions, **kwargs):
         "--list-actions", action='store_const', const=list_actions,
         help="List all actions (default prepended with '*') and exit."
     )
+    parser.add_argument(
+        "--actions", nargs='+', choices=all_actions.keys(), metavar="ACTION",
+        help="Specify the actions to run."
+    )
     return parser
 
-def get_config_parser(**kwargs):
+def get_config_parser():
     """Create a config option parser.
 
     Args:
@@ -198,13 +150,15 @@ def get_config_parser(**kwargs):
     Returns:
       ArgumentParser with config options
     """
-    kwargs.setdefault("add_help", False)
-    parser = argparse.ArgumentParser(**kwargs)
-    # TODO required config files
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        '--config-file', '--cfg', '-c', action='append', dest='config_files',
+        metavar="CONFIG_FILE", help="Specify required config files/urls"
+    )
     # TODO optional config files
     return parser
 
-def get_parser(parents=None, initial_config=None, **kwargs):
+def get_parser(all_actions=None, parents=None, initial_config=None, **kwargs):
     """Create a script option parser.
 
     Args:
@@ -216,13 +170,65 @@ def get_parser(parents=None, initial_config=None, **kwargs):
     Returns:
       ArgumentParser with config options
     """
-    parents = parents or []
+    if parents is None:
+        parents = []
+        if all_actions:
+            parents.append(get_action_parser(all_actions))
+        parents.append(get_config_parser())
     parser = argparse.ArgumentParser(parents=parents, **kwargs)
     # TODO populate
     #assert initial_config
     return parser
 
+def parse_args(all_actions=None, parser=None, initial_config=None,
+               cmdln_args=None, **kwargs):
+    """Build the parser and parse the commandline args.
 
+    Args:
+      parser (ArgumentParser, optional): specify the parser to use
+      initial_config (dict): specify a script-level config to set defaults
+        post-parser defaults, but pre-config files and commandline args
+      cmdln_args (optional): override the commandline args with these
+
+    Returns:
+      tuple(ArgumentParser, parsed_args, unknown_args)
+    """
+    if parser is None:
+        parser = get_parser(all_actions=all_actions,
+                            initial_config=initial_config, **kwargs)
+    cmdln_args = cmdln_args or []
+    parsed_args, unknown_args = parser.parse_known_args(*cmdln_args)
+    if hasattr(parsed_args, 'list_actions') and \
+            callable(parsed_args.list_actions):
+        parsed_args.list_actions()
+    return (parser, parsed_args, unknown_args)
+
+def get_actions(all_actions, parsed_args):
+    """Build a tuple of Action objects for the script.
+
+    The simple
+
+    Args:
+      all_actions (object): ordered mapping of action_name:enabled bool,
+        as accepted by iterate_pairs()
+      parsed_args, unknown_args (Namespace): from argparse
+        parse_known_args()
+
+    Returns:
+      action tuple
+    """
+    # TODO raise if unknown action
+    action_list = []
+    for action_name, value in all_actions.items():
+        if isinstance(value, Action):
+            action = value
+        else:
+            action = Action(action_name, enabled=value)
+        action_list.append(action)
+    return tuple(action_list)
+
+
+# Script {{{1
 class Script(object):
     """This maintains the context of the config + actions.
 
@@ -231,61 +237,34 @@ class Script(object):
     it makes sense.
 
     Attributes:
-      actions (tuple): Action objects to run.
       config (LoggingDict or ReadOnlyDict): the config for the script
-    """
+      strict (bool): In strict mode, warnings are fatal; config is read-only.
+      actions (tuple): Action objects to run.
+
     # TODO setitem config throws if config
-    def __init__(self, all_actions=None, *args, **kwargs):
-        default_config = {
-            "logger_name": LOGGER_NAME,
-        }
-        self.actions = self.get_actions(all_actions)
-        (parser, parsed_args, unknown_args) = self.parse_args(*args, **kwargs)
+    # TODO preflight, postflight, postfatal listeners
+    """
+    def __init__(self, actions, strict=False, cmdln_args=None, **kwargs):
+        """Script.__init__
+
+        Args:
+          actions (object): tuple of Action objects.
+          cmdln_args (tuple, optional): override the commandline args
+          **kwargs: sent to ArgumentParser() in parse_args()
+        """
+        self.strict = strict
+        (parser, parsed_args, unknown_args) = parse_args(
+            all_actions=all_actions, cmdln_args=cmdln_args, **kwargs
+        )
+        if self.strict and unknown_args:
+            raise ScriptHarnessFatal(
+                "Unknown arguments passed to script!", unknown_args
+            )
         self.config = self.build_config(parser, parsed_args, unknown_args)
-        # TODO toggle actions on/off
-        # TODO set self.config
+        self.actions = actions
+        # TODO enable/disable actions based on parsed_args
         # TODO dump config
         # TODO dump actions
-        # TODO strictness allows for ReadOnlyDict
-        #      (add ReadOnlyDict pre_config_lock/lock support)
-
-    def get_actions(self, all_actions):
-        """Build a tuple of Action objects for the script.
-
-        Args:
-          all_actions (dict): a dict of action_name:enabled bool
-
-        Returns:
-          action tuple
-        """
-        action_list = []
-        for action_name, value in all_actions.items():
-            if isinstance(value, Action):
-                action = value
-            else:
-                action = Action(self, action_name, enabled=value)
-            action_list.append(action)
-        return tuple(action_list)
-
-    def parse_args(self, parser=None, initial_config=None, *args):
-        """Build the parser and parse the commandline args.
-
-        Args:
-          parser (ArgumentParser, optional): specify the parser to use
-          initial_config (dict): specify a script-level config to set defaults
-            post-parser defaults, but pre-config files and commandline args
-          *args (optional): override the commandline args with these
-
-        Returns:
-          tuple(ArgumentParser, parsed_args, unknown_args)
-        """
-        if parser is None:
-            action_parser = get_action_parser(self.actions)
-            config_parser = get_config_parser()
-            parser = get_parser(parents=[action_parser, config_parser],
-                                initial_config=initial_config)
-        parsed_args, unknown_args = parser.parse_known_args(args)
-        return (parser, parsed_args, unknown_args)
 
     def build_config(self, parser, parsed_args, unknown_args):
         """Create self.config from the parsed args.
@@ -298,14 +277,3 @@ class Script(object):
         """Run all enabled actions.
         """
         pass
-
-# Quick n dirty tests
-if __name__ == '__main__':
-    SCRIPT = Script(all_actions={
-        "clobber": False,
-        "pull": False,
-        "build": True,
-        "package": True,
-        "upload": False,
-        "notify": False,
-    })
