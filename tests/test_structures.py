@@ -466,73 +466,115 @@ class TestLoggingList(TestLoggingClass):
             )
         return log_contents
 
+    def helper_delitem(self, item, loglist, strings):
+        """Helper method to test muted+unmuted delitem.
+        """
+        del loglist[item]
+        self.verify_log([strings['delitem'] % {"item": item}] + \
+                        self.add_log_self(loglist, strings))
+
     @mock.patch('scriptharness.structures.logging')
-    def test_delitem(self, mock_logging):
-        """Test logging list delitem
+    def test_unmuted_delitem(self, mock_logging):
+        """Test logging list delitem, unmuted
         """
         for item in (2, 1, slice(0, 3), len(LOGGING_CONTROL_LIST) - 1):
+            self.get_logger_replacement(mock_logging)
             unmuted_loglist = get_logging_list(name=None)
+            self.helper_delitem(item, unmuted_loglist, self.strings)
+
+    @mock.patch('scriptharness.structures.logging')
+    def test_muted_delitem(self, mock_logging):
+        """Test logging list delitem, muted
+        """
+        for item in (2, 1, slice(0, 3), len(LOGGING_CONTROL_LIST) - 1):
+            self.get_logger_replacement(mock_logging)
             muted_loglist = get_logging_list(name=None, muted=True)
-            for loglist, strings in ((unmuted_loglist, self.strings),
-                                     (muted_loglist, self.muted_strings)):
-                self.get_logger_replacement(mock_logging)
-                del loglist[item]
-                self.verify_log([strings['delitem'] % {"item": item}] + \
-                                self.add_log_self(loglist, strings))
+            self.helper_delitem(item, muted_loglist, self.muted_strings)
+
+    def helper_setitem(self, position, loglist, strings):
+        """Helper method to test muted+unmuted setitem.
+        """
+        loglist[position] = []
+        self.verify_log(
+            [strings['setitem'] % {
+                "position": position,
+                "item": [],
+            }] + self.add_log_self(loglist, strings)
+        )
+        self.assertTrue(isinstance(loglist[position],
+                                   structures.LoggingClass))
+        self.assertEqual(loglist.muted, loglist[position].muted)
 
     @mock.patch('scriptharness.structures.logging')
-    def test_setitem(self, mock_logging):
-        """Test logging list setitem
+    def test_unmuted_setitem(self, mock_logging):
+        """Test logging list setitem, unmuted
         """
         unmuted_loglist = get_logging_list(name=None)
-        muted_loglist = get_logging_list(name=None, muted=True)
-        for loglist, strings in ((unmuted_loglist, self.strings),
-                                 (muted_loglist, self.muted_strings)):
-            for position in 1, 2:
-                self.get_logger_replacement(mock_logging)
-                loglist[position] = []
-                self.verify_log(
-                    [strings['setitem'] % {
-                        "position": position,
-                        "item": [],
-                    }] + self.add_log_self(loglist, strings)
-                )
-                self.assertTrue(isinstance(loglist[position],
-                                           structures.LoggingClass))
-                self.assertEqual(loglist.muted, loglist[position].muted)
-
-    @mock.patch('scriptharness.structures.logging')
-    def test_append(self, mock_logging):
-        """Test logging list append
-        """
-        unmuted_loglist = get_logging_list(name=None)
-        muted_loglist = get_logging_list(name=None, muted=True)
-        for loglist, strings in ((unmuted_loglist, self.strings),
-                                 (muted_loglist, self.muted_strings)):
+        for position in 1, 2:
             self.get_logger_replacement(mock_logging)
-            loglist.append([])
-            self.verify_log([strings['append'] % {"item": []}] + \
-                            self.add_log_self(loglist, strings))
-            self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
-            self.assertEqual(loglist.muted, loglist[-1].muted)
+            self.helper_setitem(position, unmuted_loglist, self.strings)
 
     @mock.patch('scriptharness.structures.logging')
-    def test_extend(self, mock_logging):
-        """Test logging list extend
+    def test_muted_setitem(self, mock_logging):
+        """Test logging list setitem, muted
+        """
+        muted_loglist = get_logging_list(name=None, muted=True)
+        for position in 1, 2:
+            self.get_logger_replacement(mock_logging)
+            self.helper_setitem(position, muted_loglist, self.muted_strings)
+
+    def helper_append(self, loglist, strings):
+        """Helper method to test muted+unmuted append.
+        """
+        loglist.append([])
+        self.verify_log([strings['append'] % {"item": []}] + \
+                         self.add_log_self(loglist, strings))
+        self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
+        self.assertEqual(loglist.muted, loglist[-1].muted)
+
+    @mock.patch('scriptharness.structures.logging')
+    def test_unmuted_append(self, mock_logging):
+        """Test logging list append, unmuted
         """
         unmuted_loglist = get_logging_list(name=None)
+        self.get_logger_replacement(mock_logging)
+        self.helper_append(unmuted_loglist, self.strings)
+
+    @mock.patch('scriptharness.structures.logging')
+    def test_muted_append(self, mock_logging):
+        """Test logging list append, muted
+        """
         muted_loglist = get_logging_list(name=None, muted=True)
-        for loglist, strings in ((unmuted_loglist, self.strings),
-                                 (muted_loglist, self.muted_strings)):
-            self.get_logger_replacement(mock_logging)
-            extend = ['a', 'b', []]
-            loglist.extend(extend)
-            self.verify_log(
-                [strings['extend'] % {"item": pprint.pformat(extend)}] + \
-                self.add_log_self(loglist, strings)
-            )
-            self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
-            self.assertEqual(loglist.muted, loglist[-1].muted)
+        self.get_logger_replacement(mock_logging)
+        self.helper_append(muted_loglist, self.muted_strings)
+
+    def helper_extend(self, loglist, strings):
+        """Helper method to test muted+unmuted append.
+        """
+        extend = ['a', 'b', []]
+        loglist.extend(extend)
+        self.verify_log(
+            [strings['extend'] % {"item": pprint.pformat(extend)}] + \
+            self.add_log_self(loglist, strings)
+        )
+        self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
+        self.assertEqual(loglist.muted, loglist[-1].muted)
+
+    @mock.patch('scriptharness.structures.logging')
+    def test_unmuted_extend(self, mock_logging):
+        """Test logging list extend, unmuted
+        """
+        unmuted_loglist = get_logging_list(name=None)
+        self.get_logger_replacement(mock_logging)
+        self.helper_extend(unmuted_loglist, self.strings)
+
+    @mock.patch('scriptharness.structures.logging')
+    def test_muted_extend(self, mock_logging):
+        """Test logging list extend, muted
+        """
+        muted_loglist = get_logging_list(name=None, muted=True)
+        self.get_logger_replacement(mock_logging)
+        self.helper_extend(muted_loglist, self.muted_strings)
 
     @mock.patch('scriptharness.structures.logging')
     def test_insert(self, mock_logging):
