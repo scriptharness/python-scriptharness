@@ -219,11 +219,11 @@ def parse_args(parser, cmdln_args=None):
       tuple(ArgumentParser, parsed_args)
     """
     cmdln_args = cmdln_args or []
-    parsed_args = parser.parse_args(*cmdln_args)
+    parsed_args = parser.parse_args(cmdln_args)
     if hasattr(parsed_args, 'list_actions') and \
             callable(parsed_args.list_actions):
         parsed_args.list_actions()
-    return (parser, parsed_args)
+    return parsed_args
 
 
 # build_config {{{1

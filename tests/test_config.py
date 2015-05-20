@@ -4,6 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import argparse
 from contextlib import contextmanager
 import json
 import mock
@@ -17,7 +18,7 @@ import sys
 import time
 import unittest
 
-from . import TEST_ACTIONS
+from . import TEST_ACTIONS, stdstar_redirected
 
 if six.PY3:
     BUILTIN = 'builtins'
@@ -113,6 +114,15 @@ class TestUrlFunctionss(unittest.TestCase):
             contents = filehandle.read()
         self.assertEqual(contents, orig_contents)
 
+    def test_empty_download_url(self):
+        """Download an empty file from a local webserver.
+        """
+        with start_webserver() as (_, host):
+            shconfig.download_url("%s/empty_file" % host, path=TEST_FILE)
+        with open(TEST_FILE) as filehandle:
+            contents = filehandle.read()
+        self.assertEqual(contents, "")
+
     def test_timeout_download_url(self):
         """Time out in download_url()
         """
@@ -172,10 +182,9 @@ class TestParserFunctions(unittest.TestCase):
     def test_list_actions(mock_print):
         """Test --list-actions
         """
-        parser = shconfig.get_action_parser(TEST_ACTIONS)
-        args = parser.parse_args(["--list-actions"])
+        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
         try:
-            args.list_actions()
+            shconfig.parse_args(parser, cmdln_args=["--list-actions"])
         except SystemExit:
             pass
         mock_print.assert_called_once_with(
@@ -184,3 +193,28 @@ class TestParserFunctions(unittest.TestCase):
                  "  notify"]
             )
         )
+
+    def test_config_parser(self):
+        """Test config parser
+        """
+        parser = shconfig.get_config_parser()
+        args = parser.parse_args("-c file1 -c file2 -c file3".split())
+        self.assertEqual(
+            args.config_files,
+            ["file1", "file2", "file3"]
+        )
+
+    def test_no_actions(self):
+        """Test no actions, get_parser no kwargs
+        """
+        parser = shconfig.get_parser()
+        with stdstar_redirected(os.devnull):
+            self.assertRaises(SystemExit, parser.parse_args, ["--list-actions"])
+
+    def test_no_actions2(self):
+        """Test no actions, setting get_parser parents
+        """
+        parents = []
+        parser = shconfig.get_parser(parents=parents)
+        parsed_args = shconfig.parse_args(parser)
+        self.assertEqual(parsed_args, argparse.Namespace())
