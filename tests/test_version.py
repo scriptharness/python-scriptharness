@@ -7,9 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 
 import scriptharness.version
 from scriptharness.exceptions import ScriptHarnessException
-import six
 import unittest
-from . import UNICODE_STRINGS
 
 
 class TestVersionString(unittest.TestCase):

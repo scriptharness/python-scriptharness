@@ -204,6 +204,7 @@ class LogMethod(object):
             raise ScriptHarnessException(os.linesep.join(messages))
 
     def __call__(self, func, *args, **kwargs):
+        # pylint: disable=anomalous-backslash-in-string
         """Wrap the function call as a decorator.
 
         When there are decorator arguments, \_\_call\_\_ is only called once, at
