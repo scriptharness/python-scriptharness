@@ -20,6 +20,7 @@ except ImportError:
     import json
 
 from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.actions import Action
 from scriptharness.structures import iterate_pairs
 
 
@@ -132,13 +133,29 @@ def download_url(url, path=None, timeout=None, mode='wb'):
 
 
 # get_parser() {{{1
+def get_list_actions_string(action_name, enabled):
+    """Build a string for --list-actions output.
+
+    Args:
+      action_name (str):  name of the action
+      enabled (bool): whether the action is enabled by default
+    """
+    string = "  "
+    if enabled:
+        string = "* "
+    string += action_name
+    return string
+
 def get_action_parser(all_actions):
     """Create an action option parser from the action list.
 
     Actions to run are specified as the argparse.REMAINDER options.
 
     Args:
-      all_actions (list): a list of all possible Action objects for the script
+      all_actions (iterable): this is either all Action objects for the
+        script, or a data structure of pairs of action_name:enabled to pass
+        to iterate_pairs().
+
       **kwargs: additional kwargs for ArgumentParser
 
     Returns:
@@ -147,13 +164,19 @@ def get_action_parser(all_actions):
     parser = argparse.ArgumentParser(add_help=False)
     message = []
     choices = []
-    for name, enabled in iterate_pairs(all_actions):
-        string = "  "
-        if enabled:
-            string = "* "
-        string += name
-        message.append(string)
-        choices.append(name)
+    for action in all_actions:
+        if isinstance(action, Action):
+            choices.append(action.name)
+            message.append(
+                get_list_actions_string(action.name, action.enabled)
+            )
+        else:
+            message = []
+            choices = []
+            for name, enabled in iterate_pairs(all_actions):
+                message.append(get_list_actions_string(name, enabled))
+                choices.append(name)
+            break
     def list_actions():
         """Helper function to list all actions (enabled shown with a '*')"""
         print(os.linesep.join(message))
