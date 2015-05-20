@@ -5,7 +5,6 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from contextlib import contextmanager
-import mock
 import os
 import requests
 import scriptharness.config as shconfig
@@ -26,6 +25,8 @@ def nuke_test_files():
 
 @contextmanager
 def start_webserver():
+    """Start a webserver for local requests testing
+    """
     port = 8001  # TODO get free port
     max_wait = 5
     wait = 0
@@ -53,13 +54,12 @@ def start_webserver():
 class TestUrlFunctionss(unittest.TestCase):
     """Test url functions
     """
-
-    @staticmethod
-    def setUp():
+    def setUp(self):
+        assert self  # silence pylint
         nuke_test_files()
 
-    @staticmethod
-    def tearDown():
+    def tearDown(self):
+        assert self  # silence pylint
         nuke_test_files()
 
     def test_basic_url_filename(self):
@@ -85,11 +85,13 @@ class TestUrlFunctionss(unittest.TestCase):
             self.assertFalse(shconfig.is_url(url))
 
     def test_successful_download_url(self):
+        """Download a file from a local webserver.
+        """
         with start_webserver() as (path, host):
             with open(os.path.join(path, "test_config.json")) as filehandle:
                 orig_contents = filehandle.read()
-            shconfig.download_url("%s/test_config.json" % host,
-                                  path=TEST_FILE)
-        with open(TEST_FILE) as filehandle:
+            shconfig.download_url("%s/test_config.json" % host)
+        with open("test_config.json") as filehandle:
             contents = filehandle.read()
+        os.remove("test_config.json")
         self.assertEqual(contents, orig_contents)
