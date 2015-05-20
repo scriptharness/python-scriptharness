@@ -4,14 +4,64 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from contextlib import contextmanager
+import mock
+import os
+import requests
 import scriptharness.config as shconfig
+import subprocess
+import sys
+import time
 import unittest
 
+
+TEST_FILE = '_test_config_file'
+TEST_FILE2 = '_test_config_file2'
+
+def nuke_test_files():
+    """Cleanup helper function"""
+    for path in TEST_FILE, TEST_FILE2:
+        if os.path.exists(path):
+            os.remove(path)
+
+@contextmanager
+def start_webserver():
+    port = 8001  # TODO get free port
+    max_wait = 5
+    wait = 0
+    interval = .02
+    host = "http://localhost:%s" % str(port)
+    dir_path = os.path.join(os.path.dirname(__file__), 'http')
+    file_path = os.path.join(dir_path, 'cgi_server.py')
+    proc = subprocess.Popen([sys.executable, file_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while wait < max_wait:
+        try:
+            response = requests.get(host)
+            if response.status_code == 200:
+                break
+        except requests.exceptions.ConnectionError:
+            pass
+        time.sleep(interval)
+        wait += interval
+    try:
+        yield (dir_path, host)
+    finally:
+        proc.terminate()
 
 # TestUrlFunctions {{{1
 class TestUrlFunctionss(unittest.TestCase):
     """Test url functions
     """
+
+    @staticmethod
+    def setUp():
+        nuke_test_files()
+
+    @staticmethod
+    def tearDown():
+        nuke_test_files()
+
     def test_basic_url_filename(self):
         """Filename from a basic url"""
         url = "http://example.com/bar/baz"
@@ -33,3 +83,13 @@ class TestUrlFunctionss(unittest.TestCase):
         for url in ("example.com", "/usr/local/bin/python"):
             print(url)
             self.assertFalse(shconfig.is_url(url))
+
+    def test_successful_download_url(self):
+        with start_webserver() as (path, host):
+            with open(os.path.join(path, "test_config.json")) as filehandle:
+                orig_contents = filehandle.read()
+            shconfig.download_url("%s/test_config.json" % host,
+                                  path=TEST_FILE)
+        with open(TEST_FILE) as filehandle:
+            contents = filehandle.read()
+        self.assertEqual(contents, orig_contents)
