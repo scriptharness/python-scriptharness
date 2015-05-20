@@ -171,6 +171,11 @@ class Script(object):
           actions (tuple): Action objects to run.
           parser (ArgumentParser): parser to use
         """
+        for action in actions:
+            if not isinstance(action, Action):
+                raise ScriptHarnessException(
+                    "Script action is not an instance of Action!", action
+                )
         self.actions = actions
         self.listeners = {}
         for timing in VALID_LISTENER_TIMING:
