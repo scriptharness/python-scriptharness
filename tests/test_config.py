@@ -111,3 +111,15 @@ class TestUrlFunctionss(unittest.TestCase):
                 shconfig.download_url, "%s/cgi-bin/timeout.cgi" % host,
                 timeout=.1
             )
+
+    def test_ioerror_download_url(self):
+        """Download with unwritable target file.
+        """
+        with start_webserver() as (path, host):
+            with open(os.path.join(path, "test_config.json")) as filehandle:
+                orig_contents = filehandle.read()
+            self.assertRaises(
+                ScriptHarnessException,
+                shconfig.download_url,
+                "%s/test_config.json" % host, path=path
+            )

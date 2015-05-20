@@ -112,10 +112,7 @@ def download_url(url, path=None, timeout=None, mode='wb'):
                 if chunk:
                     filehandle.write(chunk)
                     filehandle.flush()
-        return
-    except requests.exceptions.Timeout as exc_info:
-        raise ScriptHarnessException("Time out accessing %s" % url,
-                                     exc_info)
+        return path
     except requests.exceptions.RequestException as exc_info:
         raise ScriptHarnessException("Error downloading from url %s" % url,
                                      exc_info)
@@ -124,7 +121,6 @@ def download_url(url, path=None, timeout=None, mode='wb'):
             "Error writing downloaded contents to path %s" % path,
             exc_info
         )
-    return path
 
 
 # get_parser() {{{1
