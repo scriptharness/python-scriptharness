@@ -1,14 +1,8 @@
 scriptharness package
 =====================
 
-
-Module contents
----------------
-
-.. automodule:: scriptharness
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Submodules
+----------
 
 scriptharness.config module
 ---------------------------
@@ -42,3 +36,11 @@ scriptharness.structures module
     :undoc-members:
     :show-inheritance:
 
+
+Module contents
+---------------
+
+.. automodule:: scriptharness
+    :members:
+    :undoc-members:
+    :show-inheritance:
