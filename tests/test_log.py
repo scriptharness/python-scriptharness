@@ -14,10 +14,10 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
-import scriptharness as sh
 import scriptharness.log as log
 import unittest
-from scriptharness import ScriptHarnessException, ScriptHarnessError
+from scriptharness.exceptions import ScriptHarnessException, \
+    ScriptHarnessError, to_unicode
 from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement, \
               stdstar_redirected
 
@@ -517,7 +517,7 @@ class TestUnicode(unittest.TestCase):
                     logger.info(string)
             with open(TEST_FILE) as filehandle:
                 line = filehandle.read().rstrip()
-                self.assertEqual(string, sh.to_unicode(line))
+                self.assertEqual(string, to_unicode(line))
 
     @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_console(self):
@@ -529,4 +529,4 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
                 console_line = console_fh.read().rstrip()
-                self.assertEqual(string, sh.to_unicode(console_line))
+                self.assertEqual(string, to_unicode(console_line))

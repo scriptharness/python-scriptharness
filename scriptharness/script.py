@@ -13,8 +13,8 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from copy import deepcopy
 import logging
-from scriptharness import ScriptHarnessError, ScriptHarnessException, \
-                          ScriptHarnessFatal
+from scriptharness.exceptions import ScriptHarnessError, \
+    ScriptHarnessException, ScriptHarnessFatal
 import scriptharness.config as shconfig
 from scriptharness.structures import iterate_pairs, LoggingDict
 import time

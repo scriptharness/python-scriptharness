@@ -24,7 +24,7 @@ Attributes:
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from copy import deepcopy
-from scriptharness import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException
 import six
 import logging
 import pprint

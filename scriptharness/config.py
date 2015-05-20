@@ -19,7 +19,7 @@ try:
 except ImportError:
     import json
 
-from scriptharness import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException
 from scriptharness.structures import iterate_pairs
 
 

@@ -19,7 +19,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import mock
 import pprint
-import scriptharness as sh
+from scriptharness.exceptions import ScriptHarnessException
 import scriptharness.structures as structures
 import unittest
 from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement
@@ -218,9 +218,9 @@ class TestGetStrings(unittest.TestCase):
 
     def test_unknown(self):
         """100% coverage"""
-        self.assertRaises(sh.ScriptHarnessException, structures.get_strings,
+        self.assertRaises(ScriptHarnessException, structures.get_strings,
                           'unknown_type')
-        self.assertRaises(sh.ScriptHarnessException, structures.get_strings,
+        self.assertRaises(ScriptHarnessException, structures.get_strings,
                           {})
 
 # TestFullNames {{{2
@@ -836,37 +836,37 @@ class TestLockedROD(unittest.TestCase):
         """locked popitem() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod.popitem)
+        self.assertRaises(ScriptHarnessException, rod.popitem)
 
     def test_update(self):
         """locked update() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod.update, {})
+        self.assertRaises(ScriptHarnessException, rod.update, {})
 
     def test_set_default(self):
         """locked setdefault() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod.setdefault, {})
+        self.assertRaises(ScriptHarnessException, rod.setdefault, {})
 
     def test_pop(self):
         """locked pop() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod.pop)
+        self.assertRaises(ScriptHarnessException, rod.pop)
 
     def test_clear(self):
         """locked clear() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod.clear)
+        self.assertRaises(ScriptHarnessException, rod.clear)
 
     def test_second_level_dict_update(self):
         """locked child dict update() should raise
         """
         rod = get_locked_rod()
-        self.assertRaises(sh.ScriptHarnessException, rod['c'].update, {})
+        self.assertRaises(ScriptHarnessException, rod['c'].update, {})
 
     def test_second_level_list_pop(self):
         """locked child list pop() should raise
@@ -915,5 +915,5 @@ class TestDeepcopyROD(unittest.TestCase):
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
         rod2.lock()
-        with self.assertRaises(sh.ScriptHarnessException):
+        with self.assertRaises(ScriptHarnessException):
             rod2['e'] = 'hey'

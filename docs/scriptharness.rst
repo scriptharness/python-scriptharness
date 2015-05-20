@@ -12,6 +12,14 @@ scriptharness.config module
     :undoc-members:
     :show-inheritance:
 
+scriptharness.exceptions module
+-------------------------------
+
+.. automodule:: scriptharness.exceptions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 scriptharness.log module
 ------------------------
 
@@ -32,6 +40,14 @@ scriptharness.structures module
 -------------------------------
 
 .. automodule:: scriptharness.structures
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+scriptharness.version module
+----------------------------
+
+.. automodule:: scriptharness.version
     :members:
     :undoc-members:
     :show-inheritance:

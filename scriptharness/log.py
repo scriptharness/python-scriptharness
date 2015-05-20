@@ -16,7 +16,7 @@ import logging
 import os
 import six
 
-from scriptharness import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException
 
 
 DEFAULT_DATEFMT = '%H:%M:%S'

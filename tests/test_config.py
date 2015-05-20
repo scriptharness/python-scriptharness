@@ -11,8 +11,8 @@ import json
 import mock
 import os
 import requests
-from scriptharness import ScriptHarnessException
 import scriptharness.config as shconfig
+from scriptharness.exceptions import ScriptHarnessException
 import six
 import subprocess
 import sys

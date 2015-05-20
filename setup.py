@@ -6,7 +6,7 @@ setup.py for scriptharness
 from setuptools import setup, find_packages
 import sys
 
-import scriptharness
+import scriptharness.version
 
 dependencies = [
     'requests',
@@ -26,7 +26,7 @@ elif sys.version_info < (2, 7):
 
 setup(
     name='scriptharness',
-    version=scriptharness.__version_string__,
+    version=scriptharness.version.__version_string__,
     description='A generic logging, configuration, and workflow harness for scripts.',
     author='Aki Sasaki',
     author_email='aki@escapewindow.com',
