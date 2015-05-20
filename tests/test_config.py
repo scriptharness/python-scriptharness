@@ -237,7 +237,6 @@ class TestParserFunctions(unittest.TestCase):
         parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
         parser.add_argument("--test-default", default="default")
         parser.add_argument("--override-default", default="default")
-        kwargs = {}
         parsed_args = shconfig.parse_args(parser, cmdln_args=cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
         config2.update(contents)
