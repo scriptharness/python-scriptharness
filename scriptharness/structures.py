@@ -118,11 +118,10 @@ MUTED_LOGGING_STRINGS = {
 def iterate_pairs(data):
     """Iterate over pairs of a data structure.
 
-    Usage::  for key, value in iterate_pairs(data_structure)::
+    Usage:: for key, value in iterate_pairs(data_structure)::
 
     Args:
-      data (data structure): a dict, iterable-of-iterable pairs (e.g.
-        ((1,2), (3,4)), or a flat iterable.
+      data (data structure): a dict, iterable-of-iterable pairs
     """
     if isinstance(data, dict):
         if six.PY2:
@@ -183,8 +182,7 @@ class LoggingClass(object):
         key.  For everything else, the name is the index.
 
         name (str): set self.name, for later logging purposes.
-        parent (Logging* object, optional): set self.parent, for later logging
-          purposes.
+        parent (Logging*, optional): set self.parent, for logging purposes.
         """
         if name is not None:
             self.name = name
@@ -212,13 +210,13 @@ class LoggingClass(object):
 
         Args:
           child_list (list, automatically generated): in a multi-level nested
-            Logging* class, generate the list of children's names. This list
-            will be built by prepending our name and calling
-            ancestor_child_list() on self.parent.
+          Logging* class, generate the list of children's names. This list
+          will be built by prepending our name and calling
+          ancestor_child_list() on self.parent.
 
         Returns:
           (ancestor, child_list) (LoggingClass, list): for self.full_name and
-            self.log_change support
+          self.log_change support
         """
         child_list = child_list or []
         if self.parent:

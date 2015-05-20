@@ -8,3 +8,4 @@ scriptharness.egg-info
 *.pyc
 *.orig
 *,cover
+docs/_build

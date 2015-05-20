@@ -224,10 +224,10 @@ class Script(object):
     def add_listener(self, listener, timing, action_names=None):
         """Add a callback for specific script timing.
 
-        For pre_ and post_run, run at the beginning and end of the script,
+        For pre and post_run, run at the beginning and end of the script,
         respectively.
 
-        For pre_ and post_action, run at the beginning and end of actions,
+        For pre and post_action, run at the beginning and end of actions,
         respectively.  If action_names are specified, only run before/after
         those action(s).
 

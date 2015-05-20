@@ -96,13 +96,14 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
     Args:
       path (str): the path to the logfile.
       level (int, optional): logging level for the file.
-      formatter: (logging.Formatter, optional): formatter to use for logs.
+      formatter (logging.Formatter, optional): formatter to use for logs.
       logger (logging logger, optional): logger to add the file handler to.
-      append(bool, optional): remove path if False.
+      mode (str, optional): mode to open the file
 
     Returns:
-      logging.FileHandler handler.  This can be added to a logger
+      handler (logging.FileHandler):  This can be added to a logger
       via logger.addHandler(handler)
+
     """
     if not formatter:
         formatter = get_formatter()
@@ -117,9 +118,9 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
     """Create a stream handler to add to a logger.
 
     Args:
-      level (int, optional): logging level for the file.
-      formatter: (logging.Formatter, optional): formatter to use for logs.
+      formatter (logging.Formatter, optional): formatter to use for logs.
       logger (logging logger, optional): logger to add the file handler to.
+      level (int, optional): logging level for the file.
 
     Returns:
       logging.StreamHandler handler.  This can be added to a logger
@@ -141,8 +142,8 @@ class LogMethod(object):
 
     Attributes:
       default_config (dict): contains the config defaults that can be
-        overridden via __init__ **kwargs.  Changing default_config directly
-        may carry over to other decorated LogMethod functions!
+      overridden via __init__ **kwargs.  Changing default_config directly
+      may carry over to other decorated LogMethod functions!
     """
     default_config = {
         'level': logging.INFO,
@@ -205,14 +206,14 @@ class LogMethod(object):
     def __call__(self, func, *args, **kwargs):
         """Wrap the function call as a decorator.
 
-        When there are decorator arguments, __call__ is only called once, at
-        decorator time.  *args and **kwargs only show up when func is called,
+        When there are decorator arguments, \_\_call\_\_ is only called once, at
+        decorator time.  \*args and \*\*kwargs only show up when func is called,
         so we need to create and return a wrapping function.
 
         Args:
           func (function): this is the decorated function.
-          *args: the function's *args
-          **kwargs: the function's *kwargs
+          *args: the function's \*args
+          **kwargs: the function's \*\*kwargs
         """
         self.func = func
         def wrapped_func(*args, **kwargs):
