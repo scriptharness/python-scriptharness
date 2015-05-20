@@ -115,8 +115,9 @@ def download_url(url, path=None, timeout=None, mode='wb'):
         session.mount(url, requests.adapters.HTTPAdapter(max_retries=5))
         response = session.get(url, timeout=timeout, stream=True)
         with open(path, mode) as filehandle:
-            for chunk in response.iter_content(chunk_size=1024):
-                if chunk:
+            for chunk in response.iter_content(  # pragma: no branch
+                    chunk_size=1024):
+                if chunk:  # pragma: no branch
                     filehandle.write(chunk)
                     filehandle.flush()
         return path
@@ -219,7 +220,7 @@ def parse_args(parser, cmdln_args=None):
       tuple(ArgumentParser, parsed_args)
     """
     args = []
-    if cmdln_args is not None:
+    if cmdln_args is not None:  # pragma: no branch
         args.append(cmdln_args)
     parsed_args = parser.parse_args(*args)
     if hasattr(parsed_args, 'list_actions') and \
@@ -257,7 +258,7 @@ def build_config(parser, parsed_args, initial_config=None):
     initial_config = initial_config or {}
     logger = logging.getLogger(LOGGER_NAME)
     for key, value in parsed_args.__dict__.items():
-        if key == 'list_actions':
+        if key in ('list_actions', 'actions'):
             continue
         if key in ('config_files', 'opt_config_files'):
             resources.setdefault(key, value or [])

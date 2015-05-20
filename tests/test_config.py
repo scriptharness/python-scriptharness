@@ -236,12 +236,13 @@ class TestParserFunctions(unittest.TestCase):
             contents = json.load(filehandle)
         parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
         parser.add_argument("--test-default", default="default")
+        parser.add_argument("--override-default", default="default")
         kwargs = {}
         parsed_args = shconfig.parse_args(parser, cmdln_args=cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
         config2.update(contents)
-        config2['actions'] = ['build', 'package']
         config2['test_default'] = 'default'
+        config2['override_default'] = 'not_default'
         self.assertEqual(config, config2)
 
     def test_build_config_optcfg(self):
@@ -250,19 +251,36 @@ class TestParserFunctions(unittest.TestCase):
         path = os.path.join(os.path.dirname(__file__), 'http',
                             'test_config.json')
         cmdln_args = ["-c", path, "--actions", "build", "package",
-                    "--opt-cfg", "%s/nonexistent_file" % __file__]
+                      "--override-default", "not_default",
+                      "--opt-cfg", "%s/nonexistent_file" % __file__]
         self.helper_build_config(cmdln_args)
 
     def test_build_config_nocfg(self):
         """Test build_config() no cfg files
         """
-        cmdln_args = ["--actions", "build", "package"]
+        cmdln_args = ["--actions", "build", "package",
+                      "--override-default", "not_default"]
         path = os.path.join(os.path.dirname(__file__), 'http',
                             'test_config.json')
         with open(path) as filehandle:
             contents = json.load(filehandle)
         initial_config = {
             "additional_config_item": 234,
+        }
+        initial_config.update(contents)
+        self.helper_build_config(cmdln_args, initial_config=initial_config)
+
+    def test_build_config_nocmdln(self):
+        """Test build_config() no cmdln
+        """
+        cmdln_args = []
+        path = os.path.join(os.path.dirname(__file__), 'http',
+                            'test_config.json')
+        with open(path) as filehandle:
+            contents = json.load(filehandle)
+        initial_config = {
+            "additional_config_item": 234,
+            "override_default": "not_default",
         }
         initial_config.update(contents)
         self.helper_build_config(cmdln_args, initial_config=initial_config)
