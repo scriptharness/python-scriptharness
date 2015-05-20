@@ -87,22 +87,26 @@ def is_url(resource):
     return False
 
 
-def download_url(url, path=None, mode='wb'):
+def download_url(url, path=None, timeout=None, mode='wb'):
     """Download a url to a path
 
     Args:
       url (str): the url to download
       path (str, optional): the path to write to
+      timeout (float, optional): how long to wait before timing out
+      mode (str, optional): the mode to open the file with
 
     Raises:
       ScriptHarnessException on error
     """
     if path is None:
         path = get_filename_from_url(url)
+    if timeout is None:
+        timeout = 10
     try:
         session = requests.Session()
         session.mount(url, requests.adapters.HTTPAdapter(max_retries=5))
-        response = session.get(url, timeout=30, stream=True)
+        response = session.get(url, timeout=timeout, stream=True)
         with open(path, mode) as filehandle:
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:

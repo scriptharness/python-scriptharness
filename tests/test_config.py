@@ -50,6 +50,12 @@ def start_webserver():
         yield (dir_path, host)
     finally:
         proc.terminate()
+        # make sure it goes away
+        try:
+            while True:
+                response = requests.get(host)
+        except requests.exceptions.ConnectionError:
+            pass
 
 # TestUrlFunctions {{{1
 class TestUrlFunctionss(unittest.TestCase):
@@ -100,7 +106,7 @@ class TestUrlFunctionss(unittest.TestCase):
     def test_timeout_download_url(self):
         """Time out in download_url()
         """
-        with start_webserver() as (path, host):
+        with start_webserver() as (_, host):
             self.assertRaises(
                 ScriptHarnessException,
                 shconfig.download_url, "%s/cgi-bin/timeout.cgi" % host,
