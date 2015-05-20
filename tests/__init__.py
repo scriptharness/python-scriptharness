@@ -5,9 +5,13 @@
 Attributes:
   UNICODE_STRINGS (list): a list of strings to test unicode functionality
   LOGGER_NAME (str): the logger name to use for tests
+  TEST_ACTIONS (tuple): action_name:enabled pairs to test with
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from contextlib import contextmanager
+import os
+import sys
 
 
 UNICODE_STRINGS = [
@@ -20,6 +24,14 @@ UNICODE_STRINGS = [
     'ខេមរភាសា',
 ]
 LOGGER_NAME = "scriptharness.nosetests"
+TEST_ACTIONS = (
+    ("clobber", False),
+    ("pull", True),
+    ("build", True),
+    ("package", True),
+    ("upload", False),
+    ("notify", False),
+)
 
 
 class LoggerReplacement(object):
@@ -57,3 +69,29 @@ class LoggerReplacement(object):
     def silence_pylint(self):
         """pylint complains about too few public methods"""
         pass
+
+
+# http://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python
+@contextmanager
+def stdstar_redirected(path):
+    """Open path and redirect stdout+stderr to it.
+
+    Args:
+      path (str): A file path to use to log stdout+stderr
+    """
+    stdout = sys.stdout
+    stderr = sys.stderr
+    with os.fdopen(os.dup(1), 'wb') as copied_out, \
+            os.fdopen(os.dup(2), 'wb') as copied_err:
+        stdout.flush()
+        stderr.flush()
+        with open(path, 'wb') as to_file:
+            os.dup2(to_file.fileno(), 1)
+            os.dup2(to_file.fileno(), 2)
+        try:
+            yield stdout
+        finally:
+            stdout.flush()
+            stderr.flush()
+            os.dup2(copied_out.fileno(), 1)  # $ exec >&copied
+            os.dup2(copied_err.fileno(), 2)  # $ exec >&copied

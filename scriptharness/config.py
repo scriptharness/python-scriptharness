@@ -145,12 +145,14 @@ def get_action_parser(all_actions):
     """
     parser = argparse.ArgumentParser(add_help=False)
     message = []
+    choices = []
     for name, enabled in iterate_pairs(all_actions):
         string = "  "
         if enabled:
             string = "* "
         string += name
         message.append(string)
+        choices.append(name)
     def list_actions():
         """Helper function to list all actions (enabled shown with a '*')"""
         print(os.linesep.join(message))
@@ -160,7 +162,7 @@ def get_action_parser(all_actions):
         help="List all actions (default prepended with '*') and exit."
     )
     parser.add_argument(
-        "--actions", nargs='+', choices=all_actions.keys(), metavar="ACTION",
+        "--actions", nargs='+', choices=choices, metavar="ACTION",
         help="Specify the actions to run."
     )
     return parser

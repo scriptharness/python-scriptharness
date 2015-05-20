@@ -16,10 +16,10 @@ import mock
 import os
 import scriptharness as sh
 import scriptharness.log as log
-import sys
 import unittest
 from scriptharness import ScriptHarnessException, ScriptHarnessError
-from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement
+from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement, \
+              stdstar_redirected
 
 
 TEST_FILE = '_test_log_file'
@@ -61,31 +61,6 @@ def always_fail_cb(*args):
 def always_succeed_cb(*args):
     """always succeed"""
     return False
-
-# http://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python
-@contextmanager
-def stdstar_redirected(path):
-    """Open path and redirect stdout+stderr to it.
-
-    Args:
-      path (str): A file path to use to log stdout+stderr
-    """
-    stdout = sys.stdout
-    stderr = sys.stderr
-    with os.fdopen(os.dup(1), 'wb') as copied_out, \
-            os.fdopen(os.dup(2), 'wb') as copied_err:
-        stdout.flush()
-        stderr.flush()
-        with open(path, 'wb') as to_file:
-            os.dup2(to_file.fileno(), 1)
-            os.dup2(to_file.fileno(), 2)
-        try:
-            yield stdout
-        finally:
-            stdout.flush()
-            stderr.flush()
-            os.dup2(copied_out.fileno(), 1)  # $ exec >&copied
-            os.dup2(copied_err.fileno(), 2)  # $ exec >&copied
 
 
 # TestPrepareSimpleLogging {{{1

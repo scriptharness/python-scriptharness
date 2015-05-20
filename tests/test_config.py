@@ -5,22 +5,33 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from contextlib import contextmanager
+import json
+import mock
 import os
 import requests
 from scriptharness import ScriptHarnessException
 import scriptharness.config as shconfig
+import six
 import subprocess
 import sys
 import time
 import unittest
 
+from . import TEST_ACTIONS
+
+if six.PY3:
+    BUILTIN = 'builtins'
+else:
+    BUILTIN = '__builtin__'
 
 TEST_FILE = '_test_config_file'
-TEST_FILE2 = '_test_config_file2'
+TEST_FILES = (TEST_FILE, 'invalid_json.json', 'test_config.json')
 
+
+# Helper functions {{{1
 def nuke_test_files():
     """Cleanup helper function"""
-    for path in TEST_FILE, TEST_FILE2:
+    for path in TEST_FILES:
         if os.path.exists(path):
             os.remove(path)
 
@@ -122,6 +133,16 @@ class TestUrlFunctionss(unittest.TestCase):
                 "%s/test_config.json" % host, path=path
             )
 
+    def test_parse_config_file(self):
+        """parse json
+        """
+        path = os.path.join(os.path.dirname(__file__), 'http',
+                            'test_config.json')
+        config = shconfig.parse_config_file(path)
+        with open(path) as filehandle:
+            config2 = json.load(filehandle)
+        self.assertEqual(config, config2)
+
     def test_parse_invalid_json(self):
         """Download invalid json and parse it
         """
@@ -131,8 +152,6 @@ class TestUrlFunctionss(unittest.TestCase):
                 shconfig.parse_config_file,
                 "%s/invalid_json.json" % host
             )
-            if os.path.exists("invalid_json.json"):
-                os.remove("invalid_json.json")
 
     def test_parse_invalid_path(self):
         """Parse nonexistent file
@@ -141,4 +160,27 @@ class TestUrlFunctionss(unittest.TestCase):
             ScriptHarnessException,
             shconfig.parse_config_file,
             "%s/nonexistent_file" % __file__
+        )
+
+
+# TestParserFunctions {{{1
+class TestParserFunctions(unittest.TestCase):
+    """Test parser functions
+    """
+    @staticmethod
+    @mock.patch('%s.print' % BUILTIN)
+    def test_list_actions(mock_print):
+        """Test --list-actions
+        """
+        parser = shconfig.get_action_parser(TEST_ACTIONS)
+        args = parser.parse_args(["--list-actions"])
+        try:
+            args.list_actions()
+        except SystemExit:
+            pass
+        mock_print.assert_called_once_with(
+            os.linesep.join(
+                ["  clobber", "* pull", "* build", "* package", "  upload",
+                 "  notify"]
+            )
         )
