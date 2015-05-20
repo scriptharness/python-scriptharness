@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 from contextlib import contextmanager
 import os
 import requests
+from scriptharness import ScriptHarnessException
 import scriptharness.config as shconfig
 import subprocess
 import sys
@@ -95,3 +96,13 @@ class TestUrlFunctionss(unittest.TestCase):
             contents = filehandle.read()
         os.remove("test_config.json")
         self.assertEqual(contents, orig_contents)
+
+    def test_timeout_download_url(self):
+        """Time out in download_url()
+        """
+        with start_webserver() as (path, host):
+            self.assertRaises(
+                ScriptHarnessException,
+                shconfig.download_url, "%s/cgi-bin/timeout.cgi" % host,
+                timeout=.1
+            )
