@@ -218,8 +218,10 @@ def parse_args(parser, cmdln_args=None):
     Returns:
       tuple(ArgumentParser, parsed_args)
     """
-    cmdln_args = cmdln_args or []
-    parsed_args = parser.parse_args(cmdln_args)
+    args = []
+    if cmdln_args is not None:
+        args.append(cmdln_args)
+    parsed_args = parser.parse_args(*args)
     if hasattr(parsed_args, 'list_actions') and \
             callable(parsed_args.list_actions):
         parsed_args.list_actions()
@@ -255,16 +257,16 @@ def build_config(parser, parsed_args, initial_config=None):
     initial_config = initial_config or {}
     logger = logging.getLogger(LOGGER_NAME)
     for key, value in parsed_args.__dict__.items():
+        if key == 'list_actions':
+            continue
+        if key in ('config_files', 'opt_config_files'):
+            resources.setdefault(key, value or [])
+            continue
         if parser.get_default(key) == value:
             config[key] = value
         else:
-            cmdln_config = value
+            cmdln_config[key] = value
     config.update(initial_config)
-    for obj in cmdln_config, config:
-        if 'config_files' in obj:
-            resources['config_files'].setdefault(obj['config_files'])
-        if 'opt_config_files' in obj:
-            resources['opt_config_files'].setdefault(obj['opt_config_files'])
     for resource in resources.get('config_files', []):
         config.update(parse_config_file(resource))
     for resource in resources.get('opt_config_files', []):

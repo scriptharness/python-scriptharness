@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import argparse
 from contextlib import contextmanager
+from copy import deepcopy
 import json
 import mock
 import os
@@ -216,5 +217,52 @@ class TestParserFunctions(unittest.TestCase):
         """
         parents = []
         parser = shconfig.get_parser(parents=parents)
-        parsed_args = shconfig.parse_args(parser)
+        parsed_args = shconfig.parse_args(parser, cmdln_args=[])
         self.assertEqual(parsed_args, argparse.Namespace())
+
+    def helper_build_config(self, cmdln_args, initial_config=None):
+        """Help test build_config()
+        """
+        if initial_config is None:
+            initial_config = {
+                "key1": "value0",
+                "key2": "value0",
+                "additional_config_item": 234,
+            }
+        config2 = deepcopy(initial_config)
+        path = os.path.join(os.path.dirname(__file__), 'http',
+                            'test_config.json')
+        with open(path) as filehandle:
+            contents = json.load(filehandle)
+        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
+        parser.add_argument("--test-default", default="default")
+        kwargs = {}
+        parsed_args = shconfig.parse_args(parser, cmdln_args=cmdln_args)
+        config = shconfig.build_config(parser, parsed_args, initial_config)
+        config2.update(contents)
+        config2['actions'] = ['build', 'package']
+        config2['test_default'] = 'default'
+        self.assertEqual(config, config2)
+
+    def test_build_config_optcfg(self):
+        """Test build_config() optcfg
+        """
+        path = os.path.join(os.path.dirname(__file__), 'http',
+                            'test_config.json')
+        cmdln_args = ["-c", path, "--actions", "build", "package",
+                    "--opt-cfg", "%s/nonexistent_file" % __file__]
+        self.helper_build_config(cmdln_args)
+
+    def test_build_config_nocfg(self):
+        """Test build_config() no cfg files
+        """
+        cmdln_args = ["--actions", "build", "package"]
+        path = os.path.join(os.path.dirname(__file__), 'http',
+                            'test_config.json')
+        with open(path) as filehandle:
+            contents = json.load(filehandle)
+        initial_config = {
+            "additional_config_item": 234,
+        }
+        initial_config.update(contents)
+        self.helper_build_config(cmdln_args, initial_config=initial_config)
