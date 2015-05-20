@@ -116,10 +116,29 @@ class TestUrlFunctionss(unittest.TestCase):
         """Download with unwritable target file.
         """
         with start_webserver() as (path, host):
-            with open(os.path.join(path, "test_config.json")) as filehandle:
-                orig_contents = filehandle.read()
             self.assertRaises(
                 ScriptHarnessException,
                 shconfig.download_url,
                 "%s/test_config.json" % host, path=path
             )
+
+    def test_parse_invalid_json(self):
+        """Download invalid json and parse it
+        """
+        with start_webserver() as (_, host):
+            self.assertRaises(
+                ScriptHarnessException,
+                shconfig.parse_config_file,
+                "%s/invalid_json.json" % host
+            )
+            if os.path.exists("invalid_json.json"):
+                os.remove("invalid_json.json")
+
+    def test_parse_invalid_path(self):
+        """Parse nonexistent file
+        """
+        self.assertRaises(
+            ScriptHarnessException,
+            shconfig.parse_config_file,
+            "%s/nonexistent_file" % __file__
+        )

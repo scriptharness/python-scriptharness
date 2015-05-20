@@ -11,6 +11,7 @@ import argparse
 import logging
 import os
 import requests
+import six
 import six.moves.urllib as urllib
 import sys
 try:
@@ -41,15 +42,21 @@ def parse_config_file(path):
       ScriptHarnessException on error
     """
     if is_url(path):
-        path = download_url(path, mode='w')
+        path = download_url(path)
+    # py3 may throw FileNotFoundError or IOError; both inherit OSError.
+    # py2 throws IOError, which doesn't inherit OSError.
+    if six.PY3:
+        exception = OSError
+    else:
+        exception = IOError
     try:
         with open(path) as filehandle:
             config = dict(json.load(filehandle))
-    except IOError as exc_info:
+    except exception as exc_info:
         raise ScriptHarnessException(
             "Can't open path %s!" % path, exc_info
         )
-    except ValueError:
+    except ValueError as exc_info:
         raise ScriptHarnessException(
             "Can't parse json in %s!" % path, exc_info
         )
