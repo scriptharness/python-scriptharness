@@ -97,10 +97,9 @@ class TestUrlFunctionss(unittest.TestCase):
         with start_webserver() as (path, host):
             with open(os.path.join(path, "test_config.json")) as filehandle:
                 orig_contents = filehandle.read()
-            shconfig.download_url("%s/test_config.json" % host)
-        with open("test_config.json") as filehandle:
+            shconfig.download_url("%s/test_config.json" % host, path=TEST_FILE)
+        with open(TEST_FILE) as filehandle:
             contents = filehandle.read()
-        os.remove("test_config.json")
         self.assertEqual(contents, orig_contents)
 
     def test_timeout_download_url(self):
