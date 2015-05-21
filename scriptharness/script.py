@@ -167,6 +167,7 @@ class Script(object):
         for listener, actions in iterate_pairs(self.listeners['post_action']):
             if actions and action.name not in actions:
                 continue
+            listener()
 
     def run(self):
         """Run all enabled actions.

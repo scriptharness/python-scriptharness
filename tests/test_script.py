@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import scriptharness.actions as actions
 from scriptharness.config import get_parser
-from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 import scriptharness.script as script
 import six
 import unittest
@@ -88,6 +88,34 @@ class TestScript(unittest.TestCase):
         scr.run()
         self.assertEqual(self.timings, ["one", "three"])
 
+    def test_non_function_listener(self):
+        """Test non-function listener
+        """
+        obj = object()
+        scr = self.get_script()
+        self.assertRaises(
+            ScriptHarnessException, scr.add_listener, obj, "pre_action"
+        )
+
+    def test_bad_timing_listener(self):
+        """Test bad timing listener
+        """
+        scr = self.get_script()
+        self.assertRaises(
+            ScriptHarnessException, scr.add_listener,
+            self.get_timing_func("pre_action1"), "bad_timing"
+        )
+
+    def test_bad_actions_listener(self):
+        """Test bad actions listener
+        """
+        scr = self.get_script()
+        self.assertRaises(
+            ScriptHarnessException, scr.add_listener,
+            self.get_timing_func("pre_action1"), "pre_run",
+            action_names=["one", "two"]
+        )
+
     def test_pre_action_listener(self):
         """Test pre_action listeners
         """
@@ -105,4 +133,23 @@ class TestScript(unittest.TestCase):
         self.assertEqual(self.timings, [
             "pre_action1", "one", "pre_action1", "pre_action2", "two",
             "pre_action1", "four"
+        ])
+
+    def test_post_action_listener(self):
+        """Test post_action listeners
+        """
+        scr = self.get_script()
+        scr.add_listener(
+            self.get_timing_func("post_action1"),
+            "post_action",
+        )
+        scr.add_listener(
+            self.get_timing_func("post_action2"),
+            "post_action",
+            action_names=["two", "three", "five"]
+        )
+        scr.run()
+        self.assertEqual(self.timings, [
+            "one", "post_action1", "two", "post_action1", "post_action2",
+            "four", "post_action1"
         ])
