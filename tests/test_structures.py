@@ -886,6 +886,16 @@ class TestLockedROD(unittest.TestCase):
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['e'][2]['turtles'], 'append'))
 
+    def test_unlock(self):
+        """unlocking locked ROD should raise. relocking shouldn't
+        """
+        rod = get_locked_rod()
+        def func():
+            """Test func"""
+            rod._lock = False
+        self.assertRaises(ScriptHarnessException, func)
+        rod._lock = True
+
 
 # TestDeepcopyROD {{{2
 class TestDeepcopyROD(unittest.TestCase):

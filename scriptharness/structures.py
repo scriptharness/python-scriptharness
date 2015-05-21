@@ -670,10 +670,21 @@ class ReadOnlyDict(dict):
 
     Slightly modified version of mozharness.base.config.ReadOnlyDict,
     largely for pylint.
+
+    Attributes:
+      _lock (bool): When locked, the dict is read-only and cannot be unlocked.
     """
+    _lock = None
     def __init__(self, *args, **kwargs):
-        self._lock = False
         super(ReadOnlyDict, self).__init__(*args, **kwargs)
+        self._lock = False
+
+    def __setattr__(self, name, *args):
+        if name == '_lock' and self._lock and not args[0]:
+            raise ScriptHarnessException(
+                "Not allowed to unlock a locked ReadOnlyDict!"
+            )
+        return super(ReadOnlyDict, self).__setattr__(name, *args)
 
     def _check_lock(self):
         """Throw an exception if we try to change anything while locked.
