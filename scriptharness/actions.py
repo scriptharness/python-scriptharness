@@ -14,6 +14,7 @@ from copy import deepcopy
 import logging
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal
+from scriptharness.structures import iterate_pairs
 import time
 
 

@@ -11,6 +11,7 @@ import json
 import mock
 import os
 import requests
+from scriptharness.actions import Action
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException
 import six
@@ -194,6 +195,22 @@ class TestParserFunctions(unittest.TestCase):
                  "  notify"]
             )
         )
+
+    def test_action_parser(self):
+        """Test action parser
+        """
+        actions = []
+        def func():
+            """test function"""
+            pass
+        for name, enabled in TEST_ACTIONS:
+            actions.append(Action(name, enabled=enabled, function=func))
+        parser = shconfig.get_action_parser(actions)
+        args = parser.parse_args("--actions build package".split())
+        self.assertEqual(args.actions, ["build", "package"])
+        with stdstar_redirected(os.devnull):
+            self.assertRaises(SystemExit, parser.parse_args,
+                              "--actions invalid_action".split())
 
     def test_config_parser(self):
         """Test config parser
