@@ -32,7 +32,7 @@ class TestScript(unittest.TestCase):
         return func
 
     def get_action(self, name, enabled=True):
-        """Helper function to generate Action()s for Script"""
+        """Helper function to generate Actions for Script"""
         return actions.Action(name, function=self.get_timing_func(name),
                               enabled=enabled)
 
@@ -52,6 +52,12 @@ class TestScript(unittest.TestCase):
             kwargs['initial_config'] = initial_config
         return script.Script(action_list, parser, cmdln_args=cmdln_args,
                              **kwargs)
+
+    def raise_fatal(self, _):
+        """Helper function for post_fatal() testing
+        """
+        self.timings.append("fatal")
+        raise ScriptHarnessFatal("Fatal")
 
     def setUp(self):
         """Clear statuses before every test"""
@@ -153,3 +159,32 @@ class TestScript(unittest.TestCase):
             "one", "post_action1", "two", "post_action1", "post_action2",
             "four", "post_action1"
         ])
+
+    def test_prepost_run_listener(self):
+        """Test pre_run and post_run listeners
+        """
+        scr = self.get_script()
+        scr.add_listener(self.get_timing_func("pre_run1"), "pre_run")
+        scr.add_listener(self.get_timing_func("pre_run2"), "pre_run")
+        scr.add_listener(self.get_timing_func("post_run1"), "post_run")
+        scr.add_listener(self.get_timing_func("post_run2"), "post_run")
+        scr.run()
+        self.assertEqual(self.timings, [
+            "pre_run1", "pre_run2", "one", "two", "four", "post_run1",
+            "post_run2"
+        ])
+
+    def test_post_fatal_listener(self):
+        """Test post_fatal listeners
+        """
+        scr = self.get_script()
+        scr.actions[1] = actions.Action(
+            "two", function=self.raise_fatal, enabled=True)
+        scr.add_listener(self.get_timing_func("post_fatal1"), "post_fatal")
+        scr.add_listener(self.get_timing_func("post_fatal2"), "post_fatal",
+                         action_names=["one", "three", "five"])
+        scr.add_listener(self.get_timing_func("post_fatal3"), "post_fatal",
+                         action_names=["two", "four"])
+        self.assertRaises(ScriptHarnessFatal, scr.run)
+        self.assertEqual(self.timings, ["one", "fatal", "post_fatal1",
+                                        "post_fatal3"])

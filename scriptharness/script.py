@@ -130,9 +130,10 @@ class Script(object):
                 "Invalid timing for add_listener!", listener_name,
                 timing, action_names
             )
-        if action_names and 'action' not in timing:
+        if action_names and ('action' not in timing and 'fatal' not in timing):
             raise ScriptHarnessException(
-                "Only specify action_names for pre/post action timing!",
+                "Only specify action_names for pre/post action or "
+                "post_fatal timing!",
                 listener_name, timing, action_names
             )
         logger = logging.getLogger(LOGGER_NAME)
