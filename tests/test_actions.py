@@ -17,6 +17,12 @@ else:
     BUILTIN = '__builtin__'
 
 
+# Helper functions {{{1
+def action_func(_):
+    """Return 50"""
+    return 50
+
+
 # TestHelperFunctions {{{1
 class TestHelperFunctions(unittest.TestCase):
     """Test the helper functions.
@@ -88,3 +94,22 @@ class TestHelperFunctions(unittest.TestCase):
             all_actions, default_actions=default_actions
         )
         self.compare_actions(action_tuple)
+
+
+# TestAction {{{1
+class TestAction(unittest.TestCase):
+    """Test Action()
+    """
+    def test_missing_func(self):
+        """Action should raise if no function
+        """
+        self.assertRaises(
+            ScriptHarnessException, actions.Action, name="missing_function"
+        )
+
+    def test_run(self):
+        """Test a successful Action.run()
+        """
+        action = actions.Action("name", function=action_func)
+        self.assertEqual(action.run({}), actions.STATUSES['success'])
+        self.assertEqual(action.history['return_value'], 50)

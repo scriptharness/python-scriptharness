@@ -122,7 +122,7 @@ class Action(object):
         self.history['timestamps']['start_time'] = time.time()
         logger = logging.getLogger(self.logger_name)
         try:
-            self.history['return_value'] = self.run_function(config)
+            self.run_function(config)
         except ScriptHarnessError as exc_info:
             self.history['status'] = STATUSES['error']
             logger.error(self.strings['error_message'], {"name": self.name})
