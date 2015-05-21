@@ -6,7 +6,8 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import mock
 import scriptharness.actions as actions
-from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException, \
+    ScriptHarnessError, ScriptHarnessFatal
 import six
 import unittest
 from . import TEST_ACTIONS
@@ -21,6 +22,14 @@ else:
 def action_func(_):
     """Return 50"""
     return 50
+
+def raise_error(_):
+    """raise ScriptHarnessError"""
+    raise ScriptHarnessError("error!")
+
+def raise_fatal(_):
+    """raise ScriptHarnessFatal"""
+    raise ScriptHarnessFatal("fatal!")
 
 
 # TestHelperFunctions {{{1
@@ -113,3 +122,17 @@ class TestAction(unittest.TestCase):
         action = actions.Action("name", function=action_func)
         self.assertEqual(action.run({}), actions.STATUSES['success'])
         self.assertEqual(action.history['return_value'], 50)
+
+    def test_error(self):
+        """Test Action.run() ScriptHarnessError
+        """
+        action = actions.Action("name", function=raise_error)
+        self.assertEqual(action.run({}), actions.STATUSES['error'])
+        self.assertEqual(action.history['status'], actions.STATUSES['error'])
+
+    def test_fatal(self):
+        """Test Action.run() ScriptHarnessFatal
+        """
+        action = actions.Action("name", function=raise_fatal)
+        self.assertRaises(ScriptHarnessFatal, action.run, {})
+        self.assertEqual(action.history['status'], actions.STATUSES['fatal'])
