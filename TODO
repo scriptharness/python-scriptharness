@@ -1,7 +1,6 @@
 0.1.0
 * improve docs
  * quick start
-* script 100% coverage
 * config['logger_name']
 * ScriptManager, like logging Manager
  * get_script(name="root")
