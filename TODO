@@ -6,3 +6,4 @@
  * get_script(name="root")
 * run_command
 * get_output_from_command
+* split muted/unmuted tests in test_structures.py for easier debugging
