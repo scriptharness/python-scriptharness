@@ -129,11 +129,8 @@ def iterate_pairs(data):
         else:
             iterable = data.items()
     else:
-        assert len(data) >= 1
-        if isinstance(data[0], (tuple, list)):
-            iterable = data
-        else:
-            assert len(data) >= 2
+        iterable = data
+        if len(data) >= 2 and not isinstance(data[0], (tuple, list)):
             iterable = zip(data[::2], data[1::2])
     return iterable
 

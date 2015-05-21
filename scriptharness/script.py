@@ -142,13 +142,13 @@ class Script(object):
         """
         logger = logging.getLogger(LOGGER_NAME)
         if not action.enabled:
-            logger.info(STRINGS['actions']['skip_message'])
+            logger.info(STRINGS['action']['skip_message'])
             return
         for listener, actions in iterate_pairs(self.listeners['pre_action']):
             if actions and action.name not in actions:
                 continue
             listener()
-        logger.info(STRINGS['actions']['run_message'])
+        logger.info(STRINGS['action']['run_message'])
         try:
             action.run(self.config)
         except ScriptHarnessFatal:
