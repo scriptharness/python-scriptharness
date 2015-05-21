@@ -57,8 +57,7 @@ class Script(object):
         for timing in VALID_LISTENER_TIMING:
             self.listeners.setdefault(timing, [])
         self.build_config(parser, **kwargs)
-        # TODO dump config
-        # TODO dump actions
+        self.save_config()
 
     def __setattr__(self, name, *args):
         if name == 'config' and self.config:
@@ -83,10 +82,17 @@ class Script(object):
         self.dict_to_config(config)
         self.enable_actions(parsed_args)
 
+    def save_config(self):
+        """Save config to disk.
+        """
+        pass
+
     def dict_to_config(self, config):
         """Here for subclassing.
         """
-        self.config = LoggingDict(config, logger_name=LOGGER_NAME)
+        self.config = LoggingDict(
+            config, logger_name=config.get('logger_name', LOGGER_NAME)
+        )
         self.config.recursively_set_parent(name="config")
 
     def enable_actions(self, parsed_args):
@@ -136,7 +142,7 @@ class Script(object):
                 "post_fatal timing!",
                 listener_name, timing, action_names
             )
-        logger = logging.getLogger(LOGGER_NAME)
+        logger = logging.getLogger(self.config.get('logger_name', LOGGER_NAME))
         logger.debug("Adding listener to script: %s %s %s.",
                      listener_name, timing, action_names)
         self.listeners[timing].append((listener, action_names))
@@ -147,7 +153,7 @@ class Script(object):
         Args:
           action (Action object).
         """
-        logger = logging.getLogger(LOGGER_NAME)
+        logger = logging.getLogger(self.config.get('logger_name', LOGGER_NAME))
         if not action.enabled:
             logger.info(STRINGS['action']['skip_message'])
             return
@@ -173,7 +179,6 @@ class Script(object):
     def run(self):
         """Run all enabled actions.
         """
-        # TODO some sort of log msg
         for listener, _ in iterate_pairs(self.listeners['pre_run']):
             listener()
         for action in self.actions:

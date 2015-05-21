@@ -1,9 +1,10 @@
 0.1.0
 * improve docs
  * quick start
-* config['logger_name']
 * ScriptManager, like logging Manager
  * get_script(name="root")
 * run_command
 * get_output_from_command
+* save config
+* log msgs in Script.run()?
 * split muted/unmuted tests in test_structures.py for easier debugging
