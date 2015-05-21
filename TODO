@@ -1,6 +1,9 @@
-* exceptions -> scriptharness.exceptions?
-* script
- * run_command
- * get_output_from_command
- * actions
-  * allow for maven-type phases?  (if you run action X, it makes sure all actions pre-X run)
+0.1.0
+* improve docs
+ * quick start
+* script 100% coverage
+* config['logger_name']
+* ScriptManager, like logging Manager
+ * get_script(name="root")
+* run_command
+* get_output_from_command
