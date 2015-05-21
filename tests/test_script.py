@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 import argparse
 import mock
 import scriptharness.actions as actions
-import scriptharness.config as config
+from scriptharness.config import get_parser
 from scriptharness.exceptions import ScriptHarnessException, \
     ScriptHarnessError, ScriptHarnessFatal
 import scriptharness.script as script
@@ -46,7 +46,7 @@ class TestScript(unittest.TestCase):
             self.get_action("three", enabled=False),
             self.get_action("four"),
         ]
-        parser = parser or config.get_parser(actions)
+        parser = parser or get_parser(actions)
         cmdln_args = cmdln_args or []
         kwargs = {}
         if initial_config is not None:
@@ -80,3 +80,10 @@ class TestScript(unittest.TestCase):
             """Test function"""
             scr.config = {}
         self.assertRaises(ScriptHarnessException, func)
+
+    def test_enable_actions(self):
+        """Enable/disable actions from the command line
+        """
+        scr = self.get_script(cmdln_args="--actions one three".split())
+        scr.run()
+        self.assertEqual(self.timings, ["one", "three"])
