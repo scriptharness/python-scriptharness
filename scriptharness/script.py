@@ -80,14 +80,14 @@ class Script(object):
         """
         parsed_args = shconfig.parse_args(parser, cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
-        self.config = self.dict_to_config(config)
+        self.dict_to_config(config)
         self.enable_actions(parsed_args)
 
-    @staticmethod
-    def dict_to_config(config):
+    def dict_to_config(self, config):
         """Here for subclassing.
         """
-        return LoggingDict(config, logger_name=LOGGER_NAME)
+        self.config = LoggingDict(config, logger_name=LOGGER_NAME)
+        self.config.recursively_set_parent(name="config")
 
     def enable_actions(self, parsed_args):
         """If parsed_args has 'actions' set, use those as the enabled actions.
@@ -95,7 +95,7 @@ class Script(object):
         Args:
           parsed_args (argparse Namespace)
         """
-        if hasattr(parsed_args, 'actions'):
+        if hasattr(parsed_args, 'actions') and parsed_args.actions is not None:
             for action in self.actions:
                 if action.name in parsed_args.actions:
                     action.enabled = True

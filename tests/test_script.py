@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 import argparse
 import mock
 import scriptharness.actions as actions
+import scriptharness.config as config
 from scriptharness.exceptions import ScriptHarnessException, \
     ScriptHarnessError, ScriptHarnessFatal
 import scriptharness.script as script
@@ -36,6 +37,22 @@ class TestScript(unittest.TestCase):
             self.timing(name)
         return actions.Action(name, function=func, enabled=enabled)
 
+    def get_script(self, parser=None, cmdln_args=None, initial_config=None):
+        """Create a Script for testing
+        """
+        actions = [
+            self.get_action("one"),
+            self.get_action("two"),
+            self.get_action("three", enabled=False),
+            self.get_action("four"),
+        ]
+        parser = parser or config.get_parser(actions)
+        cmdln_args = cmdln_args or []
+        kwargs = {}
+        if initial_config is not None:
+            kwargs['initial_config'] = initial_config
+        return script.Script(actions, parser, cmdln_args=cmdln_args, **kwargs)
+
     def setUp(self):
         """Clear statuses before every test"""
         self.timings = []
@@ -51,13 +68,15 @@ class TestScript(unittest.TestCase):
     def test_run(self):
         """Try a basic run()
         """
-        actions = [
-            self.get_action("one"),
-            self.get_action("two"),
-            self.get_action("three", enabled=False),
-            self.get_action("four"),
-        ]
-        scr = script.Script(actions, argparse.ArgumentParser(),
-                            cmdln_args=[])
+        scr = self.get_script()
         scr.run()
         self.assertEqual(self.timings, ["one", "two", "four"])
+
+    def test_change_config(self):
+        """Changing Script.config should raise
+        """
+        scr = self.get_script(initial_config={'a': 1})
+        def func():
+            """Test function"""
+            scr.config = {}
+        self.assertRaises(ScriptHarnessException, func)
