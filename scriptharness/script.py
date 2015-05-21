@@ -119,19 +119,25 @@ class Script(object):
           action_names (iterable): for pre/post action timing listeners,
             only run before/after these action(s).
         """
+        for name_var in ('__qualname__', '__name__'):
+            if hasattr(listener, name_var):
+                listener_name = getattr(listener, name_var)
+                break
+        else:
+            raise ScriptHarnessException("Listener has no __name__!", listener)
         if timing not in VALID_LISTENER_TIMING:
             raise ScriptHarnessException(
-                "Invalid timing for add_listener!", listener.__qualname__,
+                "Invalid timing for add_listener!", listener_name,
                 timing, action_names
             )
         if action_names and 'action' not in timing:
             raise ScriptHarnessException(
                 "Only specify action_names for pre/post action timing!",
-                listener.__qualname__, timing, action_names
+                listener_name, timing, action_names
             )
         logger = logging.getLogger(LOGGER_NAME)
         logger.debug("Adding listener to script: %s %s %s.",
-                     listener.__qualname__, timing, action_names)
+                     listener_name, timing, action_names)
         self.listeners[timing].append((listener, action_names))
 
     def run_action(self, action):
