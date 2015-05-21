@@ -892,9 +892,9 @@ class TestLockedROD(unittest.TestCase):
         rod = get_locked_rod()
         def func():
             """Test func"""
-            rod._lock = False
+            rod._lock = False  # pylint: disable=protected-access
         self.assertRaises(ScriptHarnessException, func)
-        rod._lock = True
+        rod._lock = True  # pylint: disable=protected-access
 
 
 # TestDeepcopyROD {{{2
