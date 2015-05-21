@@ -72,3 +72,19 @@ class TestHelperFunctions(unittest.TestCase):
             actions.get_actions_from_lists,
             all_actions, default_actions=default_actions
         )
+
+    @mock.patch('%s.globals' % BUILTIN)
+    def test_actions_from_list(self, mock_globals):
+        """Test get_actions_from_lists() with default_actions
+        """
+        self.fake_action_func(mock_globals)
+        all_actions = []
+        default_actions = []
+        for name, enabled in TEST_ACTIONS:
+            all_actions.append(name)
+            if enabled:
+                default_actions.append(name)
+        action_tuple = actions.get_actions_from_lists(
+            all_actions, default_actions=default_actions
+        )
+        self.compare_actions(action_tuple)
