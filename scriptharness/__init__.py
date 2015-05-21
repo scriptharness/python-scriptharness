@@ -13,9 +13,11 @@ import os
 import scriptharness.actions
 from scriptharness.exceptions import ScriptHarnessException
 import scriptharness.script
+from scriptharness.structures import iterate_pairs
 
 __all__ = [
-    'get_script', 'get_config', 'set_action_class', 'set_script_class',
+    'get_script', 'get_config', 'get_actions', 'get_actions_from_lists',
+    'set_action_class', 'set_script_class',
 ]
 
 
@@ -130,3 +132,46 @@ def set_script_class(script_class):
       script_class (class): use this class for new scripts.
     """
     return MANAGER.set_script_class(script_class)
+
+
+# Helper functions {{{1
+def get_actions(all_actions):
+    """Build a tuple of Action objects for the script.
+
+    Args:
+      all_actions (data structure): ordered mapping of action_name:enabled
+        bool, as accepted by iterate_pairs()
+
+    Returns:
+      tuple of Action objects
+    """
+    action_list = []
+    for action_name, value in iterate_pairs(all_actions):
+        action = MANAGER.action_class(action_name, enabled=value)
+        action_list.append(action)
+    return tuple(action_list)
+
+def get_actions_from_lists(all_actions, default_actions=None):
+    """Helper method to generate the ordered mapping for get_actions().
+
+    Args:
+      all_actions (list): ordered list of all action names
+      default_actions (list, optional): actions that are enabled by default
+
+    Returns:
+      tuple of Action objects
+    """
+    if default_actions is None:
+        default_actions = all_actions[:]
+    elif not set(default_actions).issubset(set(all_actions)):
+        raise ScriptHarnessException(
+            "default_actions not a subset of all_actions!",
+            default_actions, all_actions
+        )
+    action_list = []
+    for action in all_actions:
+        if action in default_actions:
+            action_list.append((action, True))
+        else:
+            action_list.append((action, False))
+    return get_actions(action_list)
