@@ -23,27 +23,21 @@ between actions, consider saving state to disk.
 """
 def clobber(config):
     """Clobber the source"""
-    ...
 
 def pull(config):
     """Pull source"""
-    ...
 
 def build(config):
     """Build source"""
-    ...
 
 def package(config):
     """Package source"""
-    ...
 
 def upload(config):
     """Upload packages"""
-    ...
 
 def notify(config):
     """Notify watchers"""
-    ...
 
 
 if __name__ == '__main__':
@@ -74,6 +68,7 @@ if __name__ == '__main__':
     parser = scriptharness.get_parser(all_actions=actions)
 
     """Add new commandline argument(s)
+    https://docs.python.org/dev/library/argparse.html#argparse.ArgumentParser.add_argument
     """
     parser.add_argument("--new-argument", action='store',
                         help="help message for --new-argument")
