@@ -5,9 +5,11 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import mock
-import scriptharness as sh
+import os
+import scriptharness
 from scriptharness.exceptions import ScriptHarnessException
 import six
+from six.moves import reload_module
 import unittest
 from . import TEST_ACTIONS
 
@@ -46,7 +48,7 @@ class TestHelperFunctions(unittest.TestCase):
         """Test get_actions()
         """
         self.fake_action_func(mock_globals)
-        action_tuple = sh.get_actions(TEST_ACTIONS)
+        action_tuple = scriptharness.get_actions(TEST_ACTIONS)
         self.compare_actions(action_tuple)
 
     @mock.patch('%s.globals' % BUILTIN)
@@ -54,7 +56,7 @@ class TestHelperFunctions(unittest.TestCase):
         """Test get_actions_from_list() all enabled
         """
         self.fake_action_func(mock_globals)
-        action_tuple = sh.get_actions_from_list(
+        action_tuple = scriptharness.get_actions_from_list(
             ["one", "two", "three", "four", "five", "six", "seven"]
         )
         for action in action_tuple:
@@ -69,7 +71,7 @@ class TestHelperFunctions(unittest.TestCase):
         default_actions = ["two", "three", "four"]
         self.assertRaises(
             ScriptHarnessException,
-            sh.get_actions_from_list,
+            scriptharness.get_actions_from_list,
             all_actions, default_actions=default_actions
         )
 
@@ -84,7 +86,46 @@ class TestHelperFunctions(unittest.TestCase):
             all_actions.append(name)
             if enabled:
                 default_actions.append(name)
-        action_tuple = sh.get_actions_from_list(
+        action_tuple = scriptharness.get_actions_from_list(
             all_actions, default_actions=default_actions
         )
         self.compare_actions(action_tuple)
+
+
+# TestScriptManager {{{1
+class FakeScript(object):
+    """Pretend Script class"""
+    def __init__(self, *args, **kwargs):
+        self.config = {
+            "fakescript": True
+        }
+        self.silence_pylint(args, kwargs)
+    def silence_pylint(self, *args):
+        """Silence pylint1"""
+        self.silence_pylint2(args)
+    def silence_pylint2(self, _):
+        """Silence pylint2"""
+        pass
+
+class TestScriptManager(unittest.TestCase):
+    """Test ScriptManager
+    """
+    def setUp(self):
+        reload_module(scriptharness)
+
+    def tearDown(self):
+        """Cleanliness is close to godliness
+        """
+        assert self  # silence pyflakes
+        if os.path.exists("localconfig.json"):
+            os.remove("localconfig.json")
+
+    def test_fake_script(self):
+        """Test ScriptManager with FakeScript
+        """
+        scriptharness.set_script_class(FakeScript)
+        script = scriptharness.get_script()
+        script2 = scriptharness.get_script(name="root")
+        self.assertTrue(script is script2)
+        config = scriptharness.get_config("root")
+        self.assertTrue(config['fakescript'] is True)
