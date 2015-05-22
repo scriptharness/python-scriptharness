@@ -13,21 +13,15 @@ dependencies = [
     'six',
 ]
 
-try:
-    import json
-except ImportError:
-    dependencies.append('simplejson')
-
-if sys.version_info < (2, 6):
-    print('ERROR: scriptharness requires Python 2.6 or above! Exiting...')
+if sys.version_info < (2, 7) or (sys.version_info[0] == 3 and
+                                 sys.version_info[1] < 3):
+    print('ERROR: scriptharness requires Python 2.7 or 3.3+! Exiting...')
     sys.exit(1)
-elif sys.version_info < (2, 7):
-    dependencies.append('argparse')
 
 setup(
     name='scriptharness',
     version=scriptharness.version.__version_string__,
-    description='A generic logging, configuration, and workflow harness for scripts.',
+    description='A generic logging, configuration, and workflow framework for scripts.',
     author='Aki Sasaki',
     author_email='aki@escapewindow.com',
     url='https://github.com/escapewindow/scriptharness',
