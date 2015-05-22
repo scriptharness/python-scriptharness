@@ -16,7 +16,7 @@ Scriptharness is a framework for writing scripts.  There are three core principl
 Contents:
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
    quickstart
    scriptharness

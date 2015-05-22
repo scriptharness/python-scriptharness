@@ -1,0 +1,89 @@
+Quickstart
+==========
+
+Here's an example script.  The file is also viewable here_.
+
+.. _here: https://github.com/escapewindow/python-scriptharness/blob/{{GIT_BRANCH}}/examples/quickstart.py
+
+::
+
+{{QUICKSTART_CONTENTS_INDENTED}}
+
+If you run this without any arguments, you might get output like this::
+
+    $ ./quickstart.py
+    01:23:56     INFO - Starting at 2015-05-22 01:23 PDT.
+    01:23:56     INFO - {'new_argument': None}
+    01:23:56     INFO - Skipping action clobber
+    01:23:56     INFO - Running action pull
+    01:23:56     INFO - Action pull: finished successfully
+    01:23:56     INFO - Running action build
+    01:23:56     INFO - Action build: finished successfully
+    01:23:56     INFO - Running action package
+    01:23:56     INFO - Action package: finished successfully
+    01:23:56     INFO - Skipping action upload
+    01:23:56     INFO - Skipping action notify
+    01:23:56     INFO - Done.
+
+First, it announced it's starting the script.  Next, it outputs the running
+config.  Then it logs each action as it runs enabled actions and skips disabled
+actions.  Finally, it announces 'Done.'.
+
+You can change which actions are run via the ``--actions`` option::
+
+    $ ./quickstart.py --actions package upload notify
+    01:26:12     INFO - Starting at 2015-05-22 01:26 PDT.
+    01:26:12     INFO - {'new_argument': None}
+    01:26:12     INFO - Skipping action clobber
+    01:26:12     INFO - Skipping action pull
+    01:26:12     INFO - Skipping action build
+    01:26:12     INFO - Running action package
+    01:26:12     INFO - Action package: finished successfully
+    01:26:12     INFO - Running action upload
+    01:26:12     INFO - Action upload: finished successfully
+    01:26:12     INFO - Running action notify
+    01:26:12     INFO - Action notify: finished successfully
+    01:26:12     INFO - Done.
+
+If you want to list which actions are available, and which are enabled by
+default, use the ``--list-actions`` option::
+
+    $ ./quickstart.py --list-actions
+      clobber
+    * pull
+    * build
+    * package
+      upload
+      notify
+
+You can change the ``new_argument`` value in the config via the
+``--new-argument`` option that the script added.  Also, if you just want to
+see what the config is without running anything, you can use the
+``--dump-config`` option::
+
+    $ ./quickstart.py --new-argument foo --dump-config
+    01:27:21     INFO - Dumping config:
+    01:27:21     INFO - {'new_argument': 'foo'}
+
+You can always use the ``--help`` option::
+
+    $ ./quickstart.py --help
+    usage: quickstart.py [-h] [--list-actions] [--actions ACTION [ACTION ...]]
+                         [--config-file CONFIG_FILE]
+                         [--opt-config-file CONFIG_FILE] [--dump-config]
+                         [--new-argument NEW_ARGUMENT]
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      --list-actions        List all actions (default prepended with '*') and
+                            exit.
+      --actions ACTION [ACTION ...]
+                            Specify the actions to run.
+      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
+                            Specify required config files/urls
+      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
+                            Specify optional config files/urls
+      --dump-config         Log the built configuration and exit.
+      --new-argument NEW_ARGUMENT
+                            help message for --new-argument
+

@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # This file is formatted slightly differently for readability in ReadTheDocs.
 """python-scriptharness quickstart example.
+
+This file can be found in the examples/ directory of the source at
+https://github.com/escapewindow/python-scriptharness
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -86,7 +89,7 @@ if __name__ == '__main__':
     above; the Script object will parse it and store the new_argument
     value in its config.
     """
-    script = scriptharness.get_script(actions, parser)
+    script = scriptharness.get_script(actions=actions, parser=parser)
 
     """This will run the script.
     Essentially, it will go through the list of actions, and if the action
