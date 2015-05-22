@@ -4,7 +4,6 @@
  * quick start
 * run_command
 * get_output_from_command
-* save config
 * log msgs in Script.run()?
 * more ways to enable/disable actions than --actions
 * split muted/unmuted tests in test_structures.py for easier debugging

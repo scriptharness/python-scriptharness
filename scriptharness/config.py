@@ -210,6 +210,10 @@ def get_config_parser():
         dest='opt_config_files', metavar="CONFIG_FILE",
         help="Specify optional config files/urls"
     )
+    parser.add_argument(
+        '--dump-config', action='store_true',
+        help="Log the built configuration and exit."
+    )
     return parser
 
 
@@ -281,7 +285,8 @@ def build_config(parser, parsed_args, initial_config=None):
     initial_config = initial_config or {}
     logger = logging.getLogger(LOGGER_NAME)
     for key, value in parsed_args.__dict__.items():
-        if key in ('list_actions', 'actions'):
+        # There must be a better way.
+        if key in ('list_actions', 'actions', 'dump_config'):
             continue
         if key in ('config_files', 'opt_config_files'):
             resources.setdefault(key, value or [])

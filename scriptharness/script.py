@@ -8,12 +8,20 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import codecs
 import logging
+import pprint
 from scriptharness.actions import Action, STRINGS
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict
+import sys
 import time
+try:
+    import simplejson as json
+    assert json
+except ImportError:
+    import json
 
 
 LOGGER_NAME = "scriptharness.script"
@@ -24,6 +32,17 @@ VALID_LISTENER_TIMING = (
     "post_action",
     "post_fatal",
 )
+
+
+def save_config(config, path):
+    """Save the configuration file to path as json.
+
+    Args:
+      config (dict): The config to save
+      path (str): The path to write the config to
+    """
+    with codecs.open(path, 'w', encoding='utf-8') as filehandle:
+        filehandle.write(json.dumps(config, sort_keys=True, indent=4))
 
 # Script {{{1
 class Script(object):
@@ -60,6 +79,7 @@ class Script(object):
             self.listeners.setdefault(timing, [])
         self.build_config(parser, **kwargs)
         self.logger = self.get_logger()
+        self.start_message()
         self.save_config()
 
     def __setattr__(self, name, *args):
@@ -84,11 +104,18 @@ class Script(object):
         config = shconfig.build_config(parser, parsed_args, initial_config)
         self.dict_to_config(config)
         self.enable_actions(parsed_args)
+        if parsed_args.__dict__.get("dump_config"):
+            logger = self.get_logger()
+            logger.info("Dumping config:")
+            self.save_config()
+            sys.exit(0)
 
     def save_config(self):
         """Save config to disk.
         """
-        pass
+        logger = self.get_logger()
+        logger.info(pprint.pformat(self.config, indent=4))
+        save_config(self.config, "localconfig.json")
 
     def dict_to_config(self, config):
         """Here for subclassing.
@@ -204,7 +231,7 @@ class Script(object):
         return self.logger
 
     def start_message(self):
-        """Log a message at the start of run()
+        """Log a message at the end of __init__()
 
         Split out for subclassing; the string may end up moving elsewhere
         for localizability.
@@ -224,7 +251,6 @@ class Script(object):
     def run(self):
         """Run all enabled actions.
         """
-        self.start_message()
         for listener, _ in iterate_pairs(self.listeners['pre_run']):
             listener()
         for action in self.actions:

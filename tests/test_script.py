@@ -4,6 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import os
 import scriptharness.actions as actions
 from scriptharness.config import get_parser
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
@@ -22,6 +23,15 @@ class TestScript(unittest.TestCase):
     """Test Script()
     """
     timings = None
+    def setUp(self):
+        """Clear statuses before every test"""
+        self.timings = []
+
+    def tearDown(self):
+        """Clean up localconfig.json"""
+        if os.path.exists("localconfig.json"):
+            os.remove("localconfig.json")
+
     def get_timing_func(self, name):
         """helper function for listeners and actions"""
         def func(*args):
@@ -58,10 +68,6 @@ class TestScript(unittest.TestCase):
         """
         self.timings.append("fatal")
         raise ScriptHarnessFatal("Fatal")
-
-    def setUp(self):
-        """Clear statuses before every test"""
-        self.timings = []
 
     def test_bad_actions(self):
         """Script() should throw with a bad action list
