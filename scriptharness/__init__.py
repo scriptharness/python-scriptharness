@@ -16,7 +16,7 @@ import scriptharness.script
 from scriptharness.structures import iterate_pairs
 
 __all__ = [
-    'get_script', 'get_config', 'get_actions', 'get_actions_from_lists',
+    'get_script', 'get_config', 'get_actions', 'get_actions_from_list',
     'set_action_class', 'set_script_class',
 ]
 
@@ -36,7 +36,7 @@ class ScriptManager(object):
         self.script_class = scriptharness.script.Script
         self.action_class = scriptharness.actions.Action
 
-    def get_script(self, name="root", *args, **kwargs):
+    def get_script(self, actions, parser, name="root", *args, **kwargs):
         """Back end for scriptharness.get_script().
 
         Most python scripts will have a single `script`, but there may be more
@@ -44,7 +44,7 @@ class ScriptManager(object):
         """
         if name not in self.all_scripts:
             self.all_scripts[name] = self.script_class(
-                *args, **kwargs
+                actions, parser, *args, **kwargs
             )
         return self.all_scripts[name]
 
@@ -81,7 +81,7 @@ MANAGER = ScriptManager()
 # args/kwargs.  Specifying these as *args and **kwargs and being more vague
 # in the documentation would be cleaner from a coding perspective, and more
 # difficult from a "how do I use this?" discovery perspective.
-def get_script(name="root", *args, **kwargs):
+def get_script(actions, parser, name="root", *args, **kwargs):
     """This will retrieve an existing script or create one and return it.
 
     Args:
@@ -97,7 +97,7 @@ def get_script(name="root", *args, **kwargs):
     Returns:
       The script instance.
     """
-    return MANAGER.get_script(name=name, *args, **kwargs)
+    return MANAGER.get_script(actions, parser, name=name, *args, **kwargs)
 
 def get_config(name="root"):
     """This will return the config from an existing script.
@@ -151,7 +151,7 @@ def get_actions(all_actions):
         action_list.append(action)
     return tuple(action_list)
 
-def get_actions_from_lists(all_actions, default_actions=None):
+def get_actions_from_list(all_actions, default_actions=None):
     """Helper method to generate the ordered mapping for get_actions().
 
     Args:

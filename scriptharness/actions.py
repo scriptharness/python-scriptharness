@@ -16,6 +16,7 @@ from copy import deepcopy
 import logging
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal
+import sys
 import time
 
 
@@ -33,6 +34,19 @@ SUCCESS = 0
 ERROR = 1
 FATAL = -1
 
+def get_function_by_name(function_name):
+    """If function isn't passed to Action, find the function with the same name
+    """
+    if hasattr(sys.modules['__main__'], function_name):
+        function = getattr(sys.modules['__main__'], function_name)
+    elif globals().get(function_name):
+        function = globals()[function_name]
+    else:
+        raise ScriptHarnessException("Can't find function %s!" % function_name)
+    if callable(function):
+        return function
+    else:
+        raise ScriptHarnessException('%s is not callable!' % function_name)
 
 # Action {{{1
 class Action(object):
@@ -53,8 +67,9 @@ class Action(object):
         self.strings = deepcopy(STRINGS['action'])
         self.logger_name = "scriptharness.script.%s" % self.name
         self.history = {'timestamps': {}}
-        self.function = function or \
-                        globals().get(self.name.replace('-', '_'))
+        self.function = function or get_function_by_name(
+            self.name.replace('-', '_')
+        )
         if not callable(self.function):
             raise ScriptHarnessException(
                 "No callable function for action %s!" % name

@@ -51,10 +51,10 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_all_enabled(self, mock_globals):
-        """Test get_actions_from_lists() all enabled
+        """Test get_actions_from_list() all enabled
         """
         self.fake_action_func(mock_globals)
-        action_tuple = sh.get_actions_from_lists(
+        action_tuple = sh.get_actions_from_list(
             ["one", "two", "three", "four", "five", "six", "seven"]
         )
         for action in action_tuple:
@@ -62,20 +62,20 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_bad_default_actions(self, mock_globals):
-        """Test get_actions_from_lists() with bad default_actions
+        """Test get_actions_from_list() with bad default_actions
         """
         self.fake_action_func(mock_globals)
         all_actions = ["one", "two", "three"]
         default_actions = ["two", "three", "four"]
         self.assertRaises(
             ScriptHarnessException,
-            sh.get_actions_from_lists,
+            sh.get_actions_from_list,
             all_actions, default_actions=default_actions
         )
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_actions_from_list(self, mock_globals):
-        """Test get_actions_from_lists() with default_actions
+        """Test get_actions_from_list() with default_actions
         """
         self.fake_action_func(mock_globals)
         all_actions = []
@@ -84,7 +84,7 @@ class TestHelperFunctions(unittest.TestCase):
             all_actions.append(name)
             if enabled:
                 default_actions.append(name)
-        action_tuple = sh.get_actions_from_lists(
+        action_tuple = sh.get_actions_from_list(
             all_actions, default_actions=default_actions
         )
         self.compare_actions(action_tuple)

@@ -13,6 +13,7 @@ from scriptharness.actions import Action, STRINGS
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict
+import time
 
 
 LOGGER_NAME = "scriptharness.script"
@@ -37,6 +38,7 @@ class Script(object):
       strict (bool): In strict mode, warnings are fatal; config is read-only.
       actions (tuple): Action objects to run.
       listeners (dict): callbacks for run()
+      logger (logging.Logger): the logger for the script
     """
     config = None
 
@@ -57,6 +59,7 @@ class Script(object):
         for timing in VALID_LISTENER_TIMING:
             self.listeners.setdefault(timing, [])
         self.build_config(parser, **kwargs)
+        self.logger = self.get_logger()
         self.save_config()
 
     def __setattr__(self, name, *args):
@@ -142,7 +145,7 @@ class Script(object):
                 "post_fatal timing!",
                 listener_name, timing, action_names
             )
-        logger = logging.getLogger(self.config.get('logger_name', LOGGER_NAME))
+        logger = self.get_logger()
         logger.debug("Adding listener to script: %s %s %s.",
                      listener_name, timing, action_names)
         self.listeners[timing].append((listener, action_names))
@@ -153,15 +156,18 @@ class Script(object):
         Args:
           action (Action object).
         """
-        logger = logging.getLogger(self.config.get('logger_name', LOGGER_NAME))
+        repl_dict = {
+            'name': action.name
+        }
+        logger = self.get_logger()
         if not action.enabled:
-            logger.info(STRINGS['action']['skip_message'])
+            logger.info(STRINGS['action']['skip_message'], repl_dict)
             return
         for listener, actions in iterate_pairs(self.listeners['pre_action']):
             if actions and action.name not in actions:
                 continue
             listener()
-        logger.info(STRINGS['action']['run_message'])
+        logger.info(STRINGS['action']['run_message'], repl_dict)
         try:
             action.run(self.config)
         except ScriptHarnessFatal:
@@ -176,12 +182,53 @@ class Script(object):
                 continue
             listener()
 
+    def get_logger(self):
+        """Get a logger to log messages.
+
+        This is not strictly needed, as python's logging module will
+        keep track of these loggers.
+
+        However, if we support structured logging as well as python logging,
+        get_logger() may return one or the other depending on config.
+
+        This method may end up moving to the scriptharness module, and tracked
+        in ScriptManager.
+
+        Returns:
+          logging.Logger object.
+        """
+        if not hasattr(self, 'logger') or not self.logger:
+            self.logger = logging.getLogger(
+                self.config.get('logger_name', LOGGER_NAME)
+            )
+        return self.logger
+
+    def start_message(self):
+        """Log a message at the start of run()
+
+        Split out for subclassing; the string may end up moving elsewhere
+        for localizability.
+        """
+        logger = self.get_logger()
+        logger.info("Starting at %s." % time.strftime('%Y-%m-%d %H:%M %Z'))
+
+    def end_message(self):
+        """Log a message at the end of run()
+
+        Split out for subclassing; the string may end up moving elsewhere
+        for localizability.
+        """
+        logger = self.get_logger()
+        logger.info("Done.")
+
     def run(self):
         """Run all enabled actions.
         """
+        self.start_message()
         for listener, _ in iterate_pairs(self.listeners['pre_run']):
             listener()
         for action in self.actions:
             self.run_action(action)
         for listener, _ in iterate_pairs(self.listeners['post_run']):
             listener()
+        self.end_message()
