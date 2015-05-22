@@ -19,7 +19,6 @@ import sys
 import time
 try:
     import simplejson as json
-    assert json
 except ImportError:
     import json
 

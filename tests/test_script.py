@@ -4,7 +4,9 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import json
 import os
+import pprint
 import scriptharness.actions as actions
 from scriptharness.config import get_parser
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
@@ -194,3 +196,16 @@ class TestScript(unittest.TestCase):
         self.assertRaises(ScriptHarnessFatal, scr.run)
         self.assertEqual(self.timings, ["one", "fatal", "post_fatal1",
                                         "post_fatal3"])
+
+    def test_dump_config(self):
+        """Test --dump-config
+        """
+        initial_config = {'a': 1}
+        self.assertRaises(SystemExit, self.get_script,
+                          cmdln_args=["--dump-config"],
+                          initial_config=initial_config)
+        with open("localconfig.json") as filehandle:
+            contents = filehandle.read()
+        self.assertEqual(
+            contents, json.dumps(initial_config, sort_keys=True, indent=4)
+        )
