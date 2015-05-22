@@ -19,6 +19,27 @@ else:
     BUILTIN = '__builtin__'
 
 
+# Helper classes {{{1
+class FakeAction(object):  # pylint: disable=too-few-public-methods
+    """Pretend Action class"""
+    def __init__(self, *args, **kwargs):
+        pass
+
+class FakeScript(object):
+    """Pretend Script class"""
+    def __init__(self, *args, **kwargs):
+        self.silence_pylint(args, kwargs)
+    def add_config(self):
+        """add self.config"""
+        self.config = {  # pylint: disable=attribute-defined-outside-init
+            "fakescript": True
+        }
+    def silence_pylint(self, *args):
+        """silence pylint"""
+        if args and self:
+            pass
+
+
 # TestHelperFunctions {{{1
 class TestHelperFunctions(unittest.TestCase):
     """Test the helper functions.
@@ -93,20 +114,6 @@ class TestHelperFunctions(unittest.TestCase):
 
 
 # TestScriptManager {{{1
-class FakeScript(object):
-    """Pretend Script class"""
-    def __init__(self, *args, **kwargs):
-        self.config = {
-            "fakescript": True
-        }
-        self.silence_pylint(args, kwargs)
-    def silence_pylint(self, *args):
-        """Silence pylint1"""
-        self.silence_pylint2(args)
-    def silence_pylint2(self, _):
-        """Silence pylint2"""
-        pass
-
 class TestScriptManager(unittest.TestCase):
     """Test ScriptManager
     """
@@ -127,5 +134,29 @@ class TestScriptManager(unittest.TestCase):
         script = scriptharness.get_script()
         script2 = scriptharness.get_script(name="root")
         self.assertTrue(script is script2)
+        script.add_config()
         config = scriptharness.get_config("root")
         self.assertTrue(config['fakescript'] is True)
+
+    def test_illegal_get_config(self):
+        """Test illegal get_config
+        """
+        scriptharness.set_script_class(FakeScript)
+        scriptharness.get_script()
+        self.assertRaises(
+            ScriptHarnessException, scriptharness.get_config
+        )
+        self.assertRaises(
+            ScriptHarnessException, scriptharness.get_config,
+            "nonexistent_script"
+        )
+
+    def test_actions_from_list(self):
+        """Test get_actions_from_list() with FakeAction
+        """
+        scriptharness.set_action_class(FakeAction)
+        action_tuple = scriptharness.get_actions_from_list(
+            ["one", "two"]
+        )
+        for action in action_tuple:
+            self.assertTrue(isinstance(action, FakeAction))
