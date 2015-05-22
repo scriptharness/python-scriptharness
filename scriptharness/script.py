@@ -237,7 +237,7 @@ class Script(object):
         for localizability.
         """
         logger = self.get_logger()
-        logger.info("Starting at %s." % time.strftime('%Y-%m-%d %H:%M %Z'))
+        logger.info("Starting at %s.", time.strftime('%Y-%m-%d %H:%M %Z'))
 
     def end_message(self):
         """Log a message at the end of run()
