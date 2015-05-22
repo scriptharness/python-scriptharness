@@ -207,7 +207,8 @@ class TestParserFunctions(unittest.TestCase):
             actions.append(Action(name, enabled=enabled, function=func))
         parser = shconfig.get_action_parser(actions)
         args = parser.parse_args("--actions build package".split())
-        self.assertEqual(args.actions, ["build", "package"])
+        self.assertEqual(args.scriptharness_volatile_actions,
+                         ["build", "package"])
         with stdstar_redirected(os.devnull):
             self.assertRaises(SystemExit, parser.parse_args,
                               "--actions invalid_action".split())

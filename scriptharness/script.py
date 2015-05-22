@@ -103,7 +103,7 @@ class Script(object):
         config = shconfig.build_config(parser, parsed_args, initial_config)
         self.dict_to_config(config)
         self.enable_actions(parsed_args)
-        if parsed_args.__dict__.get("dump_config"):
+        if parsed_args.__dict__.get("scriptharness_volatile_dump_config"):
             logger = self.get_logger()
             logger.info("Dumping config:")
             self.save_config()
@@ -130,9 +130,10 @@ class Script(object):
         Args:
           parsed_args (argparse Namespace)
         """
-        if hasattr(parsed_args, 'actions') and parsed_args.actions is not None:
+        if hasattr(parsed_args, 'scriptharness_volatile_actions') and \
+                parsed_args.scriptharness_volatile_actions is not None:
             for action in self.actions:
-                if action.name in parsed_args.actions:
+                if action.name in parsed_args.scriptharness_volatile_actions:
                     action.enabled = True
                 else:
                     action.enabled = False

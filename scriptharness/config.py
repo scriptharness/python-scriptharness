@@ -183,10 +183,12 @@ def get_action_parser(all_actions):
         sys.exit(0)
     parser.add_argument(
         "--list-actions", action='store_const', const=list_actions,
+        dest="scriptharness_volatile_list_actions",
         help="List all actions (default prepended with '*') and exit."
     )
     parser.add_argument(
         "--actions", nargs='+', choices=choices, metavar="ACTION",
+        dest="scriptharness_volatile_actions",
         help="Specify the actions to run."
     )
     return parser
@@ -212,6 +214,7 @@ def get_config_parser():
     )
     parser.add_argument(
         '--dump-config', action='store_true',
+        dest="scriptharness_volatile_dump_config",
         help="Log the built configuration and exit."
     )
     return parser
@@ -250,9 +253,9 @@ def parse_args(parser, cmdln_args=None):
     if cmdln_args is not None:  # pragma: no branch
         args.append(cmdln_args)
     parsed_args = parser.parse_args(*args)
-    if hasattr(parsed_args, 'list_actions') and \
-            callable(parsed_args.list_actions):
-        parsed_args.list_actions()
+    if hasattr(parsed_args, 'scriptharness_volatile_list_actions') and \
+            callable(parsed_args.scriptharness_volatile_list_actions):
+        parsed_args.scriptharness_volatile_list_actions()
     return parsed_args
 
 
@@ -285,8 +288,7 @@ def build_config(parser, parsed_args, initial_config=None):
     initial_config = initial_config or {}
     logger = logging.getLogger(LOGGER_NAME)
     for key, value in parsed_args.__dict__.items():
-        # There must be a better way.
-        if key in ('list_actions', 'actions', 'dump_config'):
+        if key.startswith('scriptharness_') and '_volatile_' in key:
             continue
         if key in ('config_files', 'opt_config_files'):
             resources.setdefault(key, value or [])
