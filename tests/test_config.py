@@ -42,7 +42,7 @@ def nuke_test_files():
 def start_webserver():
     """Start a webserver for local requests testing
     """
-    port = 8001  # TODO get free port
+    port = 8001
     max_wait = 5
     wait = 0
     interval = .02

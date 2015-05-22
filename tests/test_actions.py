@@ -31,6 +31,12 @@ def raise_fatal(_):
 
 
 # TestAction {{{1
+class TestFunctionByName(unittest.TestCase):
+    """Test get_function_by_name()
+    """
+
+
+# TestAction {{{1
 class TestAction(unittest.TestCase):
     """Test Action()
     """
@@ -40,6 +46,19 @@ class TestAction(unittest.TestCase):
         self.assertRaises(
             ScriptHarnessException, actions.Action, name="missing_function"
         )
+        # Test the sys.modules['__main__'] chunk with an uncallable func
+        self.assertRaises(
+            ScriptHarnessException, actions.Action, name="__name__"
+        )
+
+    def test_specify_func(self):
+        """Action should raise if function is not callable
+        """
+        obj = []
+        self.assertRaises(
+            ScriptHarnessException, actions.Action, name="foo", function=obj
+        )
+        actions.Action("foo", function=self.test_specify_func)
 
     def test_run(self):
         """Test a successful Action.run()

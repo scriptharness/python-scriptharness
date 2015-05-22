@@ -67,9 +67,10 @@ class Action(object):
         self.strings = deepcopy(STRINGS['action'])
         self.logger_name = "scriptharness.script.%s" % self.name
         self.history = {'timestamps': {}}
-        self.function = function or get_function_by_name(
-            self.name.replace('-', '_')
-        )
+        if function is None:
+            self.function = get_function_by_name(self.name.replace('-', '_'))
+        else:
+            self.function = function
         if not callable(self.function):
             raise ScriptHarnessException(
                 "No callable function for action %s!" % name
