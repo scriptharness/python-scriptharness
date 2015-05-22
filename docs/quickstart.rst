@@ -106,6 +106,7 @@ Here's an example script.  The file is also viewable here_.
         """
         script.run()
 
+
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
@@ -126,7 +127,7 @@ First, it announced it's starting the script.  Next, it outputs the running
 config.  Then it logs each action as it runs enabled actions and skips disabled
 actions.  Finally, it announces 'Done.'.
 
-You can change which actions are run via the --actions option::
+You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
     01:26:12     INFO - Starting at 2015-05-22 01:26 PDT.
@@ -143,7 +144,7 @@ You can change which actions are run via the --actions option::
     01:26:12     INFO - Done.
 
 If you want to list which actions are available, and which are enabled by
-default, use the --list-actions option:
+default, use the ``--list-actions`` option::
 
     $ ./quickstart.py --list-actions
       clobber
@@ -153,16 +154,16 @@ default, use the --list-actions option:
       upload
       notify
 
-You can change the new_argument value in the config via the
---new-argument option that the script added.  Also, if you just want to
+You can change the ``new_argument`` value in the config via the
+``--new-argument`` option that the script added.  Also, if you just want to
 see what the config is without running anything, you can use the
---dump-config option::
+``--dump-config`` option::
 
     $ ./quickstart.py --new-argument foo --dump-config
     01:27:21     INFO - Dumping config:
     01:27:21     INFO - {'new_argument': 'foo'}
 
-You can always use the --help option::
+You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
     usage: quickstart.py [-h] [--list-actions] [--actions ACTION [ACTION ...]]
@@ -183,4 +184,3 @@ You can always use the --help option::
       --dump-config         Log the built configuration and exit.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
-

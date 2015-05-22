@@ -26,9 +26,13 @@ def main():
     template = Template(contents)
     contents = ""
     with open("../examples/quickstart.py") as filehandle:
-        for line in filehandle.readline():
+        for line in filehandle.readlines():
             contents += "    {}".format(line)
-    template.render(GIT_BRANCH=branch, QUICKSTART_CONTENTS_INDENTED=contents)
+    with open("quickstart.rst", "w") as filehandle:
+        filehandle.write(
+            template.render(GIT_BRANCH=branch,
+                            QUICKSTART_CONTENTS_INDENTED=contents)
+        )
     subprocess.check_call(["make", "html"])
 
 if __name__ == '__main__':
