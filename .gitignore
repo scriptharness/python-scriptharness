@@ -1,11 +1,13 @@
 .coverage
 .tox
-htmlcov
 coverage.xml
+htmlcov
+localconfig.json
+log.txt
 nosetests.xml
 pylint.out
 scriptharness.egg-info
+docs/_build
 *.pyc
 *.orig
 *,cover
-docs/_build
