@@ -1,6 +1,4 @@
 0.1.0
-* improve docs
- * quick start
 * run_command
 * get_output_from_command
 * more ways to enable/disable actions than --actions
