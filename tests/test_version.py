@@ -12,9 +12,25 @@ import sys
 import unittest
 
 
+TEST_VERSION_JSON = "_test_version.json"
+def cleanup():
+    """cleanliness"""
+    if os.path.exists(TEST_VERSION_JSON):
+        os.remove(TEST_VERSION_JSON)
+
 class TestVersionString(unittest.TestCase):
     """Test the various semver version->version string conversions
     """
+    def setUp(self):
+        """cleanliness"""
+        assert self  # silence pylint
+        cleanup()
+
+    def tearDown(self):
+        """cleanliness"""
+        assert self  # silence pylint
+        cleanup()
+
     def test_three_version(self):
         """test_version | 3 digit tuple -> version string
         """
@@ -63,18 +79,14 @@ class TestVersionString(unittest.TestCase):
         """
         parent_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
         version_json = os.path.join(parent_dir, 'version.json')
-        orig_version_json = "%s.orig" % version_json
-        os.rename(version_json, orig_version_json)
         function(*args, **kwargs)
         self.assertTrue(os.path.exists(version_json))
-        if os.path.exists(version_json):
-            with open(version_json) as filehandle:
-                contents = json.load(filehandle)
-            with open(orig_version_json) as filehandle:
-                contents2 = json.load(filehandle)
-            self.assertEqual(contents, contents2)
-            os.remove(version_json)
-        os.rename(orig_version_json, version_json)
+        self.assertTrue(os.path.exists(TEST_VERSION_JSON))
+        with open(version_json) as filehandle:
+            contents = json.load(filehandle)
+        with open(TEST_VERSION_JSON) as filehandle:
+            contents2 = json.load(filehandle)
+        self.assertEqual(contents, contents2)
 
     def test_run_version_py(self):
         """test_version | run version.py
@@ -88,10 +100,20 @@ class TestVersionString(unittest.TestCase):
             ]
         parent_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
         version_py = os.path.join(parent_dir, 'scriptharness', 'version.py')
-        self.helper_write_version(subprocess.call, command + [version_py])
+        version_json = os.path.join(parent_dir, 'version.json')
+        try:
+            os.rename(version_json, TEST_VERSION_JSON)
+            self.helper_write_version(subprocess.call, command + [version_py])
+        finally:
+            if os.path.exists(version_json):
+                os.remove(version_json)
+            os.rename(TEST_VERSION_JSON, version_json)
+
 
     def test_write_version(self):
         """test_version | write_version()
         """
         self.helper_write_version(scriptharness.version.write_version,
-                                  '__main__')
+                                  name='__main__', path=TEST_VERSION_JSON)
+        self.helper_write_version(scriptharness.version.write_version,
+                                  path=TEST_VERSION_JSON)

@@ -43,14 +43,14 @@ __version__ = (0, 1, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
 
 
-def write_version(name):
+def write_version(name=None, path=None):
     """Write the version info to ../version.json, for setup.py
     """
     # Written like this for coverage purposes.
     # http://stackoverflow.com/questions/5850268/how-to-test-or-mock-if-name-main-contents/27084447#27084447
-    if name == '__main__':
-        path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                            "version.json")
+    if name is None or name == '__main__':
+        path = path or os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                    "version.json")
         contents = {
             'version': __version__,
             'version_string': __version_string__,
@@ -59,4 +59,4 @@ def write_version(name):
             filehandle.write(json.dumps(contents, sort_keys=True, indent=4))
 
 
-write_version(__name__)
+write_version(name=__name__)
