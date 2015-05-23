@@ -8,7 +8,6 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-from scriptharness.exceptions import ScriptHarnessException
 
 
 def get_version_string(version):
@@ -31,7 +30,7 @@ def get_version_string(version):
     elif version_len == 4:
         version_string = '%d.%d.%d-%s' % version
     else:
-        raise ScriptHarnessException(
+        raise Exception(
             'Version tuple is non-semver-compliant {} length!'.format(version_len)
         )
     return version_string
