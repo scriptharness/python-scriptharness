@@ -273,7 +273,7 @@ def parse_args(parser, cmdln_args=None):
 
 # build_config {{{1
 
-def update_dirs(config):
+def update_dirs(config, max_depth=2):
     """Directory paths for the script are defined in config.
     Absolute paths help avoid chdir issues.  `scriptharness_base_dir` (or
     any other directory path, or any config value) can be overridden during
@@ -290,11 +290,12 @@ def update_dirs(config):
     for key, value in config.items():
         if key.startswith("scriptharness_") and key.endswith("_dir"):
             repl_dict[key] = value
-    # This is fine for a single level of expansion.  We'll need more smarts
-    # here if we want to have a dir based on scriptharness_work_dir, for
-    # example; at that point order matters.
-    for key in repl_dict:
-        config[key] = config[key] % repl_dict
+    # Make a couple expansion passes, in case a dir is based on another dir
+    # with a % formatting string.
+    for _ in range(max_depth):
+        for key in repl_dict:
+            repl_dict[key] = repl_dict[key] % repl_dict
+    config.update(repl_dict)
 
 def build_config(parser, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
