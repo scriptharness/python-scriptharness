@@ -10,15 +10,16 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import scriptharness
 
-
 """First, define functions for all actions.  Each action MUST have a function
-defined.
+defined.  The function should be named the same as the action.  (If the
+action has a `-` in it, replace it with an `_`; e.g. an action named
+`upload-to-s3` would call the `upload_to_s3()` function.
 
 Each action function should be idempotent, and able to run standalone.
-In this example, 'package' may require that the steps in 'build' ran at
-some point before 'package' is run, but we can't assume that happened in
+In this example, `package` may require that the steps in `build` ran at
+some point before `package` is run, but we can't assume that happened in
 the same script run.  It could have happened yesterday, or three weeks ago,
-and 'package' should still be able to run.  If you need to save state
+and `package` should still be able to run.  If you need to save state
 between actions, consider saving state to disk.
 """
 def clobber(config):
@@ -74,7 +75,7 @@ if __name__ == '__main__':
                         help="help message for --new-argument")
 
     """Create the Script object.  If this is run a second time, it will
-    retrieve the same-named script object.  ('name' in get_script() defaults
+    retrieve the same-named script object.  (`name` in get_script() defaults
     to "root".  We'll explore running multiple Script objects within the
     same script in the not-distant future.)
 

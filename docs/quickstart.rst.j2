@@ -9,6 +9,9 @@ Here's an example script.  The file is also viewable here_.
 
 {{QUICKSTART_CONTENTS_INDENTED}}
 
+output
+------
+
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
@@ -26,8 +29,14 @@ If you run this without any arguments, you might get output like this::
     01:23:56     INFO - Done.
 
 First, it announced it's starting the script.  Next, it outputs the running
-config.  Then it logs each action as it runs enabled actions and skips disabled
-actions.  Finally, it announces 'Done.'.
+config, also saving it to the file ``localconfig.json``.  Then it logs each
+action as it runs enabled actions and skips disabled actions.  Finally, it
+announces 'Done.'.
+
+The same output is written to the file ``log.txt``.
+
+--actions
+---------
 
 You can change which actions are run via the ``--actions`` option::
 
@@ -45,6 +54,9 @@ You can change which actions are run via the ``--actions`` option::
     01:26:12     INFO - Action notify: finished successfully
     01:26:12     INFO - Done.
 
+--list-actions
+--------------
+
 If you want to list which actions are available, and which are enabled by
 default, use the ``--list-actions`` option::
 
@@ -56,6 +68,9 @@ default, use the ``--list-actions`` option::
       upload
       notify
 
+--dump-config
+-------------
+
 You can change the ``new_argument`` value in the config via the
 ``--new-argument`` option that the script added.  Also, if you just want to
 see what the config is without running anything, you can use the
@@ -64,6 +79,9 @@ see what the config is without running anything, you can use the
     $ ./quickstart.py --new-argument foo --dump-config
     01:27:21     INFO - Dumping config:
     01:27:21     INFO - {'new_argument': 'foo'}
+
+--help
+------
 
 You can always use the ``--help`` option::
 

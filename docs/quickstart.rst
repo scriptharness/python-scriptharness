@@ -19,15 +19,16 @@ Here's an example script.  The file is also viewable here_.
                            unicode_literals
     import scriptharness
     
-    
     """First, define functions for all actions.  Each action MUST have a function
-    defined.
+    defined.  The function should be named the same as the action.  (If the
+    action has a `-` in it, replace it with an `_`; e.g. an action named
+    `upload-to-s3` would call the `upload_to_s3()` function.
     
     Each action function should be idempotent, and able to run standalone.
-    In this example, 'package' may require that the steps in 'build' ran at
-    some point before 'package' is run, but we can't assume that happened in
+    In this example, `package` may require that the steps in `build` ran at
+    some point before `package` is run, but we can't assume that happened in
     the same script run.  It could have happened yesterday, or three weeks ago,
-    and 'package' should still be able to run.  If you need to save state
+    and `package` should still be able to run.  If you need to save state
     between actions, consider saving state to disk.
     """
     def clobber(config):
@@ -83,7 +84,7 @@ Here's an example script.  The file is also viewable here_.
                             help="help message for --new-argument")
     
         """Create the Script object.  If this is run a second time, it will
-        retrieve the same-named script object.  ('name' in get_script() defaults
+        retrieve the same-named script object.  (`name` in get_script() defaults
         to "root".  We'll explore running multiple Script objects within the
         same script in the not-distant future.)
     
@@ -102,6 +103,9 @@ Here's an example script.  The file is also viewable here_.
         script.run()
 
 
+output
+------
+
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
@@ -119,8 +123,14 @@ If you run this without any arguments, you might get output like this::
     01:23:56     INFO - Done.
 
 First, it announced it's starting the script.  Next, it outputs the running
-config.  Then it logs each action as it runs enabled actions and skips disabled
-actions.  Finally, it announces 'Done.'.
+config, also saving it to the file ``localconfig.json``.  Then it logs each
+action as it runs enabled actions and skips disabled actions.  Finally, it
+announces 'Done.'.
+
+The same output is written to the file ``log.txt``.
+
+--actions
+---------
 
 You can change which actions are run via the ``--actions`` option::
 
@@ -138,6 +148,9 @@ You can change which actions are run via the ``--actions`` option::
     01:26:12     INFO - Action notify: finished successfully
     01:26:12     INFO - Done.
 
+--list-actions
+--------------
+
 If you want to list which actions are available, and which are enabled by
 default, use the ``--list-actions`` option::
 
@@ -149,6 +162,9 @@ default, use the ``--list-actions`` option::
       upload
       notify
 
+--dump-config
+-------------
+
 You can change the ``new_argument`` value in the config via the
 ``--new-argument`` option that the script added.  Also, if you just want to
 see what the config is without running anything, you can use the
@@ -157,6 +173,9 @@ see what the config is without running anything, you can use the
     $ ./quickstart.py --new-argument foo --dump-config
     01:27:21     INFO - Dumping config:
     01:27:21     INFO - {'new_argument': 'foo'}
+
+--help
+------
 
 You can always use the ``--help`` option::
 
