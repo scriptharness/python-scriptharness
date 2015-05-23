@@ -1,6 +1,13 @@
 scriptharness package
 =====================
 
+Subpackages
+-----------
+
+.. toctree::
+
+    scriptharness.commands
+
 Submodules
 ----------
 
