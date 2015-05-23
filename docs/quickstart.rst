@@ -31,22 +31,22 @@ Here's an example script.  The file is also viewable here_.
     and `package` should still be able to run.  If you need to save state
     between actions, consider saving state to disk.
     """
-    def clobber(config):
+    def clobber(context):
         """Clobber the source"""
     
-    def pull(config):
+    def pull(context):
         """Pull source"""
     
-    def build(config):
+    def build(context):
         """Build source"""
     
-    def package(config):
+    def package(context):
         """Package source"""
     
-    def upload(config):
+    def upload(context):
         """Upload packages"""
     
-    def notify(config):
+    def notify(context):
         """Notify watchers"""
     
     
