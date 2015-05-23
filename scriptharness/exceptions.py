@@ -21,7 +21,10 @@ def to_unicode(obj, encoding='utf-8'):
         obj (unicode): the encoded string
     """
     if not isinstance(obj, six.text_type):
-        obj = six.text_type(obj, encoding)
+        try:
+            obj = six.text_type(obj, encoding)
+        except TypeError:
+            pass
     return obj
 
 @six.python_2_unicode_compatible

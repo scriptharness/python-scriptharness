@@ -25,6 +25,12 @@ class TestUnicode(unittest.TestCase):
             else:
                 self.assertEqual(ustring, astring)
 
+    def test_to_unicode_exception(self):
+        """Verify to_unicode of a None object gives None
+        """
+        value = exceptions.to_unicode(None)
+        self.assertTrue(value is None)
+
     def test_exception(self):
         """Verify ScriptHarnessBaseException works
         """
