@@ -12,6 +12,7 @@ from scriptharness.config import get_parser, update_dirs, \
     SCRIPTHARNESS_INITIAL_CONFIG
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 import scriptharness.script as script
+import shutil
 import six
 import unittest
 
@@ -31,9 +32,9 @@ class TestScript(unittest.TestCase):
         self.timings = []
 
     def tearDown(self):
-        """Clean up localconfig.json"""
-        if os.path.exists("localconfig.json"):
-            os.remove("localconfig.json")
+        """Clean up artifacts"""
+        if os.path.exists("artifacts"):
+            shutil.rmtree("artifacts")
 
     def get_timing_func(self, name):
         """helper function for listeners and actions"""
@@ -207,7 +208,7 @@ class TestScript(unittest.TestCase):
         self.assertRaises(SystemExit, self.get_script,
                           cmdln_args=["--dump-config"],
                           initial_config=initial_config)
-        with open("localconfig.json") as filehandle:
+        with open("artifacts/localconfig.json") as filehandle:
             contents = filehandle.read()
         self.assertEqual(
             contents, json.dumps(initial_config, sort_keys=True, indent=4)

@@ -67,10 +67,25 @@ class LoggerReplacement(object):
         self.level_messages.setdefault(level, [])
         self.level_messages[level].append((msg, args))
 
-    def info(self, msg, *args):
+    def debug(self, *args):
+        """debug() wrapper"""
+        self.log(logging.DEBUG, *args)
+
+    def info(self, *args):
         """info() wrapper"""
-        self.all_messages.append((logging.INFO, msg, args))
-        self.level_messages[logging.INFO].append((msg, args))
+        self.log(logging.INFO, *args)
+
+    def warning(self, *args):
+        """warning() wrapper"""
+        self.log(logging.WARNING, *args)
+
+    def error(self, *args):
+        """error() wrapper"""
+        self.log(logging.ERROR, *args)
+
+    def critical(self, *args):
+        """critical() wrapper"""
+        self.log(logging.CRITICAL, *args)
 
 
 # http://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python
