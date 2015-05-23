@@ -13,7 +13,7 @@ import collections
 import logging
 import os
 import pprint
-from scriptharness.actions import Action, STRINGS
+from scriptharness.actions import Action, STRINGS, ACTION_MSG_PREFIX
 from scriptharness.commands import make_parent_dir
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
@@ -207,7 +207,8 @@ class Script(object):
         """
         context = build_context(self, action=action)
         repl_dict = {
-            'name': action.name
+            'name': action.name,
+            'action_msg_prefix': ACTION_MSG_PREFIX,
         }
         logger = self.get_logger()
         if not action.enabled:

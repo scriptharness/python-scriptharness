@@ -23,13 +23,16 @@ import time
 LOGGER_NAME = "scriptharness.actions"
 STRINGS = {
     "action": {
-        "run_message": "Running action %(name)s",
-        "skip_message": "Skipping action %(name)s",
-        "error_message": "Action %(name)s error!",
-        "fatal_message": "Fatal %(name)s exception: %(exc_info)s",
-        "success_message": "Action %(name)s: finished successfully",
+        "run_message": "%(action_msg_prefix)sRunning action %(name)s",
+        "skip_message": "%(action_msg_prefix)sSkipping action %(name)s",
+        "error_message": "%(action_msg_prefix)sAction %(name)s error!",
+        "fatal_message":
+            "%(action_msg_prefix)sFatal %(name)s exception: %(exc_info)s",
+        "success_message":
+            "%(action_msg_prefix)sAction %(name)s: finished successfully",
     }
 }
+ACTION_MSG_PREFIX = "### "
 SUCCESS = 0
 ERROR = 1
 FATAL = -1
@@ -80,7 +83,7 @@ class Action(object):
         """Run self.function.  Called from run() for subclassing purposes.
 
         Args:
-          context (NamedTuple): the context from the calling Script
+          context (Context): the context from the calling Script
             (passed from run()).
         """
         self.history['return_value'] = self.function(context)
@@ -89,24 +92,26 @@ class Action(object):
         """Run the action.
 
         Args:
-          context (NamedTuple): the context from the calling Script.
+          context (Context): the context from the calling Script.
         """
         self.history['timestamps']['start_time'] = time.time()
         logger = logging.getLogger(self.logger_name)
+        repl_dict = {
+            "name": self.name,
+            "action_msg_prefix": ACTION_MSG_PREFIX,
+        }
         try:
             self.run_function(context)
         except ScriptHarnessError as exc_info:
             self.history['status'] = ERROR
-            logger.error(self.strings['error_message'], {"name": self.name})
+            logger.error(self.strings['error_message'], repl_dict)
         except ScriptHarnessFatal as exc_info:
+            repl_dict['exc_info'] = exc_info
             self.history['status'] = FATAL
-            logger.critical(self.strings['fatal_message'], {
-                "name": self.name,
-                "exc_info": exc_info,
-            })
+            logger.critical(self.strings['fatal_message'], repl_dict)
             raise
         else:
             self.history['status'] = SUCCESS
-            logger.info(self.strings['success_message'], {"name": self.name})
+            logger.info(self.strings['success_message'], repl_dict)
         self.history['timestamps']['end_time'] = time.time()
         return self.history['status']

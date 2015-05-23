@@ -24,21 +24,30 @@ between actions, consider saving state to disk.
 """
 def clobber(context):
     """Clobber the source"""
+    context.logger.info("log message from clobber")
 
 def pull(context):
     """Pull source"""
+    context.logger.info("log message from pull")
 
 def build(context):
     """Build source"""
+    context.logger.info("log message from build")
+    if context.config.get("new_argument"):
+        context.logger.info("new_argument is set to %s",
+                            context_config['new_argument'])
 
 def package(context):
     """Package source"""
+    context.logger.info("log message from package")
 
 def upload(context):
     """Upload packages"""
+    context.logger.info("log message from upload")
 
 def notify(context):
     """Notify watchers"""
+    context.logger.info("log message from notify")
 
 
 if __name__ == '__main__':

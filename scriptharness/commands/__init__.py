@@ -27,21 +27,21 @@ STRINGS = {
 }
 
 
-def makedirs(path):
+def makedirs(path, level=logging.INFO):
     """os.makedirs() wrapper.
 
     Args:
       path (str): path to the directory
     """
     logger = logging.getLogger(LOGGER_NAME)
-    logger.info("Creating directory %s", path)
+    logger.log(level, "Creating directory %s", path)
     if not os.path.exists(path):
         os.makedirs(path)
-        logger.info("Done.")
+        logger.log(level, "Done.")
     else:
-        logger.info("Already exists.")
+        logger.log(level, "Already exists.")
 
-def make_parent_dir(path):
+def make_parent_dir(path, **kwargs):
     """Create the parent of path if it doesn't exist.
 
     Args:
@@ -49,7 +49,7 @@ def make_parent_dir(path):
     """
     dirname = os.path.dirname(path)
     if dirname:
-        makedirs(dirname)
+        makedirs(dirname, **kwargs)
 
 def check_output(command, logger_name="scriptharness.commands.check_output",
                  log_level=logging.INFO, log_output=True, **kwargs):
