@@ -4,3 +4,10 @@
 * more ways to enable/disable actions than --actions
 * split muted/unmuted tests in test_structures.py for easier debugging
 * artifact_dir
+* create various requirements.txt files for various envs
+ * py27 non-windows, base (needed? or just rely on setup.py?)
+ * py27 non-windows, full
+ * py27 windows
+ * py33+ non-windows, base (needed? or just rely on setup.py?)
+ * py33+ non-windows, full
+ * py33+ windows
