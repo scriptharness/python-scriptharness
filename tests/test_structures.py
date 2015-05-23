@@ -102,21 +102,21 @@ class TestIteratePairs(unittest.TestCase):
         ('c', 3),
     )
     def test_dict(self):
-        """Test iterate_pairs(dict)
+        """test_structures | iterate_pairs(dict)
         """
         result = structures.iterate_pairs(OrderedDict(self.pairs))
         for position, pair in enumerate(result):
             self.assertEqual(pair, self.pairs[position])
 
     def test_nested_tuples(self):
-        """Test iterate_pairs(tuple_of_pairs)
+        """test_structures | iterate_pairs(tuple_of_pairs)
         """
         result = structures.iterate_pairs(self.pairs)
         for position, pair in enumerate(result):
             self.assertEqual(pair, self.pairs[position])
 
     def test_flat_list(self):
-        """Test iterate_pairs(flat_list)
+        """test_structures | iterate_pairs(flat_list)
         """
         flat_list = []
         for pair in self.pairs:
@@ -173,51 +173,51 @@ class TestGetStrings(unittest.TestCase):
     """Test structures.get_strings()
     """
     def test_list_unmuted_string(self):
-        """test get_strings('list')"""
+        """test_structures | get_strings('list')"""
         strings = structures.get_strings('list')
         self.assertEqual(structures.LOGGING_STRINGS['list'], strings)
 
     def test_list_muted_string(self):
-        """test muted get_strings('list')"""
+        """test_structures | muted get_strings('list')"""
         strings = structures.get_strings('list', muted=True)
         self.assertEqual(structures.MUTED_LOGGING_STRINGS['list'], strings)
 
     def test_list_unmuted_object(self):
-        """test get_strings(LoggingList)"""
+        """test_structures | get_strings(LoggingList)"""
         loglist = get_logging_list()
         strings = structures.get_strings(loglist)
         self.assertEqual(structures.LOGGING_STRINGS['list'], strings)
 
     def test_list_muted_object(self):
-        """test muted get_strings(LoggingList)"""
+        """test_structures | muted get_strings(LoggingList)"""
         loglist = get_logging_list()
         strings = structures.get_strings(loglist, muted=True)
         self.assertEqual(structures.MUTED_LOGGING_STRINGS['list'], strings)
 
     def test_dict_unmuted_string(self):
-        """test get_strings('dict')"""
+        """test_structures | get_strings('dict')"""
         strings = structures.get_strings('dict')
         self.assertEqual(structures.LOGGING_STRINGS['dict'], strings)
 
     def test_dict_muted_string(self):
-        """test muted get_strings('dict')"""
+        """test_structures | muted get_strings('dict')"""
         strings = structures.get_strings('dict', muted=True)
         self.assertEqual(structures.MUTED_LOGGING_STRINGS['dict'], strings)
 
     def test_dict_unmuted_object(self):
-        """test get_strings(LoggingDict)"""
+        """test_structures | get_strings(LoggingDict)"""
         logdict = get_logging_dict()
         strings = structures.get_strings(logdict)
         self.assertEqual(structures.LOGGING_STRINGS['dict'], strings)
 
     def test_dict_muted_object(self):
-        """test muted get_strings(LoggingDict)"""
+        """test_structures | muted get_strings(LoggingDict)"""
         logdict = get_logging_dict()
         strings = structures.get_strings(logdict, muted=True)
         self.assertEqual(structures.MUTED_LOGGING_STRINGS['dict'], strings)
 
     def test_unknown(self):
-        """100% coverage"""
+        """test_structures | 100% coverage"""
         self.assertRaises(ScriptHarnessException, structures.get_strings,
                           'unknown_type')
         self.assertRaises(ScriptHarnessException, structures.get_strings,
@@ -295,21 +295,21 @@ class TestLoggingDeepcopy(unittest.TestCase):
     """Test deepcopy of the various Logging* classes
     """
     def test_list(self):
-        """deepcopy(LoggingList) should return a non-logging list
+        """test_structures | deepcopy(LoggingList) should return a list
         """
         loglist = get_logging_list()
         dup = deepcopy(loglist)
         self.assertEqual(LOGGING_CONTROL_LIST, dup)
 
     def test_dict(self):
-        """deepcopy(LoggingDict) should return a non-logging dict
+        """test_structures | deepcopy(LoggingDict) should return a dict
         """
         logdict = get_logging_dict()
         dup = deepcopy(logdict)
         self.assertEqual(LOGGING_CONTROL_DICT, dup)
 
     def test_tuple(self):
-        """deepcopy(LoggingTuple) should return a non-logging tuple
+        """test_structures | deepcopy(LoggingTuple) should return a tuple
         """
         logtuple = structures.add_logging_to_obj(
             tuple(LOGGING_CONTROL_LIST)
@@ -331,7 +331,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_setitem(self, mock_logging):
-        """Test logging dict setitem
+        """test_structures | logging dict setitem
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
@@ -348,7 +348,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_delitem(self, mock_logging):
-        """Test logging dict delitem
+        """test_structures | logging dict delitem
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
@@ -360,7 +360,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_clear(self, mock_logging):
-        """Test logging dict clear
+        """test_structures | logging dict clear
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
@@ -370,7 +370,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_pop(self, mock_logging):
-        """Test logging dict pop
+        """test_structures | logging dict pop
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
@@ -401,7 +401,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_popitem(self, mock_logging):
-        """Test logging dict popitem
+        """test_structures | logging dict popitem
         """
         self.get_logger_replacement(mock_logging)
         logdict = get_logging_dict(name=None)
@@ -418,7 +418,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_setdefault(self, mock_logging):
-        """Test logging dict setdefault
+        """test_structures | logging dict setdefault
         """
         unmuted_logdict = get_logging_dict(name=None)
         muted_logdict = get_logging_dict(name=None, muted=True)
@@ -453,7 +453,7 @@ class TestLoggingDict(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_update(self, mock_logging):
-        """Test logging dict setdefault
+        """test_structures | logging dict setdefault
         """
         unmuted_logdict = get_logging_dict(name=None)
         muted_logdict = get_logging_dict(name=None, muted=True)
@@ -510,7 +510,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_unmuted_delitem(self, mock_logging):
-        """Test logging list delitem, unmuted
+        """test_structures | logging list delitem, unmuted
         """
         for item in (2, 1, slice(0, 3), len(LOGGING_CONTROL_LIST) - 1):
             self.get_logger_replacement(mock_logging)
@@ -519,7 +519,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_muted_delitem(self, mock_logging):
-        """Test logging list delitem, muted
+        """test_structures | logging list delitem, muted
         """
         for item in (2, 1, slice(0, 3), len(LOGGING_CONTROL_LIST) - 1):
             self.get_logger_replacement(mock_logging)
@@ -542,7 +542,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_unmuted_setitem(self, mock_logging):
-        """Test logging list setitem, unmuted
+        """test_structures | logging list setitem, unmuted
         """
         unmuted_loglist = get_logging_list(name=None)
         for position in 1, 2:
@@ -551,7 +551,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_muted_setitem(self, mock_logging):
-        """Test logging list setitem, muted
+        """test_structures | logging list setitem, muted
         """
         muted_loglist = get_logging_list(name=None, muted=True)
         for position in 1, 2:
@@ -569,7 +569,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_unmuted_append(self, mock_logging):
-        """Test logging list append, unmuted
+        """test_structures | logging list append, unmuted
         """
         unmuted_loglist = get_logging_list(name=None)
         self.get_logger_replacement(mock_logging)
@@ -577,7 +577,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_muted_append(self, mock_logging):
-        """Test logging list append, muted
+        """test_structures | logging list append, muted
         """
         muted_loglist = get_logging_list(name=None, muted=True)
         self.get_logger_replacement(mock_logging)
@@ -597,7 +597,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_unmuted_extend(self, mock_logging):
-        """Test logging list extend, unmuted
+        """test_structures | logging list extend, unmuted
         """
         unmuted_loglist = get_logging_list(name=None)
         self.get_logger_replacement(mock_logging)
@@ -605,7 +605,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_muted_extend(self, mock_logging):
-        """Test logging list extend, muted
+        """test_structures | logging list extend, muted
         """
         muted_loglist = get_logging_list(name=None, muted=True)
         self.get_logger_replacement(mock_logging)
@@ -613,7 +613,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_insert(self, mock_logging):
-        """Test logging list insert
+        """test_structures | logging list insert
         """
         for position in (0, 3, len(LOGGING_CONTROL_LIST)):
             unmuted_loglist = get_logging_list(name=None)
@@ -635,7 +635,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_remove(self, mock_logging):
-        """Test logging list remove
+        """test_structures | logging list remove
         """
         for item in (1, 2, "finally"):
             unmuted_loglist = get_logging_list(name=None)
@@ -650,7 +650,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_pop_no_args(self, mock_logging):
-        """Test logging list pop with no args
+        """test_structures | logging list pop with no args
         """
         unmuted_loglist = get_logging_list(name=None)
         muted_loglist = get_logging_list(name=None, muted=True)
@@ -665,7 +665,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_pop_args(self, mock_logging):
-        """Test logging list pop with args
+        """test_structures | logging list pop with args
         """
         for position in (0, 3, len(LOGGING_CONTROL_LIST) - 1):
             unmuted_loglist = get_logging_list(name=None)
@@ -683,7 +683,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_sort(self, mock_logging):
-        """Test logging list sort
+        """test_structures | logging list sort
         """
         values = [9, 3, 4, 0]
         unmuted_loglist = get_logging_list(name=None, values=values)
@@ -698,7 +698,7 @@ class TestLoggingList(TestLoggingClass):
 
     @mock.patch('scriptharness.structures.logging')
     def test_reverse(self, mock_logging):
-        """Test logging list reverse
+        """test_structures | logging list reverse
         """
         unmuted_loglist = get_logging_list(name=None)
         muted_loglist = get_logging_list(name=None, muted=True)
@@ -716,8 +716,8 @@ class TestAddLogging(unittest.TestCase):
     in other ways
     """
     def test_recursion(self):
-        """Known issue: recursion in add_logging_to_obj raises RuntimeError
-        Rewrite test when this is fixed.
+        """test_structures | add_logging_to_obj recursion raises RuntimeError
+        Known issue: Rewrite test when this is fixed.
         """
         one = {}
         two = {}
@@ -756,14 +756,14 @@ class TestUnlockedROD(unittest.TestCase):
     """
 
     def test_create_rod(self):
-        """A ROD and the equivalent dict should be equal.
+        """test_structures | A ROD and the equivalent dict should be equal.
         """
         rod = get_unlocked_rod()
         self.assertEqual(rod, RO_CONTROL_DICT,
                          msg="can't transfer dict to ReadOnlyDict")
 
     def test_pop_item(self):
-        """ROD.popitem() should work when unlocked.
+        """test_structures | ROD.popitem() should work when unlocked.
         """
         rod = get_unlocked_rod()
         rod.popitem()
@@ -771,7 +771,7 @@ class TestUnlockedROD(unittest.TestCase):
                          msg="can't popitem() ReadOnlyDict when unlocked")
 
     def test_pop(self):
-        """ROD.pop() should work when unlocked.
+        """test_structures | ROD.pop() should work when unlocked.
         """
         rod = get_unlocked_rod()
         rod.pop('e')
@@ -779,7 +779,7 @@ class TestUnlockedROD(unittest.TestCase):
                          msg="can't pop() ReadOnlyDict when unlocked")
 
     def test_del(self):
-        """Del a key when unlocked
+        """test_structures | Del a key when unlocked
         """
         rod = get_unlocked_rod()
         del rod['e']
@@ -787,7 +787,7 @@ class TestUnlockedROD(unittest.TestCase):
                          msg="can't del in ReadOnlyDict when unlocked")
 
     def test_clear(self):
-        """Clear the dict when unlocked
+        """test_structures | Clear the ROD when unlocked
         """
         rod = get_unlocked_rod()
         rod.clear()
@@ -795,7 +795,7 @@ class TestUnlockedROD(unittest.TestCase):
                          msg="can't clear() ReadOnlyDict when unlocked")
 
     def test_update(self):
-        """Update the dict when unlocked
+        """test_structures | Update the ROD when unlocked
         """
         rod = get_unlocked_rod()
         dict2 = {
@@ -807,7 +807,7 @@ class TestUnlockedROD(unittest.TestCase):
                          msg="can't update() ReadOnlyDict when unlocked")
 
     def test_set_default(self):
-        """setdefault() when unlocked
+        """test_structures | setdefault() when unlocked
         """
         rod = structures.ReadOnlyDict()
         for key in RO_CONTROL_DICT.keys():
@@ -821,79 +821,80 @@ class TestLockedROD(unittest.TestCase):
     """Make sure the ReadOnlyDict is read-only after lock()ing.
     """
     def test_set(self):
-        """locked list shouldn't have a __setitem__
+        """test_structures | locked list shouldn't have a __setitem__
         """
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['e'], '__setitem__'))
 
     def test_del(self):
-        """locked list shouldn't have a __delitem__
+        """test_structures | locked list shouldn't have a __delitem__
         """
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['e'], '__delitem__'))
 
     def test_popitem(self):
-        """locked popitem() should raise
+        """test_structures | locked popitem() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod.popitem)
 
     def test_update(self):
-        """locked update() should raise
+        """test_structures | locked update() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod.update, {})
 
     def test_set_default(self):
-        """locked setdefault() should raise
+        """test_structures | locked setdefault() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod.setdefault, {})
 
     def test_pop(self):
-        """locked pop() should raise
+        """test_structures | locked pop() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod.pop)
 
     def test_clear(self):
-        """locked clear() should raise
+        """test_structures | locked clear() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod.clear)
 
     def test_second_level_dict_update(self):
-        """locked child dict update() should raise
+        """test_structures | locked child dict update() should raise
         """
         rod = get_locked_rod()
         self.assertRaises(ScriptHarnessException, rod['c'].update, {})
 
     def test_second_level_list_pop(self):
-        """locked child list pop() should raise
+        """test_structures | locked child list pop() should raise
         """
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['e'], 'pop'))
 
     def test_third_level_mutate(self):
-        """locked child list-in-dict append() should raise
+        """test_structures | locked child list-in-dict append() should raise
         """
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['d']['turtles'], 'append'))
 
     def test_object_in_tuple_mutate(self):
-        """locked child list-in-tuple append() should raise
+        """test_structures | locked child list-in-tuple append() should raise
         """
         rod = get_locked_rod()
         self.assertFalse(hasattr(rod['e'][2]['turtles'], 'append'))
 
     def test_unlock(self):
-        """unlocking locked ROD should raise. relocking shouldn't
+        """test_structures | unlocking locked ROD should raise.
         """
         rod = get_locked_rod()
         def func():
             """Test func"""
             rod._lock = False  # pylint: disable=protected-access
         self.assertRaises(ScriptHarnessException, func)
+        # Re-locking a locked ROD should be fine.
         rod._lock = True  # pylint: disable=protected-access
 
 
@@ -902,7 +903,7 @@ class TestDeepcopyROD(unittest.TestCase):
     """Make sure deepcopy behaves properly on ReadOnlyDict
     """
     def test_deepcopy_equality(self):
-        """deepcopy of locked rod should equal the original rod
+        """test_structures | deepcopy of locked rod should equal the original
         """
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
@@ -912,7 +913,7 @@ class TestDeepcopyROD(unittest.TestCase):
         )
 
     def test_deepcopy_set(self):
-        """deepcopy of locked rod should be read-write
+        """test_structures | deepcopy of locked rod should be read-write
         """
         rod = get_locked_rod()
         rod2 = deepcopy(rod)
@@ -920,7 +921,7 @@ class TestDeepcopyROD(unittest.TestCase):
         self.assertEqual(rod2['e'], 'hey', "can't set var in rod2 after deepcopy")
 
     def test_deepcopy_new_lock(self):
-        """deepcopy of locked rod should be lockable
+        """test_structures | deepcopy of locked rod should be lockable
         """
         rod = get_locked_rod()
         rod2 = deepcopy(rod)

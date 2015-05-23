@@ -84,29 +84,29 @@ class TestUrlFunctionss(unittest.TestCase):
         nuke_test_files()
 
     def test_basic_url_filename(self):
-        """Filename from a basic url"""
+        """test_config | Filename from a basic url"""
         url = "http://example.com/bar/baz"
         self.assertEqual(shconfig.get_filename_from_url(url), "baz")
 
     def test_no_path(self):
-        """Filename from a url without a path"""
+        """test_config | Filename from a url without a path"""
         url = "https://example.com"
         self.assertEqual(shconfig.get_filename_from_url(url), "example.com")
 
     def test_is_url(self):
-        """Verify is_url(real_url)"""
+        """test_config | Verify is_url(real_url)"""
         for url in ("http://example.com", "https://example.com/foo/bar",
                     "file:///home/example/.bashrc"):
             self.assertTrue(shconfig.is_url(url))
 
     def test_is_not_url(self):
-        """Verify not is_url(real_url)"""
+        """test_config | Verify not is_url(real_url)"""
         for url in ("example.com", "/usr/local/bin/python"):
             print(url)
             self.assertFalse(shconfig.is_url(url))
 
     def test_successful_download_url(self):
-        """Download a file from a local webserver.
+        """test_config | Download a file from a local webserver.
         """
         with start_webserver() as (path, host):
             with open(os.path.join(path, "test_config.json")) as filehandle:
@@ -117,7 +117,7 @@ class TestUrlFunctionss(unittest.TestCase):
         self.assertEqual(contents, orig_contents)
 
     def test_empty_download_url(self):
-        """Download an empty file from a local webserver.
+        """test_config | Download an empty file from a local webserver.
         """
         with start_webserver() as (_, host):
             shconfig.download_url("%s/empty_file" % host, path=TEST_FILE)
@@ -126,7 +126,7 @@ class TestUrlFunctionss(unittest.TestCase):
         self.assertEqual(contents, "")
 
     def test_timeout_download_url(self):
-        """Time out in download_url()
+        """test_config | Time out in download_url()
         """
         with start_webserver() as (_, host):
             self.assertRaises(
@@ -136,7 +136,7 @@ class TestUrlFunctionss(unittest.TestCase):
             )
 
     def test_ioerror_download_url(self):
-        """Download with unwritable target file.
+        """test_config | Download with unwritable target file.
         """
         with start_webserver() as (path, host):
             self.assertRaises(
@@ -146,7 +146,7 @@ class TestUrlFunctionss(unittest.TestCase):
             )
 
     def test_parse_config_file(self):
-        """parse json
+        """test_config | parse json
         """
         path = os.path.join(os.path.dirname(__file__), 'http',
                             'test_config.json')
@@ -156,7 +156,7 @@ class TestUrlFunctionss(unittest.TestCase):
         self.assertEqual(config, config2)
 
     def test_parse_invalid_json(self):
-        """Download invalid json and parse it
+        """test_config | Download invalid json and parse it
         """
         with start_webserver() as (_, host):
             self.assertRaises(
@@ -166,7 +166,7 @@ class TestUrlFunctionss(unittest.TestCase):
             )
 
     def test_parse_invalid_path(self):
-        """Parse nonexistent file
+        """test_config | Parse nonexistent file
         """
         self.assertRaises(
             ScriptHarnessException,
@@ -182,7 +182,7 @@ class TestParserFunctions(unittest.TestCase):
     @staticmethod
     @mock.patch('%s.print' % BUILTIN)
     def test_list_actions(mock_print):
-        """Test --list-actions
+        """test_config | --list-actions
         """
         parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
         try:
@@ -197,7 +197,7 @@ class TestParserFunctions(unittest.TestCase):
         )
 
     def test_action_parser(self):
-        """Test action parser
+        """test_config | action parser
         """
         actions = []
         def func():
@@ -214,7 +214,7 @@ class TestParserFunctions(unittest.TestCase):
                               "--actions invalid_action".split())
 
     def test_config_parser(self):
-        """Test config parser
+        """test_config | config parser
         """
         parser = shconfig.get_config_parser()
         args = parser.parse_args("-c file1 -c file2 -c file3".split())
@@ -224,14 +224,14 @@ class TestParserFunctions(unittest.TestCase):
         )
 
     def test_no_actions(self):
-        """Test no actions, get_parser no kwargs
+        """test_config | no actions, get_parser no kwargs
         """
         parser = shconfig.get_parser()
         with stdstar_redirected(os.devnull):
             self.assertRaises(SystemExit, parser.parse_args, ["--list-actions"])
 
     def test_no_actions2(self):
-        """Test no actions, setting get_parser parents
+        """test_config | no actions, setting get_parser parents
         """
         parents = []
         parser = shconfig.get_parser(parents=parents)
@@ -265,7 +265,7 @@ class TestParserFunctions(unittest.TestCase):
         self.assertEqual(config, config2)
 
     def test_build_config_optcfg(self):
-        """Test build_config() optcfg
+        """test_config | build_config() optcfg
         """
         path = os.path.join(os.path.dirname(__file__), 'http',
                             'test_config.json')
@@ -275,7 +275,7 @@ class TestParserFunctions(unittest.TestCase):
         self.helper_build_config(cmdln_args)
 
     def test_build_config_nocfg(self):
-        """Test build_config() no cfg files
+        """test_config | build_config() no cfg files
         """
         cmdln_args = ["--actions", "build", "package",
                       "--override-default", "not_default"]
@@ -290,7 +290,7 @@ class TestParserFunctions(unittest.TestCase):
         self.helper_build_config(cmdln_args, initial_config=initial_config)
 
     def test_build_config_nocmdln(self):
-        """Test build_config() no cmdln
+        """test_config | build_config() no cmdln
         """
         cmdln_args = []
         path = os.path.join(os.path.dirname(__file__), 'http',

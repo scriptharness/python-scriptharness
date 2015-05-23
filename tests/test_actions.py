@@ -31,17 +31,11 @@ def raise_fatal(_):
 
 
 # TestAction {{{1
-class TestFunctionByName(unittest.TestCase):
-    """Test get_function_by_name()
-    """
-
-
-# TestAction {{{1
 class TestAction(unittest.TestCase):
     """Test Action()
     """
     def test_missing_func(self):
-        """Action should raise if no function
+        """test_action | Action should raise if no function
         """
         self.assertRaises(
             ScriptHarnessException, actions.Action, name="missing_function"
@@ -52,7 +46,7 @@ class TestAction(unittest.TestCase):
         )
 
     def test_specify_func(self):
-        """Action should raise if function is not callable
+        """test_action | Action should raise if function is not callable
         """
         obj = []
         self.assertRaises(
@@ -61,21 +55,21 @@ class TestAction(unittest.TestCase):
         actions.Action("foo", function=self.test_specify_func)
 
     def test_run(self):
-        """Test a successful Action.run()
+        """test_action | successful Action.run()
         """
         action = actions.Action("name", function=action_func)
         self.assertEqual(action.run({}), actions.SUCCESS)
         self.assertEqual(action.history['return_value'], 50)
 
     def test_error(self):
-        """Test Action.run() ScriptHarnessError
+        """test_action | Action.run() ScriptHarnessError
         """
         action = actions.Action("name", function=raise_error)
         self.assertEqual(action.run({}), actions.ERROR)
         self.assertEqual(action.history['status'], actions.ERROR)
 
     def test_fatal(self):
-        """Test Action.run() ScriptHarnessFatal
+        """test_action | Action.run() ScriptHarnessFatal
         """
         action = actions.Action("name", function=raise_fatal)
         self.assertRaises(ScriptHarnessFatal, action.run, {})

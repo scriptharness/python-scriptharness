@@ -16,7 +16,7 @@ class TestUnicode(unittest.TestCase):
     """Test unicode support.
     """
     def test_to_unicode(self):
-        """Verify to_unicode gives a unicode string
+        """test_exceptions | Verify to_unicode gives a unicode string
         """
         for ustring in UNICODE_STRINGS:
             astring = exceptions.to_unicode(ustring)
@@ -26,13 +26,13 @@ class TestUnicode(unittest.TestCase):
                 self.assertEqual(ustring, astring)
 
     def test_to_unicode_exception(self):
-        """Verify to_unicode of a None object gives None
+        """test_exceptions | Verify to_unicode of a None object gives None
         """
         value = exceptions.to_unicode(None)
         self.assertTrue(value is None)
 
     def test_exception(self):
-        """Verify ScriptHarnessBaseException works
+        """test_exceptions | Verify ScriptHarnessBaseException works
         """
         for ustring in UNICODE_STRINGS:
             for exception in (exceptions.ScriptHarnessBaseException,

@@ -74,7 +74,7 @@ class TestScript(unittest.TestCase):
         raise ScriptHarnessFatal("Fatal")
 
     def test_bad_actions(self):
-        """Script() should throw with a bad action list
+        """test_script | Script() should throw with a bad action list
         """
         self.assertRaises(
             ScriptHarnessException,
@@ -82,14 +82,14 @@ class TestScript(unittest.TestCase):
         )
 
     def test_run(self):
-        """Try a basic run()
+        """test_script | Try a basic run()
         """
         scr = self.get_script()
         scr.run()
         self.assertEqual(self.timings, ["one", "two", "four"])
 
     def test_change_config(self):
-        """Changing Script.config should raise
+        """test_script | Changing Script.config should raise
         """
         scr = self.get_script(initial_config={'a': 1})
         def func():
@@ -98,14 +98,14 @@ class TestScript(unittest.TestCase):
         self.assertRaises(ScriptHarnessException, func)
 
     def test_enable_actions(self):
-        """Enable/disable actions from the command line
+        """test_script | Enable/disable actions from the command line
         """
         scr = self.get_script(cmdln_args="--actions one three".split())
         scr.run()
         self.assertEqual(self.timings, ["one", "three"])
 
     def test_non_function_listener(self):
-        """Test non-function listener
+        """test_script non-function listener
         """
         obj = object()
         scr = self.get_script()
@@ -114,7 +114,7 @@ class TestScript(unittest.TestCase):
         )
 
     def test_bad_timing_listener(self):
-        """Test bad timing listener
+        """test_script | bad timing listener
         """
         scr = self.get_script()
         self.assertRaises(
@@ -123,7 +123,7 @@ class TestScript(unittest.TestCase):
         )
 
     def test_bad_actions_listener(self):
-        """Test bad actions listener
+        """test_script | bad actions listener
         """
         scr = self.get_script()
         self.assertRaises(
@@ -133,7 +133,7 @@ class TestScript(unittest.TestCase):
         )
 
     def test_pre_action_listener(self):
-        """Test pre_action listeners
+        """test_script | pre_action listeners
         """
         scr = self.get_script()
         scr.add_listener(
@@ -152,7 +152,7 @@ class TestScript(unittest.TestCase):
         ])
 
     def test_post_action_listener(self):
-        """Test post_action listeners
+        """test_script | post_action listeners
         """
         scr = self.get_script()
         scr.add_listener(
@@ -171,7 +171,7 @@ class TestScript(unittest.TestCase):
         ])
 
     def test_prepost_run_listener(self):
-        """Test pre_run and post_run listeners
+        """test_script | pre_run and post_run listeners
         """
         scr = self.get_script()
         scr.add_listener(self.get_timing_func("pre_run1"), "pre_run")
@@ -185,7 +185,7 @@ class TestScript(unittest.TestCase):
         ])
 
     def test_post_fatal_listener(self):
-        """Test post_fatal listeners
+        """test_script | post_fatal listeners
         """
         scr = self.get_script()
         scr.actions[1] = actions.Action(
@@ -200,7 +200,7 @@ class TestScript(unittest.TestCase):
                                         "post_fatal3"])
 
     def test_dump_config(self):
-        """Test --dump-config
+        """test_script | --dump-config
         """
         initial_config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
         update_dirs(initial_config)

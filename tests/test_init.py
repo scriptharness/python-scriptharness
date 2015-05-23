@@ -66,7 +66,7 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_get_actions(self, mock_globals):
-        """Test get_actions()
+        """test_init | get_actions()
         """
         self.fake_action_func(mock_globals)
         action_tuple = scriptharness.get_actions(TEST_ACTIONS)
@@ -74,7 +74,7 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_all_enabled(self, mock_globals):
-        """Test get_actions_from_list() all enabled
+        """test_init | get_actions_from_list() all enabled
         """
         self.fake_action_func(mock_globals)
         action_tuple = scriptharness.get_actions_from_list(
@@ -85,7 +85,7 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_bad_default_actions(self, mock_globals):
-        """Test get_actions_from_list() with bad default_actions
+        """test_init | get_actions_from_list() with bad default_actions
         """
         self.fake_action_func(mock_globals)
         all_actions = ["one", "two", "three"]
@@ -98,7 +98,7 @@ class TestHelperFunctions(unittest.TestCase):
 
     @mock.patch('%s.globals' % BUILTIN)
     def test_actions_from_list(self, mock_globals):
-        """Test get_actions_from_list() with default_actions
+        """test_init | get_actions_from_list() with default_actions
         """
         self.fake_action_func(mock_globals)
         all_actions = []
@@ -115,20 +115,20 @@ class TestHelperFunctions(unittest.TestCase):
 
 # TestScriptManager {{{1
 class TestScriptManager(unittest.TestCase):
-    """Test ScriptManager
+    """test_init | ScriptManager
     """
     def setUp(self):
         reload_module(scriptharness)
 
     def tearDown(self):
-        """Cleanliness is close to godliness
+        """test_init | is close to godliness
         """
         assert self  # silence pyflakes
         if os.path.exists("localconfig.json"):
             os.remove("localconfig.json")
 
     def test_fake_script(self):
-        """Test ScriptManager with FakeScript
+        """test_init | ScriptManager with FakeScript
         """
         scriptharness.set_script_class(FakeScript)
         script = scriptharness.get_script()
@@ -139,7 +139,7 @@ class TestScriptManager(unittest.TestCase):
         self.assertTrue(config['fakescript'] is True)
 
     def test_illegal_get_config(self):
-        """Test illegal get_config
+        """test_init | illegal get_config
         """
         scriptharness.set_script_class(FakeScript)
         scriptharness.get_script()
@@ -152,7 +152,7 @@ class TestScriptManager(unittest.TestCase):
         )
 
     def test_actions_from_list(self):
-        """Test get_actions_from_list() with FakeAction
+        """test_init | get_actions_from_list() with FakeAction
         """
         scriptharness.set_action_class(FakeAction)
         action_tuple = scriptharness.get_actions_from_list(

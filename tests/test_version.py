@@ -14,7 +14,7 @@ class TestVersionString(unittest.TestCase):
     """Test the various semver version->version string conversions
     """
     def test_three_version(self):
-        """3 digit tuple -> version string
+        """test_version | 3 digit tuple -> version string
         """
         test_dict = {
             '0.1.0': (0, 1, 0),
@@ -27,7 +27,7 @@ class TestVersionString(unittest.TestCase):
             )
 
     def test_illegal_three_version(self):
-        """Raise if a 3-len tuple has a non-digit
+        """test_version | Raise if a 3-len tuple has a non-digit
         """
         self.assertRaises(
             TypeError, scriptharness.version.get_version_string,
@@ -35,7 +35,7 @@ class TestVersionString(unittest.TestCase):
         )
 
     def test_four_version(self):
-        """3 digit + string tuple -> version string
+        """test_version | 3 digit + string tuple -> version string
         """
         self.assertEqual(
             scriptharness.version.get_version_string((0, 1, 0, 'alpha')),
@@ -43,7 +43,7 @@ class TestVersionString(unittest.TestCase):
         )
 
     def test_illegal_len_version(self):
-        """Raise if len(version) not in (3, 4)
+        """test_version | Raise if len(version) not in (3, 4)
         """
         test_versions = (
             (0, ),

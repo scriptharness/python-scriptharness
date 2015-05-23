@@ -70,7 +70,7 @@ class TestPrepareSimpleLogging(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_no_kwargs(mock_logging):
-        """Test prepare_simple_logging with just 'path'
+        """test_log | prepare_simple_logging with just 'path'
         """
         path = _absent_test_file()
         console_mock = mock.MagicMock()
@@ -83,7 +83,7 @@ class TestPrepareSimpleLogging(unittest.TestCase):
 
 # TestGetFileHandler {{{1
 class TestGetFileHandler(unittest.TestCase):
-    """Test scriptharness.log.get_file_handler() method
+    """test_log | scriptharness.log.get_file_handler() method
     """
     def tearDown(self):
         assert self  # silence pylint
@@ -93,7 +93,7 @@ class TestGetFileHandler(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_basic(mock_logging):
-        """Test basic get_file_handler
+        """test_log | basic get_file_handler
         """
         log_file = _absent_test_file()
         formatter = mock.MagicMock()
@@ -102,7 +102,7 @@ class TestGetFileHandler(unittest.TestCase):
         handler.setFormatter.assert_called_once_with(formatter)
 
     def test_overwrite(self):
-        """Verify that mode='w' deletes the existing file
+        """test_log | Verify that mode='w' deletes the existing file
         """
         log_file = _present_test_file()
         logger = logging.getLogger(LOGGER_NAME)
@@ -119,12 +119,12 @@ class TestGetFileHandler(unittest.TestCase):
 
 # TestGetConsoleHandler {{{1
 class TestGetConsoleHandler(unittest.TestCase):
-    """Test scriptharness.log.get_console_handler() method
+    """test_log | scriptharness.log.get_console_handler() method
     """
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_addhandler(mock_logging):
-        """Test get_console_handler with existing log file
+        """test_log | get_console_handler with existing log file
         """
         assert mock_logging  # shush pylint
         logger = mock.MagicMock()
@@ -134,7 +134,7 @@ class TestGetConsoleHandler(unittest.TestCase):
     @staticmethod
     @mock.patch('scriptharness.log.logging')
     def test_handler(mock_logging):
-        """Test basic get_console_handler
+        """test_log | basic get_console_handler
         """
         assert mock_logging  # shush pylint
         formatter = mock.MagicMock()
@@ -145,7 +145,7 @@ class TestGetConsoleHandler(unittest.TestCase):
 
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
-    """Test scriptharness.log.LogMethod.__init__()
+    """test_log | scriptharness.log.LogMethod.__init__()
     """
     def test_no_kwargs(self):
         """LogMethod.__init__() with no keyword arguments
