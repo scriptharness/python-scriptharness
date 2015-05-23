@@ -1,5 +1,6 @@
 .coverage
 .tox
+artifacts/
 coverage.xml
 htmlcov
 localconfig.json

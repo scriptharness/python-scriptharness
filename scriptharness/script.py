@@ -10,8 +10,10 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import codecs
 import logging
+import os
 import pprint
 from scriptharness.actions import Action, STRINGS
+from scriptharness.commands import make_parent_dir
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict
@@ -40,6 +42,7 @@ def save_config(config, path):
       config (dict): The config to save
       path (str): The path to write the config to
     """
+    make_parent_dir(path)
     with codecs.open(path, 'w', encoding='utf-8') as filehandle:
         filehandle.write(json.dumps(config, sort_keys=True, indent=4))
 
@@ -115,7 +118,12 @@ class Script(object):
         logger = self.get_logger()
         for line in pprint.pformat(self.config).splitlines():
             logger.info(line)
-        save_config(self.config, "localconfig.json")
+        save_config(
+            self.config,
+            os.path.join(
+                self.config['scriptharness_artifact_dir'], "localconfig.json"
+            )
+        )
 
     def dict_to_config(self, config):
         """Here for subclassing.

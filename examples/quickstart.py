@@ -45,7 +45,7 @@ if __name__ == '__main__':
     """Enable logging to screen + log.txt.  Not required, but without it
     the script will run silently.
     """
-    scriptharness.prepare_simple_logging("log.txt")
+    scriptharness.prepare_simple_logging("artifacts/log.txt")
 
     """Define actions.  All six actions are available to run, but if the
     script is run without any action commandline options, only the

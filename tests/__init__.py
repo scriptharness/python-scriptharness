@@ -10,6 +10,7 @@ Attributes:
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from contextlib import contextmanager
+import logging
 import os
 import sys
 
@@ -66,9 +67,10 @@ class LoggerReplacement(object):
         self.level_messages.setdefault(level, [])
         self.level_messages[level].append((msg, args))
 
-    def silence_pylint(self):
-        """pylint complains about too few public methods"""
-        pass
+    def info(self, msg, *args):
+        """info() wrapper"""
+        self.all_messages.append((logging.INFO, msg, args))
+        self.level_messages[logging.INFO].append((msg, args))
 
 
 # http://stackoverflow.com/questions/4675728/redirect-stdout-to-a-file-in-python

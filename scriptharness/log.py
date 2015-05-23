@@ -16,6 +16,7 @@ import logging
 import os
 import six
 
+from scriptharness.commands import make_parent_dir
 from scriptharness.exceptions import ScriptHarnessException
 
 
@@ -83,6 +84,7 @@ def prepare_simple_logging(path, mode='w', logger_name='', level=DEFAULT_LEVEL,
     """
     logger = logging.getLogger(logger_name)
     logger.setLevel(level)
+    make_parent_dir(path)
     get_file_handler(path, logger=logger, mode=mode, level=level,
                      formatter=formatter)
     get_console_handler(logger=logger, level=level, formatter=formatter)
@@ -105,6 +107,7 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
       via logger.addHandler(handler)
 
     """
+    make_parent_dir(path)
     if not formatter:
         formatter = get_formatter()
     handler = logging.FileHandler(path, mode)
