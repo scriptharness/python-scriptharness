@@ -3,15 +3,19 @@
 setup.py for scriptharness
 """
 
+import json
+import os
 from setuptools import setup, find_packages
 import sys
-
-import scriptharness.version
 
 dependencies = [
     'requests',
     'six',
 ]
+
+path = os.path.join(os.path.dirname(__file__), "version.json")
+with open(path) as filehandle:
+    version = json.load(filehandle)['version_string']
 
 if sys.version_info < (2, 7) or (sys.version_info[0] == 3 and
                                  sys.version_info[1] < 3):
@@ -20,7 +24,7 @@ if sys.version_info < (2, 7) or (sys.version_info[0] == 3 and
 
 setup(
     name='scriptharness',
-    version=scriptharness.version.__version_string__,
+    version=version,
     description='A generic logging, configuration, and workflow framework for scripts.',
     author='Aki Sasaki',
     author_email='aki@escapewindow.com',

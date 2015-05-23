@@ -2,13 +2,14 @@
 .tox
 artifacts/
 coverage.xml
+dist/
+docs/_build
 htmlcov
 localconfig.json
 log.txt
 nosetests.xml
 pylint.out
 scriptharness.egg-info
-docs/_build
 *.pyc
 *.orig
 *,cover

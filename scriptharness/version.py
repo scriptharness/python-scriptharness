@@ -8,6 +8,8 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import json
+import os
 
 
 def get_version_string(version):
@@ -39,3 +41,18 @@ def get_version_string(version):
 # Semantic versioning 2.0.0  http://semver.org/
 __version__ = (0, 1, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
+
+
+def write_version():
+    path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                        "version.json")
+    contents = {
+        'version': __version__,
+        'version_string': __version_string__,
+    }
+    with open(path, 'w') as filehandle:
+        filehandle.write(json.dumps(contents, sort_keys=True, indent=4))
+
+
+if __name__ == '__main__':
+    write_version()
