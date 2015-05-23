@@ -34,6 +34,11 @@ def main():
                             QUICKSTART_CONTENTS_INDENTED=contents)
         )
     subprocess.check_call(["make", "html"])
+    if not os.path.exists("README.rst"):
+        os.link("../README.rst", "README.rst")
+    subprocess.check_call(["make", "text"])
+    os.remove("README.rst")
+    subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
 
 if __name__ == '__main__':
     main()

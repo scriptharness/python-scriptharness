@@ -280,11 +280,11 @@ def update_dirs(config, max_depth=2):
     build_config().  Defining the directory paths as formattable strings
     is configurable but not overly complex.
 
-    Any key in `config` named scriptharness_..._dir will be % formatted with
-    the other dirs as the replacement dictionary.
+    Any key in `config` named scriptharness_SOMETHING_dir will be % formatted
+    with the other dirs as the replacement dictionary.
 
     Args:
-      config (dict): the config to parse for scriptharness_..._dir keys.
+      config (dict): the config to parse for scriptharness_SOMETHING_dir keys.
     """
     repl_dict = {}
     for key, value in config.items():

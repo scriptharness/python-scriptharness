@@ -51,10 +51,10 @@ Here's an example script.  The file is also viewable here_.
     
     
     if __name__ == '__main__':
-        """Enable logging to screen + log.txt.  Not required, but without it
-        the script will run silently.
+        """Enable logging to screen + artifacts/log.txt.  Not required, but
+        without it the script will run silently.
         """
-        scriptharness.prepare_simple_logging("log.txt")
+        scriptharness.prepare_simple_logging("artifacts/log.txt")
     
         """Define actions.  All six actions are available to run, but if the
         script is run without any action commandline options, only the
@@ -103,8 +103,9 @@ Here's an example script.  The file is also viewable here_.
         script.run()
 
 
+######
 output
-------
+######
 
 If you run this without any arguments, you might get output like this::
 
@@ -129,8 +130,9 @@ announces 'Done.'.
 
 The same output is written to the file ``log.txt``.
 
+#########
 --actions
----------
+#########
 
 You can change which actions are run via the ``--actions`` option::
 
@@ -148,8 +150,9 @@ You can change which actions are run via the ``--actions`` option::
     01:26:12     INFO - Action notify: finished successfully
     01:26:12     INFO - Done.
 
+##############
 --list-actions
---------------
+##############
 
 If you want to list which actions are available, and which are enabled by
 default, use the ``--list-actions`` option::
@@ -162,8 +165,9 @@ default, use the ``--list-actions`` option::
       upload
       notify
 
+#############
 --dump-config
--------------
+#############
 
 You can change the ``new_argument`` value in the config via the
 ``--new-argument`` option that the script added.  Also, if you just want to
@@ -174,8 +178,9 @@ see what the config is without running anything, you can use the
     01:27:21     INFO - Dumping config:
     01:27:21     INFO - {'new_argument': 'foo'}
 
+######
 --help
-------
+######
 
 You can always use the ``--help`` option::
 
