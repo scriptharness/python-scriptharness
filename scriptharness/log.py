@@ -148,7 +148,7 @@ class LogMethod(object):
     default_config = {
         'level': logging.INFO,
         'error_level': logging.ERROR,
-        'logger_name': '{func_name}',
+        'logger_name': 'scriptharness.{func_name}',
         'pre_msg': '%(func_name)s arguments were: %(args)s %(kwargs)s',
         'post_success_msg': '%(func_name)s completed.',
         'post_failure_msg': '%(func_name)s failed.',
@@ -247,10 +247,12 @@ class LogMethod(object):
         After running self.func, we'll also set return_value.
         """
         self.repl_dict = {
-            'func_name': self.func.__name__,
             'args': self.args,
             'kwargs': self.kwargs,
         }
+        for name_var in ('__qualname__', '__name__'):
+            if hasattr(self.func, name_var):
+                self.repl_dict['func_name'] = getattr(self.func, name_var)
 
     def pre_func(self):
         """Log the function call before proceeding.
