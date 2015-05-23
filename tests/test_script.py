@@ -88,15 +88,6 @@ class TestScript(unittest.TestCase):
         scr.run()
         self.assertEqual(self.timings, ["one", "two", "four"])
 
-    def test_change_config(self):
-        """test_script | Changing Script.config should raise
-        """
-        scr = self.get_script(initial_config={'a': 1})
-        def func():
-            """Test function"""
-            scr.config = {}
-        self.assertRaises(ScriptHarnessException, func)
-
     def test_enable_actions(self):
         """test_script | Enable/disable actions from the command line
         """

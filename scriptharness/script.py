@@ -56,7 +56,6 @@ class Script(object):
 
     Attributes:
       config (LoggingDict): the config for the script
-      strict (bool): In strict mode, warnings are fatal; config is read-only.
       actions (tuple): Action objects to run.
       listeners (dict): callbacks for run()
       logger (logging.Logger): the logger for the script
@@ -83,13 +82,6 @@ class Script(object):
         self.logger = self.get_logger()
         self.start_message()
         self.save_config()
-
-    def __setattr__(self, name, *args):
-        if name == 'config' and self.config:
-            raise ScriptHarnessException(
-                "Changing script config after config is already set!"
-            )
-        return super(Script, self).__setattr__(name, *args)
 
     def build_config(self, parser, cmdln_args=None, initial_config=None):
         """Create self.config from the parsed args.
