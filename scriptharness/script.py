@@ -17,7 +17,7 @@ from scriptharness.actions import Action, STRINGS, ACTION_MSG_PREFIX
 from scriptharness.commands import make_parent_dir
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
-from scriptharness.structures import iterate_pairs, LoggingDict
+from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict
 import sys
 import time
 try:
@@ -284,3 +284,42 @@ class Script(object):
         for listener, _ in iterate_pairs(self.listeners['post_run']):
             listener(context)
         self.end_message()
+
+
+class StrictScript(Script):
+    """A subclass of Script that uses a ReadOnlyDict for config, and locks
+    its attributes.
+
+    Attributes:
+      _lock (bool): Similar to the ReadOnlyDict _lock.  Once set,
+        __setattr__ will raise if any attributes are changed/set.
+    """
+    def __init__(self, *args, **kwargs):
+        super(StrictScript, self).__init__(*args, **kwargs)
+        self._lock = False
+
+    def __setattr__(self, name, *args):
+        if self._lock:
+            # Re-locking a locked StrictScript is ok; everything else is
+            # verboten.
+            if name != '_lock' or not args[0]:
+                raise ScriptHarnessException(
+                    "Not allowed to modify a locked StrictScript!"
+                )
+        return super(StrictScript, self).__setattr__(name, *args)
+
+    def pre_config_lock(self):
+        """Stub method for subclassing.
+        """
+        assert self
+
+    def dict_to_config(self, config):
+        """Set self.config to a ReadOnlyDict and lock.
+        """
+        self.config = ReadOnlyDict(config)
+        self.pre_config_lock()
+        self.config.lock()
+
+    def run(self):
+        self._lock = True
+        super(StrictScript, self).run()
