@@ -6,6 +6,7 @@ setup.py for scriptharness
 import json
 import os
 from setuptools import setup, find_packages
+import subprocess
 import sys
 
 dependencies = [
@@ -14,6 +15,11 @@ dependencies = [
 ]
 
 path = os.path.join(os.path.dirname(__file__), "version.json")
+if not os.path.exists(path):
+    subprocess.check_call(
+        [sys.executable, os.path.join(os.path.dirname(__file__),
+                                      "scriptharness", "version.py")]
+    )
 with open(path) as filehandle:
     version = json.load(filehandle)['version_string']
 
