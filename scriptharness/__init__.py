@@ -39,12 +39,13 @@ class ScriptManager(object):
         self.script_class = scriptharness.script.Script
         self.action_class = scriptharness.actions.Action
 
-    def get_script(self, name="root", *args, **kwargs):
+    def get_script(self, *args, **kwargs):
         """Back end for scriptharness.get_script().
 
         Most python scripts will have a single `script`, but there may be more
         when parallel execution is desired.
         """
+        name = kwargs.get('name', 'root')
         if name not in self.all_scripts:
             self.all_scripts[name] = self.script_class(*args, **kwargs)
         return self.all_scripts[name]
@@ -64,6 +65,16 @@ class ScriptManager(object):
             ]))
         return self.all_scripts[name].config
 
+    def get_logger(self, name="root"):
+        """Back end for scriptharness.get_logger().
+        """
+        if name not in self.all_scripts:
+            raise ScriptHarnessException(os.linesep.join([
+                "scriptharness.get_logger(): %s not in all_scripts!" % name,
+                "use scriptharness.get_script(%s, ...) first!",
+            ]))
+        return self.all_scripts[name].get_logger()
+
     def set_action_class(self, action_class):
         """Back end for scriptharness.set_action_class().
         """
@@ -82,29 +93,35 @@ MANAGER = ScriptManager()
 # args/kwargs.  Specifying these as *args and **kwargs and being more vague
 # in the documentation would be cleaner from a coding perspective, and more
 # difficult from a "how do I use this?" discovery perspective.
-def get_script(name="root", *args, **kwargs):
+def get_script(*args, **kwargs):
     """This will retrieve an existing script or create one and return it.
 
     Args:
-      name (str, optional):  The name of the script to retrieve/create.
-        Defaults to "root".
+      actions (tuple of Actions): When creating a new Script,
+        this is required.  When retrieving an existing script, this is
+        ignored/optional.
 
-      *args: args to pass to MANAGER.get_script(); these will be passed to
-        Script.__init__()
+      parser (argparse.ArgumentParser): When creating a new Script,
+        this is required.  When retrieving an existing script, this is
+        ignored/optional.
+
+      name (str, optional):  The name of the script to retrieve/create.
+        Defaults to "root".  This is a keyword argument, so use name=NAME
 
       **kwargs: kwargs to pass to MANAGER.get_script(); these will be passed
-        to Script.__init__()
+        to Script.__init__() when creating a new Script.  When retrieving an
+        existing script, this is ignored/optional.
 
     Returns:
       The script instance.
     """
-    return MANAGER.get_script(name=name, *args, **kwargs)
+    return MANAGER.get_script(*args, **kwargs)
 
 def get_config(name="root"):
     """This will return the config from an existing script.
 
     Args:
-      name (str, optional):  The name of the script to retrieve/create.
+      name (str, optional):  The name of the script to get the config from.
         Defaults to "root".
 
     Raises:
@@ -115,6 +132,28 @@ def get_config(name="root"):
       config (dict): By default scriptharness.structures.LoggingDict
     """
     return MANAGER.get_config(name=name)
+
+def get_logger(name="root"):
+    """This will return the logger from an existing script.
+
+    This function isn't strictly needed, since the logging module keeps track
+    of loggers for you.  However, if/when scriptharness supports multiple
+    parallel Script objects, and if/when scriptharness supports structured
+    logging outside of the python logging module, this function will become
+    more important.
+
+    Args:
+      name (str, optional):  The name of the script to get the logger from.
+        Defaults to "root".
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessException, if there is no script
+        of name `name`.
+
+    Returns:
+      logger (logging.Logger)
+    """
+    return MANAGER.get_logger(name=name)
 
 def set_action_class(action_class):
     """By default new actions use the scriptharness.actions.Action class.
@@ -135,7 +174,6 @@ def set_script_class(script_class):
     return MANAGER.set_script_class(script_class)
 
 
-# Helper functions {{{1
 def get_actions(all_actions):
     """Build a tuple of Action objects for the script.
 

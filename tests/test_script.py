@@ -38,10 +38,9 @@ class TestScript(unittest.TestCase):
 
     def get_timing_func(self, name):
         """helper function for listeners and actions"""
-        def func(*args):
+        def func(context):
             """Test function"""
-            if args:  # silence pylint
-                pass
+            assert context  # silence pylint
             self.timings.append(name)
         return func
 

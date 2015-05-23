@@ -76,25 +76,25 @@ class Action(object):
                 "No callable function for action %s!" % name
             )
 
-    def run_function(self, config):
+    def run_function(self, context):
         """Run self.function.  Called from run() for subclassing purposes.
 
         Args:
-          config (data structure): the config from the calling Script
+          context (NamedTuple): the context from the calling Script
             (passed from run()).
         """
-        self.history['return_value'] = self.function(config)
+        self.history['return_value'] = self.function(context)
 
-    def run(self, config):
+    def run(self, context):
         """Run the action.
 
         Args:
-          config (data structure): the config from the calling Script.
+          context (NamedTuple): the context from the calling Script.
         """
         self.history['timestamps']['start_time'] = time.time()
         logger = logging.getLogger(self.logger_name)
         try:
-            self.run_function(config)
+            self.run_function(context)
         except ScriptHarnessError as exc_info:
             self.history['status'] = ERROR
             logger.error(self.strings['error_message'], {"name": self.name})

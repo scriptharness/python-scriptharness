@@ -9,6 +9,7 @@ Attributes:
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import codecs
+import collections
 import logging
 import os
 import pprint
@@ -34,7 +35,12 @@ VALID_LISTENER_TIMING = (
     "post_fatal",
 )
 
+Context = collections.namedtuple(
+    'Context', ['script', 'config', 'logger', 'action']
+)
 
+
+# Helper functions {{{1
 def save_config(config, path):
     """Save the configuration file to path as json.
 
@@ -43,8 +49,21 @@ def save_config(config, path):
       path (str): The path to write the config to
     """
     make_parent_dir(path)
+    # log rotation would be nice.
     with codecs.open(path, 'w', encoding='utf-8') as filehandle:
         filehandle.write(json.dumps(config, sort_keys=True, indent=4))
+
+def build_context(script, action=None):
+    """Build context for functions called by Actions.
+
+    Args:
+      script (Script): the calling script
+      action (Action, optional): The active Action.
+    """
+    return Context(
+        script=script, config=script.config, logger=script.get_logger(),
+        action=action
+    )
 
 # Script {{{1
 class Script(object):
@@ -57,12 +76,13 @@ class Script(object):
     Attributes:
       config (LoggingDict): the config for the script
       actions (tuple): Action objects to run.
+      name (string): The name of the script
       listeners (dict): callbacks for run()
       logger (logging.Logger): the logger for the script
     """
     config = None
 
-    def __init__(self, actions, parser, **kwargs):
+    def __init__(self, actions, parser, name='root', **kwargs):
         """Script.__init__
 
         Args:
@@ -75,6 +95,7 @@ class Script(object):
                     "Script action is not an instance of Action!", action
                 )
         self.actions = actions
+        self.name = name
         self.listeners = {}
         for timing in VALID_LISTENER_TIMING:
             self.listeners.setdefault(timing, [])
@@ -184,6 +205,7 @@ class Script(object):
         Args:
           action (Action object).
         """
+        context = build_context(self, action=action)
         repl_dict = {
             'name': action.name
         }
@@ -194,21 +216,21 @@ class Script(object):
         for listener, actions in iterate_pairs(self.listeners['pre_action']):
             if actions and action.name not in actions:
                 continue
-            listener()
+            listener(context)
         logger.info(STRINGS['action']['run_message'], repl_dict)
         try:
-            action.run(self.config)
+            action.run(context)
         except ScriptHarnessFatal:
             for listener, actions in \
                     iterate_pairs(self.listeners['post_fatal']):
                 if actions and action.name not in actions:
                     continue
-                listener()
+                listener(context)
             raise
         for listener, actions in iterate_pairs(self.listeners['post_action']):
             if actions and action.name not in actions:
                 continue
-            listener()
+            listener(context)
 
     def get_logger(self):
         """Get a logger to log messages.
@@ -225,6 +247,7 @@ class Script(object):
         Returns:
           logging.Logger object.
         """
+        # Maybe self.logger should be an @property?
         if not hasattr(self, 'logger') or not self.logger:
             self.logger = logging.getLogger(
                 self.config.get('logger_name', LOGGER_NAME)
@@ -252,10 +275,11 @@ class Script(object):
     def run(self):
         """Run all enabled actions.
         """
+        context = build_context(self)
         for listener, _ in iterate_pairs(self.listeners['pre_run']):
-            listener()
+            listener(context)
         for action in self.actions:
             self.run_action(action)
         for listener, _ in iterate_pairs(self.listeners['post_run']):
-            listener()
+            listener(context)
         self.end_message()
