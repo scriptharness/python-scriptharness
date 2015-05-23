@@ -4,10 +4,15 @@
 
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
+
+  SCRIPTHARNESS_INITIAL_CONFIG (dict): These key/value pairs are available
+    in all scriptharness scripts.
+
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import argparse
+from copy import deepcopy
 import logging
 import os
 import requests
@@ -19,12 +24,19 @@ try:
 except ImportError:
     import json
 
-from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessException, to_unicode
 from scriptharness.actions import Action
 from scriptharness.structures import iterate_pairs
 
 
 LOGGER_NAME = "scriptharness.config"
+SCRIPTHARNESS_INITIAL_CONFIG = {
+    "scriptharness_base_dir": six.text_type(os.getcwd()),
+    "scriptharness_work_dir":
+        "%(scriptharness_base_dir)s{}build".format(os.sep),
+    "scriptharness_artifact_dir":
+        "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
+}
 
 
 # parse_config_file() {{{1
@@ -260,6 +272,30 @@ def parse_args(parser, cmdln_args=None):
 
 
 # build_config {{{1
+
+def update_dirs(config):
+    """Directory paths for the script are defined in config.
+    Absolute paths help avoid chdir issues.  `scriptharness_base_dir` (or
+    any other directory path, or any config value) can be overridden during
+    build_config().  Defining the directory paths as formattable strings
+    is configurable but not overly complex.
+
+    Any key in `config` named scriptharness_..._dir will be % formatted with
+    the other dirs as the replacement dictionary.
+
+    Args:
+      config (dict): the config to parse for scriptharness_..._dir keys.
+    """
+    repl_dict = {}
+    for key, value in config.items():
+        if key.startswith("scriptharness_") and key.endswith("_dir"):
+            repl_dict[key] = value
+    # This is fine for a single level of expansion.  We'll need more smarts
+    # here if we want to have a dir based on scriptharness_work_dir, for
+    # example; at that point order matters.
+    for key in repl_dict:
+        config[key] = config[key] % repl_dict
+
 def build_config(parser, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
 
@@ -282,7 +318,7 @@ def build_config(parser, parsed_args, initial_config=None):
       initial_config (dict, optional): initial configuration to set before
         commandline args
     """
-    config = {}
+    config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
     cmdln_config = {}
     resources = {}
     initial_config = initial_config or {}
@@ -294,7 +330,7 @@ def build_config(parser, parsed_args, initial_config=None):
             resources.setdefault(key, value or [])
             continue
         if parser.get_default(key) == value:
-            config[key] = value
+            config[to_unicode(key)] = to_unicode(value)
         else:
             cmdln_config[key] = value
     config.update(initial_config)
@@ -308,4 +344,5 @@ def build_config(parser, parsed_args, initial_config=None):
                         resource)
     if cmdln_config:
         config.update(cmdln_config)
+    update_dirs(config)
     return config

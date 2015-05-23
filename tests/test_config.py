@@ -241,13 +241,15 @@ class TestParserFunctions(unittest.TestCase):
     def helper_build_config(self, cmdln_args, initial_config=None):
         """Help test build_config()
         """
+        config2 = deepcopy(shconfig.SCRIPTHARNESS_INITIAL_CONFIG)
+        shconfig.update_dirs(config2)
         if initial_config is None:
             initial_config = {
                 "key1": "value0",
                 "key2": "value0",
                 "additional_config_item": 234,
             }
-        config2 = deepcopy(initial_config)
+        config2.update(initial_config)
         path = os.path.join(os.path.dirname(__file__), 'http',
                             'test_config.json')
         with open(path) as filehandle:

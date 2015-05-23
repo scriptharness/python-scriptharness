@@ -4,10 +4,12 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from copy import deepcopy
 import json
 import os
 import scriptharness.actions as actions
-from scriptharness.config import get_parser
+from scriptharness.config import get_parser, update_dirs, \
+    SCRIPTHARNESS_INITIAL_CONFIG
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 import scriptharness.script as script
 import six
@@ -199,7 +201,9 @@ class TestScript(unittest.TestCase):
     def test_dump_config(self):
         """Test --dump-config
         """
-        initial_config = {'a': 1}
+        initial_config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
+        update_dirs(initial_config)
+        initial_config['a'] = 1
         self.assertRaises(SystemExit, self.get_script,
                           cmdln_args=["--dump-config"],
                           initial_config=initial_config)

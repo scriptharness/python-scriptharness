@@ -113,7 +113,8 @@ class Script(object):
         """Save config to disk.
         """
         logger = self.get_logger()
-        logger.info(pprint.pformat(self.config, indent=4))
+        for line in pprint.pformat(self.config).splitlines():
+            logger.info(line)
         save_config(self.config, "localconfig.json")
 
     def dict_to_config(self, config):
