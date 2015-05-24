@@ -507,7 +507,6 @@ class TestUnicode(unittest.TestCase):
         logger.addHandler(console_handler)
         return logger
 
-    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_file(self):
         """test_log | unicode strings to a file
         """
@@ -519,7 +518,6 @@ class TestUnicode(unittest.TestCase):
                 line = filehandle.read().rstrip()
                 self.assertEqual(string, to_unicode(line))
 
-    @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_console(self):
         """test_log | bare unicode strings to a console
         """
