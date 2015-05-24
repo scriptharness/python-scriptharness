@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 
+RELEASE_DATE = "2015-05-25 00:00 PDT"
 READTHEDOCS_LINK = """
 .. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
     :target: https://readthedocs.org/projects/python-scriptharness/?badge=latest
@@ -37,7 +38,8 @@ def indent_output(command, time_string='00:00:00', required_string="INFO",
     output = ""
     kwargs.setdefault('stderr', subprocess.STDOUT)
     for line in subprocess.check_output(command, **kwargs).splitlines():
-        line = re.sub(r"\d\d:\d\d:\d\d", time_string, line.decode())
+        line = re.sub(r"\d\d:\d\d:\d\d", time_string, line.decode()).rstrip()
+        line = re.sub(r"Starting at.*$", "Starting at %s." % RELEASE_DATE, line)
         output += "    {}{}".format(line, os.linesep)
     assert required_string in output
     return output

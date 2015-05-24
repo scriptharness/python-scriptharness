@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Python scripting harness / framework.
+"""Scriptharness is a python scripting harness or framework.
 
-Core principles:
-  Full logging.
-  Flexible configuration.
-  Modular actions.
-"""
+Scriptharness' core principles are:
+ * Full logging.
+ * Flexible configuration.
+ * Modular actions.
+
+The top-level module has two main purposes:
+ 1. to serve shortcuts for simple scripts.  A single import, and a few function
+    calls should serve for simple workflows.
+ 2. the ScriptManager can keep track of all Script objects if and when
+    a script calls for running tasks in parallel.
+ """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import os
@@ -19,7 +25,7 @@ from scriptharness.structures import iterate_pairs
 
 __all__ = [
     'get_script', 'get_config', 'get_actions', 'get_actions_from_list',
-    'get_parser', 'prepare_simple_logging',
+    'get_logger', 'get_parser', 'prepare_simple_logging',
     'set_action_class', 'set_script_class',
 ]
 
@@ -113,7 +119,7 @@ def get_script(*args, **kwargs):
         existing script, this is ignored/optional.
 
     Returns:
-      The script instance.
+      The Script instance.
     """
     return MANAGER.get_script(*args, **kwargs)
 
@@ -125,7 +131,7 @@ def get_config(name="root"):
         Defaults to "root".
 
     Raises:
-      scriptharness.exceptions.ScriptHarnessException, if there is no script
+      scriptharness.exceptions.ScriptHarnessException: if there is no script
         of name `name`.
 
     Returns:
@@ -147,7 +153,7 @@ def get_logger(name="root"):
         Defaults to "root".
 
     Raises:
-      scriptharness.exceptions.ScriptHarnessException, if there is no script
+      scriptharness.exceptions.ScriptHarnessException: if there is no script
         of name `name`.
 
     Returns:
