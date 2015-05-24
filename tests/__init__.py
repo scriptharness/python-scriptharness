@@ -3,10 +3,6 @@
 """Common attributes, classes, and functions for test suites.
 
 Attributes:
-  UNICODE_BYTES (list): a list of strings to test unicode functionality,
-    in byte format.  Originally there was only UNICODE_STRINGS, but
-    this got mangled on git clone on Windows.
-
   UNICODE_STRINGS (list): a list of strings to test unicode functionality
 
   LOGGER_NAME (str): the logger name to use for tests
@@ -21,16 +17,15 @@ import os
 import sys
 
 
-UNICODE_BYTES = [
-    b'ascii',
-    b'\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e',
-    b'\xed\x95\x9c\xea\xb5\xad\xeb\xa7\x90',
-    b'\xe0\xa4\xb9\xe0\xa4\xbf\xe0\xa4\xa8\xe0\xa5\x8d\xe0\xa4\xa6\xe0\xa5\x80',
-    b'\xd8\xa7\xd9\x84\xd8\xb9\xd9\x8e\xd8\xb1\xd9\x8e\xd8\xa8\xd9\x90\xd9\x8a\xd8\xa9\xd9\x8f',
-    b'\xd1\x80\xd1\x83\xcc\x81\xd1\x81\xd1\x81\xd0\xba\xd0\xb8\xd0\xb9 \xd1\x8f\xd0\xb7\xd1\x8b\xcc\x81\xd0\xba',
-    b'\xe1\x9e\x81\xe1\x9f\x81\xe1\x9e\x98\xe1\x9e\x9a\xe1\x9e\x97\xe1\x9e\xb6\xe1\x9e\x9f\xe1\x9e\xb6',
+UNICODE_STRINGS = [
+    'ascii',
+    '日本語',
+    '한국말',
+    'हिन्दी',
+    'العَرَبِيةُ',
+    'ру́сский язы́к',
+    'ខេមរភាសា',
 ]
-UNICODE_STRINGS = [string.decode() for string in UNICODE_BYTES]
 LOGGER_NAME = "scriptharness.nosetests"
 TEST_ACTIONS = (
     ("clobber", False),

@@ -126,6 +126,8 @@ class TestUrlFunctionss(unittest.TestCase):
             contents = filehandle.read()
         self.assertEqual(contents, "")
 
+    @unittest.skipIf(os.name == 'nt',
+                     "windows downloads the cgi instead of running")
     def test_timeout_download_url(self):
         """test_config | Time out in download_url()
         """

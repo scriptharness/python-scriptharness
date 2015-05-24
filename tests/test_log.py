@@ -10,6 +10,7 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import codecs
 from contextlib import contextmanager
 import logging
 import mock
@@ -17,7 +18,7 @@ import os
 import scriptharness.log as log
 import unittest
 from scriptharness.exceptions import ScriptHarnessException, \
-    ScriptHarnessError, to_unicode
+    ScriptHarnessError
 from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement, \
               stdstar_redirected
 
@@ -519,9 +520,9 @@ class TestUnicode(unittest.TestCase):
             with stdstar_redirected(TEST_CONSOLE):
                 with self.get_file_logger() as logger:
                     logger.info(string)
-            with open(TEST_FILE) as filehandle:
+            with codecs.open(TEST_FILE, 'r', 'utf-8') as filehandle:
                 line = filehandle.read().rstrip()
-                self.assertEqual(string, to_unicode(line))
+                self.assertEqual(string, line)
 
     def test_unicode_console(self):
         """test_log | bare unicode strings to a console
@@ -530,6 +531,5 @@ class TestUnicode(unittest.TestCase):
             with stdstar_redirected(TEST_CONSOLE):
                 logger = self.get_console_logger()
                 logger.info(string)
-            with open(TEST_CONSOLE) as console_fh:
-                console_line = to_unicode(console_fh.read().rstrip())
-                self.assertEqual(string, console_line)
+            with codecs.open(TEST_CONSOLE, 'r', 'utf-8') as console_fh:
+                self.assertEqual(string, console_fh.read().rstrip())
