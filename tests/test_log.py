@@ -145,10 +145,10 @@ class TestGetConsoleHandler(unittest.TestCase):
 
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
-    """test_log | scriptharness.log.LogMethod.__init__()
+    """scriptharness.log.LogMethod.__init__()
     """
     def test_no_kwargs(self):
-        """LogMethod.__init__() with no keyword arguments
+        """test_log | LogMethod.__init__() with no keyword arguments
         """
         func = 'x'
         log_method = log.LogMethod(func)
@@ -156,7 +156,7 @@ class TestLogMethodInit(unittest.TestCase):
         self.assertEqual(log_method.func, func)
 
     def test_illegal_kwargs(self):
-        """LogMethod.__init__() with illegal keyword argument
+        """test_log | LogMethod.__init__() with illegal keyword argument
         """
         kwargs = {
             'level': logging.WARNING,
@@ -167,7 +167,7 @@ class TestLogMethodInit(unittest.TestCase):
         )
 
     def test_basic_decorator_return(self):
-        """Basic @LogMethod decorator return
+        """test_log | Basic @LogMethod decorator return
         """
         @log.LogMethod()
         def test_func(*args, **kwargs):
@@ -180,7 +180,7 @@ class TestLogMethodInit(unittest.TestCase):
         self.assertEqual((args, kwargs), test_func(*args, **kwargs))
 
     def test_illegal_callback(self):
-        """LogMethod.__init__() with illegal detect_error_cb
+        """test_log | LogMethod.__init__() with illegal detect_error_cb
         """
         self.assertRaises(
             ScriptHarnessException, log.LogMethod,
@@ -194,7 +194,7 @@ class TestLogMethodFunction(unittest.TestCase):
     """
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_prefunc(self, mock_logging):
-        """Basic @LogMethod pre_func(), function
+        """test_log | Basic @LogMethod pre_func(), function
         """
         @NoPostFunc()
         def test_func(*args, **kwargs):
@@ -223,7 +223,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_basic_decorator_postfunc(self, mock_logging):
-        """Basic @LogMethod post_func(), function
+        """test_log | Basic @LogMethod post_func(), function
         """
         @log.LogMethod()
         def test_func(*args, **kwargs):
@@ -252,7 +252,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_failure(self, mock_logging):
-        """Use @LogMethod detect_error_cb, function, fail
+        """test_log | @LogMethod detect_error_cb, function, fail
         """
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
@@ -282,7 +282,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_error_cb_success(self, mock_logging):
-        """Use @LogMethod detect_error_cb, function, succeed
+        """test_log | @LogMethod detect_error_cb, function, succeed
         """
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
@@ -312,7 +312,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_exception(self, mock_logging):
-        """Use @LogMethod detect_error_cb, function, raise
+        """test_log | @LogMethod detect_error_cb, function, raise
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
@@ -342,7 +342,7 @@ class TestLogMethodFunction(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_no_raise_success(self, mock_logging):
-        """Use @LogMethod detect_error_cb, function, don't raise on success
+        """ test_log | @LogMethod detect_error_cb, function, don't raise on success
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
@@ -381,7 +381,7 @@ class TestLogMethodClass(unittest.TestCase):
     """
     @mock.patch('scriptharness.log.logging')
     def test_exception(self, mock_logging):
-        """Use @LogMethod detect_error_cb, class method, raise
+        """test_log | @LogMethod detect_error_cb, class method, raise
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
@@ -422,7 +422,7 @@ class TestLogMethodClass(unittest.TestCase):
 
     @mock.patch('scriptharness.log.logging')
     def test_no_raise_success(self, mock_logging):
-        """Use @LogMethod detect_error_cb, class method, don't raise on success
+        """test_log | @LogMethod detect_error_cb, class method, don't raise on success
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
@@ -509,7 +509,7 @@ class TestUnicode(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_file(self):
-        """Test logging unicode strings to a file
+        """test_log | unicode strings to a file
         """
         for string in UNICODE_STRINGS:
             with stdstar_redirected(TEST_CONSOLE):
@@ -521,7 +521,7 @@ class TestUnicode(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', "powershell utf8 issues")
     def test_unicode_console(self):
-        """Test logging bare unicode strings to a console
+        """test_log | bare unicode strings to a console
         """
         for string in UNICODE_STRINGS:
             with stdstar_redirected(TEST_CONSOLE):

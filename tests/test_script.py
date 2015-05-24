@@ -95,7 +95,7 @@ class TestScript(unittest.TestCase):
         self.assertEqual(self.timings, ["one", "three"])
 
     def test_non_function_listener(self):
-        """test_script non-function listener
+        """test_script | non-function listener
         """
         obj = object()
         scr = self.get_script()
@@ -203,3 +203,78 @@ class TestScript(unittest.TestCase):
         self.assertEqual(
             contents, json.dumps(initial_config, sort_keys=True, indent=4)
         )
+
+# TestStrictScript {{{1
+def change_config1(context):
+    """This should raise"""
+    context.script.config = {'a': 1}
+
+def change_config2(context):
+    """This should raise"""
+    context.script.config['a'] = 1
+
+def change_attribute(context):
+    """This should raise"""
+    context.script.a = 1
+
+class TestStrictScript(unittest.TestCase):
+    """Test StrictScript()
+    """
+    def tearDown(self):
+        """Clean up artifacts"""
+        if os.path.exists("artifacts"):
+            shutil.rmtree("artifacts")
+
+    @staticmethod
+    def get_action(name, function, enabled=True):
+        """Helper function to generate Actions for StrictScript"""
+        return actions.Action(name, function=function, enabled=enabled)
+
+    def get_script(self, parser=None, cmdln_args=None, initial_config=None):
+        """Create a StrictScript for testing
+        """
+        action_list = [
+            self.get_action("one", change_config1),
+            self.get_action("two", change_config2),
+            self.get_action("three", change_attribute, enabled=False),
+        ]
+        parser = parser or get_parser(action_list)
+        cmdln_args = cmdln_args or []
+        kwargs = {}
+        if initial_config is not None:
+            kwargs['initial_config'] = initial_config
+        return script.StrictScript(action_list, parser, cmdln_args=cmdln_args,
+                                   **kwargs)
+
+    def test_pre_run(self):
+        """test_script | StrictScript pre-run()
+        """
+        scr = self.get_script()
+        scr.b = 1
+        def testfunc():
+            """set attribute"""
+            scr.config['a'] = 1
+        def testfunc2():
+            """Set the lock; this shouldn't raise"""
+            scr._lock = True  # pylint: disable=protected-access
+        self.assertRaises(ScriptHarnessException, testfunc)
+        testfunc2()  # lock
+        testfunc2()  # relock
+
+    def test_replace_config(self):
+        """test_script | StrictScript replace config
+        """
+        scr = self.get_script()
+        self.assertRaises(ScriptHarnessException, scr.run)
+
+    def test_change_config(self):
+        """test_script | StrictScript change config
+        """
+        scr = self.get_script(cmdln_args="--actions two".split())
+        self.assertRaises(ScriptHarnessException, scr.run)
+
+    def test_change_attribute(self):
+        """test_script | StrictScript change attribute
+        """
+        scr = self.get_script(cmdln_args="--actions three".split())
+        self.assertRaises(ScriptHarnessException, scr.run)

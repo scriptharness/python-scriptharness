@@ -299,7 +299,7 @@ class StrictScript(Script):
         self._lock = False
 
     def __setattr__(self, name, *args):
-        if self._lock:
+        if hasattr(self, '_lock') and self._lock:
             # Re-locking a locked StrictScript is ok; everything else is
             # verboten.
             if name != '_lock' or not args[0]:

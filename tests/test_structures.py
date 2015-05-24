@@ -228,13 +228,13 @@ class TestFullNames(unittest.TestCase):
     """Test LoggingClass.full_name()
     """
     def test_no_name(self):
-        """The name should be None if not set explicitly
+        """test_structures | The name should be None if not set explicitly
         """
         logdict = get_logging_dict(name=None)
         self.assertEqual(logdict.full_name(), "")
 
     def test_logdict_names(self):
-        """get_logging_dict() should return a logdict with name NAME
+        """test_structures | get_logging_dict() should return a logdict with name NAME
         """
         logdict = get_logging_dict()
         self.assertEqual(logdict.full_name(), NAME)
@@ -252,7 +252,7 @@ class TestFullNames(unittest.TestCase):
 
     @mock.patch('scriptharness.structures.logging')
     def test_unicode_names(self, mock_logging):
-        """Try unicode names!
+        """test_structures | Try unicode names!
         """
         assert mock_logging  # silence pylint
         logdict = get_logging_dict()
@@ -271,7 +271,7 @@ class TestFullNames(unittest.TestCase):
 
     @mock.patch('scriptharness.structures.logging')
     def test_quotes(self, mock_logging):
-        """Try names with quotes in them.
+        """test_structures | Try names with quotes in them.
 
         Expected behavior: use the quotes in structures.QUOTES in preferred order,
         moving on to the next if all the preceding quote types are in the name.

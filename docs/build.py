@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-
+"""Build scriptharness documentation.  At some point it would be good to
+automate all CI/Release tasks for scriptharness; this is a good start.
+"""
 from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 from jinja2 import Template
 import os
 import subprocess
 
-def nuke(*args):
+def cleanup(*args):
+    """Cleanliness."""
     for path in args:
         if os.path.exists(path):
             os.remove(path)
 
 def main():
+    """Main function"""
     os.chdir(os.path.dirname(__file__))
     for line in subprocess.check_output(['git', 'branch', '--no-color'],
                                         stderr=subprocess.PIPE).splitlines():
@@ -22,7 +26,7 @@ def main():
     subprocess.check_call("sphinx-apidoc -f -o . ../scriptharness".split())
     with open("quickstart.rst.j2") as filehandle:
         contents = filehandle.read()
-    nuke("modules.rst")
+    cleanup("modules.rst")
     template = Template(contents)
     contents = ""
     with open("../examples/quickstart.py") as filehandle:

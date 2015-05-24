@@ -32,7 +32,7 @@ TEST_FILES = (TEST_FILE, 'invalid_json.json', 'test_config.json')
 
 
 # Helper functions {{{1
-def nuke_test_files():
+def cleanup():
     """Cleanup helper function"""
     for path in TEST_FILES:
         if os.path.exists(path):
@@ -77,11 +77,11 @@ class TestUrlFunctionss(unittest.TestCase):
     """
     def setUp(self):
         assert self  # silence pylint
-        nuke_test_files()
+        cleanup()
 
     def tearDown(self):
         assert self  # silence pylint
-        nuke_test_files()
+        cleanup()
 
     def test_basic_url_filename(self):
         """test_config | Filename from a basic url"""
