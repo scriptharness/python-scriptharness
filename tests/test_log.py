@@ -515,7 +515,8 @@ class TestUnicode(unittest.TestCase):
         return logger
 
     @unittest.skipIf(
-        os.name == 'nt' and six.PY3, r"""'\u65e5\u672c\u8a9e' != ''"""
+        os.name == 'nt' and six.PY3, r"""'\u65e5\u672c\u8a9e' != '' """
+        "http://bugs.python.org/issue1602 ?"
     )
     def test_unicode_file(self):
         """test_log | unicode strings to a file
@@ -530,7 +531,8 @@ class TestUnicode(unittest.TestCase):
 
     @unittest.skipIf(
         os.name == 'nt' and six.PY3,
-        r"""'\u65e5\u672c\u8a9e' != '\\u65e5\\u672c\\u8a9e'"""
+        r"""'\u65e5\u672c\u8a9e' != '\\u65e5\\u672c\\u8a9e' """
+        "http://bugs.python.org/issue1602 ?"
     )
     def test_unicode_console(self):
         """test_log | bare unicode strings to a console
