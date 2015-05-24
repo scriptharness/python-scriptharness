@@ -6,7 +6,13 @@ from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 from jinja2 import Template
 import os
+import shutil
 import subprocess
+import sys
+
+READTHEDOCS_LINK = """.. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
+    :target: https://readthedocs.org/projects/python-scriptharness/?badge=latest
+    :alt: Documentation Status"""
 
 def cleanup(*args):
     """Cleanliness."""
@@ -14,34 +20,74 @@ def cleanup(*args):
         if os.path.exists(path):
             os.remove(path)
 
-def main():
-    """Main function"""
-    os.chdir(os.path.dirname(__file__))
+def build_readme_rst():
+    with open("README.rst.j2") as filehandle:
+        contents = filehandle.read()
+    template = Template(contents)
+    with open("../README.rst", "w") as filehandle:
+        filehandle.write(template.render(readthedocs_link=READTHEDOCS_LINK))
+    with open("README.rst", "w") as filehandle:
+        filehandle.write(template.render())
+
+def indent_output(command, **kwargs):
+    output = ""
+    kwargs.setdefault('stderr', subprocess.STDOUT)
+    for line in subprocess.check_output(command, **kwargs).splitlines():
+        output += "    {}{}".format(line.decode(), os.linesep)
+    return output
+
+def build_quickstart():
     for line in subprocess.check_output(['git', 'branch', '--no-color'],
                                         stderr=subprocess.PIPE).splitlines():
         if line.startswith(b'*'):
             _, branch = line.split()
     branch = branch.decode()
-    print(branch)
-    subprocess.check_call("sphinx-apidoc -f -o . ../scriptharness".split())
     with open("quickstart.rst.j2") as filehandle:
         contents = filehandle.read()
-    cleanup("modules.rst")
     template = Template(contents)
-    contents = ""
+    quickstart_contents = ""
     with open("../examples/quickstart.py") as filehandle:
         for line in filehandle.readlines():
-            contents += "    {}".format(line)
+            quickstart_contents += "    {}".format(line)
+    run_output = indent_output(
+        [sys.executable, "../examples/quickstart.py"],
+    )
+    actions_output = indent_output(
+        [sys.executable, "../examples/quickstart.py", "--actions",
+         "package", "upload", "notify"],
+    )
+    list_actions_output = indent_output(
+        [sys.executable, "../examples/quickstart.py", "--list-actions"],
+    )
+    dump_config_output = indent_output(
+        [sys.executable, "../examples/quickstart.py", "--new-argument",
+         "foo", "--dump-config"],
+    )
+    help_output = indent_output(
+        [sys.executable, "../examples/quickstart.py", "--help"],
+    )
     with open("quickstart.rst", "w") as filehandle:
         filehandle.write(
-            template.render(GIT_BRANCH=branch,
-                            QUICKSTART_CONTENTS_INDENTED=contents)
+            template.render(
+                git_branch=branch,
+                quickstart_contents=quickstart_contents,
+                run_output=run_output,
+                actions_output=actions_output,
+                list_actions_output=list_actions_output,
+                dump_config_output=dump_config_output,
+                help_output=help_output,
+            )
         )
+
+def main():
+    """Main function"""
+    os.chdir(os.path.dirname(__file__))
+    subprocess.check_call("sphinx-apidoc -f -o . ../scriptharness".split())
+    cleanup("modules.rst")
+    build_readme_rst()
+    build_quickstart()
     subprocess.check_call(["make", "html"])
-    if not os.path.exists("README.rst"):
-        os.link("../README.rst", "README.rst")
     subprocess.check_call(["make", "text"])
-    os.remove("README.rst")
     subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
 
 if __name__ == '__main__':

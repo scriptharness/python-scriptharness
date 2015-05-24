@@ -1,3 +1,5 @@
+.. This file is built from docs/quickstart.rst.j2; do not edit!
+
 Quickstart
 ==========
 
@@ -22,7 +24,8 @@ Here's an example script.  The file is also viewable here_.
     """First, define functions for all actions.  Each action MUST have a function
     defined.  The function should be named the same as the action.  (If the
     action has a `-` in it, replace it with an `_`; e.g. an action named
-    `upload-to-s3` would call the `upload_to_s3()` function.
+    `upload-to-s3` would call the `upload_to_s3()` function.  Each action function
+    will take a single argument, `context`.
     
     Each action function should be idempotent, and able to run standalone.
     In this example, `package` may require that the steps in `build` ran at
@@ -33,21 +36,30 @@ Here's an example script.  The file is also viewable here_.
     """
     def clobber(context):
         """Clobber the source"""
+        context.logger.info("log message from clobber")
     
     def pull(context):
         """Pull source"""
+        context.logger.info("log message from pull")
     
     def build(context):
         """Build source"""
+        context.logger.info("log message from build")
+        if context.config.get("new_argument"):
+            context.logger.info("new_argument is set to %s",
+                                context_config['new_argument'])
     
     def package(context):
         """Package source"""
+        context.logger.info("log message from package")
     
     def upload(context):
         """Upload packages"""
+        context.logger.info("log message from upload")
     
     def notify(context):
         """Notify watchers"""
+        context.logger.info("log message from notify")
     
     
     if __name__ == '__main__':
@@ -83,10 +95,10 @@ Here's an example script.  The file is also viewable here_.
         parser.add_argument("--new-argument", action='store',
                             help="help message for --new-argument")
     
-        """Create the Script object.  If this is run a second time, it will
-        retrieve the same-named script object.  (`name` in get_script() defaults
-        to "root".  We'll explore running multiple Script objects within the
-        same script in the not-distant future.)
+        """Create the Script object.  If ``get_script()`` is called a second time,
+        it will return the same-named script object.  (`name` in get_script()
+        defaults to "root".  We'll explore running multiple Script objects within
+        the same script in the not-distant future.)
     
         When this Script object is created, it will parse all commandline
         arguments sent to the script.  So it doesn't matter that this script
@@ -110,25 +122,34 @@ output
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
-    01:23:56     INFO - Starting at 2015-05-22 01:23 PDT.
-    01:23:56     INFO - {'new_argument': None}
-    01:23:56     INFO - Skipping action clobber
-    01:23:56     INFO - Running action pull
-    01:23:56     INFO - Action pull: finished successfully
-    01:23:56     INFO - Running action build
-    01:23:56     INFO - Action build: finished successfully
-    01:23:56     INFO - Running action package
-    01:23:56     INFO - Action package: finished successfully
-    01:23:56     INFO - Skipping action upload
-    01:23:56     INFO - Skipping action notify
-    01:23:56     INFO - Done.
+    19:29:17     INFO - Starting at 2015-05-23 19:29 PDT.
+    19:29:17     INFO - {'new_argument': None,
+    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    19:29:17     INFO - Already exists.
+    19:29:17     INFO - ### Skipping action clobber
+    19:29:17     INFO - ### Running action pull
+    19:29:17     INFO - log message from pull
+    19:29:17     INFO - ### Action pull: finished successfully
+    19:29:17     INFO - ### Running action build
+    19:29:17     INFO - log message from build
+    19:29:17     INFO - ### Action build: finished successfully
+    19:29:17     INFO - ### Running action package
+    19:29:17     INFO - log message from package
+    19:29:17     INFO - ### Action package: finished successfully
+    19:29:17     INFO - ### Skipping action upload
+    19:29:17     INFO - ### Skipping action notify
+    19:29:17     INFO - Done.
+
 
 First, it announced it's starting the script.  Next, it outputs the running
-config, also saving it to the file ``localconfig.json``.  Then it logs each
-action as it runs enabled actions and skips disabled actions.  Finally, it
-announces 'Done.'.
+config, also saving it to the file ``artifacts/localconfig.json``.  Then it
+logs each action as it runs enabled actions and skips disabled actions.
+Finally, it announces 'Done.'.
 
-The same output is written to the file ``log.txt``.
+The same output is written to the file ``artifacts/log.txt``.
 
 #########
 --actions
@@ -137,18 +158,27 @@ The same output is written to the file ``log.txt``.
 You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
-    01:26:12     INFO - Starting at 2015-05-22 01:26 PDT.
-    01:26:12     INFO - {'new_argument': None}
-    01:26:12     INFO - Skipping action clobber
-    01:26:12     INFO - Skipping action pull
-    01:26:12     INFO - Skipping action build
-    01:26:12     INFO - Running action package
-    01:26:12     INFO - Action package: finished successfully
-    01:26:12     INFO - Running action upload
-    01:26:12     INFO - Action upload: finished successfully
-    01:26:12     INFO - Running action notify
-    01:26:12     INFO - Action notify: finished successfully
-    01:26:12     INFO - Done.
+    19:29:17     INFO - Starting at 2015-05-23 19:29 PDT.
+    19:29:17     INFO - {'new_argument': None,
+    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    19:29:17     INFO - Already exists.
+    19:29:17     INFO - ### Skipping action clobber
+    19:29:17     INFO - ### Skipping action pull
+    19:29:17     INFO - ### Skipping action build
+    19:29:17     INFO - ### Running action package
+    19:29:17     INFO - log message from package
+    19:29:17     INFO - ### Action package: finished successfully
+    19:29:17     INFO - ### Running action upload
+    19:29:17     INFO - log message from upload
+    19:29:17     INFO - ### Action upload: finished successfully
+    19:29:17     INFO - ### Running action notify
+    19:29:17     INFO - log message from notify
+    19:29:17     INFO - ### Action notify: finished successfully
+    19:29:17     INFO - Done.
+
 
 ##############
 --list-actions
@@ -165,6 +195,7 @@ default, use the ``--list-actions`` option::
       upload
       notify
 
+
 #############
 --dump-config
 #############
@@ -175,8 +206,14 @@ see what the config is without running anything, you can use the
 ``--dump-config`` option::
 
     $ ./quickstart.py --new-argument foo --dump-config
-    01:27:21     INFO - Dumping config:
-    01:27:21     INFO - {'new_argument': 'foo'}
+    19:29:17     INFO - Dumping config:
+    19:29:17     INFO - {'new_argument': 'foo',
+    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    19:29:17     INFO - Already exists.
+
 
 ######
 --help
@@ -203,3 +240,4 @@ You can always use the ``--help`` option::
       --dump-config         Log the built configuration and exit.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
+

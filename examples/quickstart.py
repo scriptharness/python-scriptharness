@@ -13,7 +13,8 @@ import scriptharness
 """First, define functions for all actions.  Each action MUST have a function
 defined.  The function should be named the same as the action.  (If the
 action has a `-` in it, replace it with an `_`; e.g. an action named
-`upload-to-s3` would call the `upload_to_s3()` function.
+`upload-to-s3` would call the `upload_to_s3()` function.  Each action function
+will take a single argument, `context`.
 
 Each action function should be idempotent, and able to run standalone.
 In this example, `package` may require that the steps in `build` ran at
@@ -83,10 +84,10 @@ if __name__ == '__main__':
     parser.add_argument("--new-argument", action='store',
                         help="help message for --new-argument")
 
-    """Create the Script object.  If this is run a second time, it will
-    retrieve the same-named script object.  (`name` in get_script() defaults
-    to "root".  We'll explore running multiple Script objects within the
-    same script in the not-distant future.)
+    """Create the Script object.  If ``get_script()`` is called a second time,
+    it will return the same-named script object.  (`name` in get_script()
+    defaults to "root".  We'll explore running multiple Script objects within
+    the same script in the not-distant future.)
 
     When this Script object is created, it will parse all commandline
     arguments sent to the script.  So it doesn't matter that this script
