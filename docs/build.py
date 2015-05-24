@@ -93,6 +93,8 @@ def main():
     subprocess.check_call(["make", "html"])
     subprocess.check_call(["make", "text"])
     subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
+    if os.path.exists("artifacts"):
+        shutil.rmtree("artifacts")
 
 if __name__ == '__main__':
     main()
