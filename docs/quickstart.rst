@@ -5,7 +5,7 @@ Quickstart
 
 Here's an example script.  The file is also viewable here_.
 
-.. _here: https://github.com/escapewindow/python-scriptharness/blob/0.1.0-dev/examples/quickstart.py
+.. _here: https://github.com/scriptharness/python-scriptharness/blob/master/examples/quickstart.py
 
 ::
 
@@ -15,7 +15,7 @@ Here's an example script.  The file is also viewable here_.
     """python-scriptharness quickstart example.
     
     This file can be found in the examples/ directory of the source at
-    https://github.com/escapewindow/python-scriptharness
+    https://github.com/scriptharness/python-scriptharness
     """
     from __future__ import absolute_import, division, print_function, \
                            unicode_literals
@@ -122,7 +122,7 @@ output
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
-    00:00:00     INFO - Starting at 2015-05-23 21:55 PDT.
+    00:00:00     INFO - Starting at 2015-05-25 00:00 PDT.
     00:00:00     INFO - {'new_argument': None,
     00:00:00     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
     00:00:00     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
@@ -158,7 +158,7 @@ The same output is written to the file ``artifacts/log.txt``.
 You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
-    00:00:05     INFO - Starting at 2015-05-23 21:55 PDT.
+    00:00:05     INFO - Starting at 2015-05-25 00:00 PDT.
     00:00:05     INFO - {'new_argument': None,
     00:00:05     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
     00:00:05     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',

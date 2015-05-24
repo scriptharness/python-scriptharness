@@ -4,7 +4,7 @@
 """python-scriptharness quickstart example.
 
 This file can be found in the examples/ directory of the source at
-https://github.com/escapewindow/python-scriptharness
+https://github.com/scriptharness/python-scriptharness
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
