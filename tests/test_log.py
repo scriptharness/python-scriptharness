@@ -532,6 +532,4 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
                 console_line = to_unicode(console_fh.read().rstrip())
-                if WINDOWS:
-                    console_line.replace('\\\\', '\\')
                 self.assertEqual(string, console_line)
