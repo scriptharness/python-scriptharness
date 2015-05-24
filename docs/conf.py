@@ -13,6 +13,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+import json
 import sys
 import os
 import shlex
@@ -22,6 +23,10 @@ import shlex
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../scriptharness'))
+
+with open("../version.json") as filehandle:
+    version_info = json.load(filehandle)
+    version_string = version_info['version_string']
 
 # -- General configuration ------------------------------------------------
 
@@ -127,10 +132,11 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #html_theme = 'classic'
-html_theme = 'sphinx_rtd_theme'
+#html_theme = 'sphinx_rtd_theme'
 #html_theme = 'sphinxdoc'
 #html_theme = 'scrolls'
 #html_theme = 'bizstyle'
+html_theme = 'boto_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -138,11 +144,11 @@ html_theme = 'sphinx_rtd_theme'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+html_theme_path = ["."]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = "scriptharness v%s" % version_string
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
