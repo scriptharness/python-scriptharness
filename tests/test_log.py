@@ -21,6 +21,11 @@ from scriptharness.exceptions import ScriptHarnessException, \
 from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement, \
               stdstar_redirected
 
+if os.name == 'nt':
+    WINDOWS = True
+else:
+    WINDOWS = False
+
 
 TEST_FILE = '_test_log_file'
 TEST_CONSOLE = '_test_log_console'
@@ -526,5 +531,7 @@ class TestUnicode(unittest.TestCase):
                 logger = self.get_console_logger()
                 logger.info(string)
             with open(TEST_CONSOLE) as console_fh:
-                console_line = console_fh.read().rstrip()
-                self.assertEqual(string, to_unicode(console_line))
+                console_line = to_unicode(console_fh.read().rstrip())
+                if WINDOWS:
+                    console_line.replace('\\\\', '\\')
+                self.assertEqual(string, console_line)
