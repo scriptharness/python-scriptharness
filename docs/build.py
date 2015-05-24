@@ -6,13 +6,16 @@ from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 from jinja2 import Template
 import os
+import re
 import shutil
 import subprocess
 import sys
 
-READTHEDOCS_LINK = """.. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
+READTHEDOCS_LINK = """
+.. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
     :target: https://readthedocs.org/projects/python-scriptharness/?badge=latest
-    :alt: Documentation Status"""
+    :alt: Documentation Status
+"""
 
 def cleanup(*args):
     """Cleanliness."""
@@ -29,11 +32,13 @@ def build_readme_rst():
     with open("README.rst", "w") as filehandle:
         filehandle.write(template.render())
 
-def indent_output(command, required_string="INFO", **kwargs):
+def indent_output(command, time_string='00:00:00', required_string="INFO",
+                  **kwargs):
     output = ""
     kwargs.setdefault('stderr', subprocess.STDOUT)
     for line in subprocess.check_output(command, **kwargs).splitlines():
-        output += "    {}{}".format(line.decode(), os.linesep)
+        line = re.sub(r"\d\d:\d\d:\d\d", time_string, line.decode())
+        output += "    {}{}".format(line, os.linesep)
     assert required_string in output
     return output
 
@@ -56,6 +61,7 @@ def build_quickstart():
     actions_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--actions",
          "package", "upload", "notify"],
+        time_string="00:00:05",
     )
     list_actions_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--list-actions"],
@@ -64,7 +70,7 @@ def build_quickstart():
     dump_config_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--new-argument",
          "foo", "--dump-config"],
-        required_string="Dumping",
+        time_string="00:00:14", required_string="Dumping",
     )
     help_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--help"],

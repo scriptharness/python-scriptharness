@@ -122,26 +122,26 @@ output
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
-    19:29:17     INFO - Starting at 2015-05-23 19:29 PDT.
-    19:29:17     INFO - {'new_argument': None,
-    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
-    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
-    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
-    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
-    19:29:17     INFO - Already exists.
-    19:29:17     INFO - ### Skipping action clobber
-    19:29:17     INFO - ### Running action pull
-    19:29:17     INFO - log message from pull
-    19:29:17     INFO - ### Action pull: finished successfully
-    19:29:17     INFO - ### Running action build
-    19:29:17     INFO - log message from build
-    19:29:17     INFO - ### Action build: finished successfully
-    19:29:17     INFO - ### Running action package
-    19:29:17     INFO - log message from package
-    19:29:17     INFO - ### Action package: finished successfully
-    19:29:17     INFO - ### Skipping action upload
-    19:29:17     INFO - ### Skipping action notify
-    19:29:17     INFO - Done.
+    00:00:00     INFO - Starting at 2015-05-23 21:55 PDT.
+    00:00:00     INFO - {'new_argument': None,
+    00:00:00     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    00:00:00     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    00:00:00     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    00:00:00     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    00:00:00     INFO - Already exists.
+    00:00:00     INFO - ### Skipping action clobber
+    00:00:00     INFO - ### Running action pull
+    00:00:00     INFO - log message from pull
+    00:00:00     INFO - ### Action pull: finished successfully
+    00:00:00     INFO - ### Running action build
+    00:00:00     INFO - log message from build
+    00:00:00     INFO - ### Action build: finished successfully
+    00:00:00     INFO - ### Running action package
+    00:00:00     INFO - log message from package
+    00:00:00     INFO - ### Action package: finished successfully
+    00:00:00     INFO - ### Skipping action upload
+    00:00:00     INFO - ### Skipping action notify
+    00:00:00     INFO - Done.
 
 
 First, it announced it's starting the script.  Next, it outputs the running
@@ -158,26 +158,26 @@ The same output is written to the file ``artifacts/log.txt``.
 You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
-    19:29:17     INFO - Starting at 2015-05-23 19:29 PDT.
-    19:29:17     INFO - {'new_argument': None,
-    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
-    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
-    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
-    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
-    19:29:17     INFO - Already exists.
-    19:29:17     INFO - ### Skipping action clobber
-    19:29:17     INFO - ### Skipping action pull
-    19:29:17     INFO - ### Skipping action build
-    19:29:17     INFO - ### Running action package
-    19:29:17     INFO - log message from package
-    19:29:17     INFO - ### Action package: finished successfully
-    19:29:17     INFO - ### Running action upload
-    19:29:17     INFO - log message from upload
-    19:29:17     INFO - ### Action upload: finished successfully
-    19:29:17     INFO - ### Running action notify
-    19:29:17     INFO - log message from notify
-    19:29:17     INFO - ### Action notify: finished successfully
-    19:29:17     INFO - Done.
+    00:00:05     INFO - Starting at 2015-05-23 21:55 PDT.
+    00:00:05     INFO - {'new_argument': None,
+    00:00:05     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    00:00:05     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    00:00:05     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    00:00:05     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    00:00:05     INFO - Already exists.
+    00:00:05     INFO - ### Skipping action clobber
+    00:00:05     INFO - ### Skipping action pull
+    00:00:05     INFO - ### Skipping action build
+    00:00:05     INFO - ### Running action package
+    00:00:05     INFO - log message from package
+    00:00:05     INFO - ### Action package: finished successfully
+    00:00:05     INFO - ### Running action upload
+    00:00:05     INFO - log message from upload
+    00:00:05     INFO - ### Action upload: finished successfully
+    00:00:05     INFO - ### Running action notify
+    00:00:05     INFO - log message from notify
+    00:00:05     INFO - ### Action notify: finished successfully
+    00:00:05     INFO - Done.
 
 
 ##############
@@ -206,13 +206,13 @@ see what the config is without running anything, you can use the
 ``--dump-config`` option::
 
     $ ./quickstart.py --new-argument foo --dump-config
-    19:29:17     INFO - Dumping config:
-    19:29:17     INFO - {'new_argument': 'foo',
-    19:29:17     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
-    19:29:17     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
-    19:29:17     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
-    19:29:17     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
-    19:29:17     INFO - Already exists.
+    00:00:14     INFO - Dumping config:
+    00:00:14     INFO - {'new_argument': 'foo',
+    00:00:14     INFO -  'scriptharness_artifact_dir': '/src/SH/python-scriptharness/docs/artifacts',
+    00:00:14     INFO -  'scriptharness_base_dir': '/src/SH/python-scriptharness/docs',
+    00:00:14     INFO -  'scriptharness_work_dir': '/src/SH/python-scriptharness/docs/build'}
+    00:00:14     INFO - Creating directory /src/SH/python-scriptharness/docs/artifacts
+    00:00:14     INFO - Already exists.
 
 
 ######

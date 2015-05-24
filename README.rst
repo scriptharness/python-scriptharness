@@ -1,7 +1,6 @@
-.. This file is built from docs/README.rst.j2; do not edit!
-
 Scriptharness
 =============
+.. This file is built from docs/README.rst.j2; do not edit!
 
 Scriptharness is a framework for writing scripts.  There are three core principles: full logging, flexible configuration, and modular actions.  The goal of `full logging` is to be able to debug problems purely through the log.  The goal of `flexible configuration` is to make each script useful in a variety of contexts and environments.  The goals of `modular actions` are a) faster development feedback loops and b) different workflows for different usage requirements.
 
