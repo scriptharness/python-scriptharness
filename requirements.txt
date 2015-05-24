@@ -1,7 +1,10 @@
+# This is the full requirement list for scriptharness.  The minimum set
+# is defined in setup.py.
 coverage
 jinja2
 pylint
 requests
 Sphinx
 six
+# For some reason tox 2.0.0+ breaks unicode console handling.
 tox==1.9.2
