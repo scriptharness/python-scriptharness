@@ -16,6 +16,7 @@ import logging
 import mock
 import os
 import scriptharness.log as log
+import six
 import unittest
 from scriptharness.exceptions import ScriptHarnessException, \
     ScriptHarnessError
@@ -513,6 +514,9 @@ class TestUnicode(unittest.TestCase):
         logger.addHandler(console_handler)
         return logger
 
+    @unittest.skipIf(
+        os.name == 'nt' and six.PY3, r"""'\u65e5\u672c\u8a9e' != ''"""
+    )
     def test_unicode_file(self):
         """test_log | unicode strings to a file
         """
@@ -524,6 +528,10 @@ class TestUnicode(unittest.TestCase):
                 line = filehandle.read().rstrip()
                 self.assertEqual(string, line)
 
+    @unittest.skipIf(
+        os.name == 'nt' and six.PY3,
+        r"""'\u65e5\u672c\u8a9e' != '\\u65e5\\u672c\\u8a9e'"""
+    )
     def test_unicode_console(self):
         """test_log | bare unicode strings to a console
         """

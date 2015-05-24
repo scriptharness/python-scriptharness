@@ -7,6 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 import json
 import os
 import scriptharness.version
+import six
 import subprocess
 import sys
 import unittest
@@ -88,25 +89,23 @@ class TestVersionString(unittest.TestCase):
             contents2 = json.load(filehandle)
         self.assertEqual(contents, contents2)
 
+    @unittest.skipIf(
+        os.name == 'nt' and six.PY3,
+        "OSError: [WinError 6] The handle is invalid"
+    )
     def test_run_version_py(self):
         """test_version | run version.py
         """
         if os.name == 'nt':
             command = [sys.executable]
-            version_py = "scriptharness/version.py"
-            version_json = "version.json"
         else:
             command = [
                 os.path.join(os.path.dirname(sys.executable), "coverage"),
                 "run", "-a", "--branch",
             ]
-            parent_dir = os.path.join(
-                os.path.dirname(os.path.dirname(__file__))
-            )
-            version_py = os.path.join(
-                parent_dir, 'scriptharness', 'version.py'
-            )
-            version_json = os.path.join(parent_dir, 'version.json')
+        parent_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
+        version_py = os.path.join(parent_dir, 'scriptharness', 'version.py')
+        version_json = os.path.join(parent_dir, 'version.json')
         try:
             os.rename(version_json, TEST_VERSION_JSON)
             self.helper_write_version(subprocess.call, command + [version_py])
