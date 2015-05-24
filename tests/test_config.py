@@ -106,6 +106,8 @@ class TestUrlFunctionss(unittest.TestCase):
             print(url)
             self.assertFalse(shconfig.is_url(url))
 
+    @unittest.skipIf(os.name == 'nt' and six.PY3,
+                     "OSError: [WinError 6] The handle is invalid")
     def test_successful_download_url(self):
         """test_config | Download a file from a local webserver.
         """
