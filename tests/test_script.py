@@ -103,13 +103,13 @@ class TestScript(unittest.TestCase):
             ScriptHarnessException, scr.add_listener, obj, "pre_action"
         )
 
-    def test_bad_timing_listener(self):
-        """test_script | bad timing listener
+    def test_bad_phase_listener(self):
+        """test_script | bad phase listener
         """
         scr = self.get_script()
         self.assertRaises(
             ScriptHarnessException, scr.add_listener,
-            self.get_timing_func("pre_action1"), "bad_timing"
+            self.get_timing_func("pre_action1"), "bad_phase"
         )
 
     def test_bad_actions_listener(self):
@@ -188,6 +188,15 @@ class TestScript(unittest.TestCase):
         self.assertRaises(ScriptHarnessFatal, scr.run)
         self.assertEqual(self.timings, ["one", "fatal", "post_fatal1",
                                         "post_fatal3"])
+
+    def test_bad_phase_context(self):
+        """test_script | bad phase build_context
+        """
+        scr = self.get_script()
+        self.assertRaises(
+            ScriptHarnessException, script.build_context,
+            scr, "bad_phase"
+        )
 
     def test_dump_config(self):
         """test_script | --dump-config
