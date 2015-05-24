@@ -94,8 +94,8 @@ def build_quickstart():
 def main():
     """Main function"""
     os.chdir(os.path.dirname(__file__))
-    subprocess.check_call("sphinx-apidoc -f -o . ../scriptharness".split())
-    cleanup("modules.rst")
+    subprocess.check_call("sphinx-apidoc -e -f -o . ../scriptharness".split())
+#    cleanup("modules.rst")
     build_readme_rst()
     build_quickstart()
     subprocess.check_call(["make", "html"])

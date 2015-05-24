@@ -12,7 +12,7 @@ Contents:
 
    README
    quickstart
-   scriptharness
+   modules
 
 Indices and tables
 ==================
