@@ -38,9 +38,22 @@ This is in the same spirit of other frameworks that allow for discrete targets, 
 Running unit tests
 ##################
 
+Linux and OS X
+--------------
+
 ::
 
     # By default, this will look for python 2.7 + 3.{3,4,5}.
     # You can run |tox -e ENV| to run a specific env, e.g. |tox -e py27|
     pip install tox
     tox
+
+Windows
+-------
+
+::
+
+    # By default, this will look for python 2.7 + 3.4
+    # You can run |tox -c tox_win.ini -e ENV| to run a specific env, e.g. |tox -c tox_win.ini -e py27|
+    pip install tox
+    tox -c win.ini
