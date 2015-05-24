@@ -4,7 +4,13 @@
 
 Attributes:
   LOGGER_NAME (str): logging.Logger name to use
-  VALID_LISTENER_TIMING (tuple): valid timing for Script.add_listener()
+  LISTENER_PHASES (tuple): valid phases for Script.add_listener()
+  ALL_PHASES (tuple): valid phases for build_context()
+  PRE_RUN (str): the pre-run phase constant
+  POST_RUN (str): the post-run phase constant
+  PRE_ACTION (str): the pre-action phase constant
+  POST_ACTION (str): the post-action phase constant
+  RUN_ACTION (str): the run-action phase constant
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -27,16 +33,17 @@ except ImportError:
 
 
 LOGGER_NAME = "scriptharness.script"
-VALID_LISTENER_TIMING = (
-    "pre_run",
-    "post_run",
-    "pre_action",
-    "post_action",
-    "post_fatal",
-)
+PRE_RUN = "pre_run"
+POST_RUN = "post_run"
+PRE_ACTION = "pre_action"
+POST_ACTION = "post_action"
+RUN_ACTION = "run_action"
+POST_FATAL = "post_fatal"
+LISTENER_PHASES = (PRE_RUN, POST_RUN, PRE_ACTION, POST_ACTION, POST_FATAL)
+ALL_PHASES = tuple(list(LISTENER_PHASES) + [RUN_ACTION])
 
 Context = collections.namedtuple(
-    'Context', ['script', 'config', 'logger', 'action']
+    'Context', ['script', 'config', 'logger', 'action', 'phase', 'script_name']
 )
 
 
@@ -53,16 +60,21 @@ def save_config(config, path):
     with codecs.open(path, 'w', encoding='utf-8') as filehandle:
         filehandle.write(json.dumps(config, sort_keys=True, indent=4))
 
-def build_context(script, action=None):
+def build_context(script, phase, action=None):
     """Build context for functions called by Actions.
 
     Args:
       script (Script): the calling script
+      phase (str): the current script phase
       action (Action, optional): The active Action.
     """
+    if phase not in ALL_PHASES:
+        raise ScriptHarnessException(
+            "Invalid phase %s in build_context!" % phase
+        )
     return Context(
         script=script, config=script.config, logger=script.get_logger(),
-        action=action
+        action=action, phase=phase, script_name=script.name
     )
 
 # Script {{{1
@@ -97,8 +109,8 @@ class Script(object):
         self.actions = actions
         self.name = name
         self.listeners = {}
-        for timing in VALID_LISTENER_TIMING:
-            self.listeners.setdefault(timing, [])
+        for phase in LISTENER_PHASES:
+            self.listeners.setdefault(phase, [])
         self.build_config(parser, **kwargs)
         self.logger = self.get_logger()
         self.start_message()
@@ -160,8 +172,8 @@ class Script(object):
                 else:
                     action.enabled = False
 
-    def add_listener(self, listener, timing, action_names=None):
-        """Add a callback for specific script timing.
+    def add_listener(self, listener, phase, action_names=None):
+        """Add a callback for a specific script phase.
 
         For pre and post_run, run at the beginning and end of the script,
         respectively.
@@ -172,9 +184,8 @@ class Script(object):
 
         Args:
           listener (function): Function to call at the right time.
-          timing (str): When to run the function.  Choices in
-            VALID_LISTENER_TIMING.
-          action_names (iterable): for pre/post action timing listeners,
+          phase (str): When to run the function.  Choices in LISTENER_PHASES
+          action_names (iterable): for pre/post action phase listeners,
             only run before/after these action(s).
         """
         for name_var in ('__qualname__', '__name__'):
@@ -183,21 +194,21 @@ class Script(object):
                 break
         else:
             raise ScriptHarnessException("Listener has no __name__!", listener)
-        if timing not in VALID_LISTENER_TIMING:
+        if phase not in LISTENER_PHASES:
             raise ScriptHarnessException(
-                "Invalid timing for add_listener!", listener_name,
-                timing, action_names
+                "Invalid phase for add_listener!", listener_name,
+                phase, action_names
             )
-        if action_names and ('action' not in timing and 'fatal' not in timing):
+        if action_names and ('action' not in phase and 'fatal' not in phase):
             raise ScriptHarnessException(
                 "Only specify action_names for pre/post action or "
-                "post_fatal timing!",
-                listener_name, timing, action_names
+                "post_fatal phase!",
+                listener_name, phase, action_names
             )
         logger = self.get_logger()
         logger.debug("Adding listener to script: %s %s %s.",
-                     listener_name, timing, action_names)
-        self.listeners[timing].append((listener, action_names))
+                     listener_name, phase, action_names)
+        self.listeners[phase].append((listener, action_names))
 
     def run_action(self, action):
         """Run a specific action.
@@ -205,7 +216,6 @@ class Script(object):
         Args:
           action (Action object).
         """
-        context = build_context(self, action=action)
         repl_dict = {
             'name': action.name,
             'action_msg_prefix': ACTION_MSG_PREFIX,
@@ -214,20 +224,24 @@ class Script(object):
         if not action.enabled:
             logger.info(STRINGS['action']['skip_message'], repl_dict)
             return
-        for listener, actions in iterate_pairs(self.listeners['pre_action']):
+        context = build_context(self, PRE_ACTION, action=action)
+        for listener, actions in iterate_pairs(self.listeners[PRE_ACTION]):
             if actions and action.name not in actions:
                 continue
             listener(context)
         logger.info(STRINGS['action']['run_message'], repl_dict)
         try:
+            context = build_context(self, RUN_ACTION, action=action)
             action.run(context)
         except ScriptHarnessFatal:
+            context = build_context(self, POST_FATAL, action=action)
             for listener, actions in \
                     iterate_pairs(self.listeners['post_fatal']):
                 if actions and action.name not in actions:
                     continue
                 listener(context)
             raise
+        context = build_context(self, POST_ACTION, action=action)
         for listener, actions in iterate_pairs(self.listeners['post_action']):
             if actions and action.name not in actions:
                 continue
@@ -276,12 +290,13 @@ class Script(object):
     def run(self):
         """Run all enabled actions.
         """
-        context = build_context(self)
-        for listener, _ in iterate_pairs(self.listeners['pre_run']):
+        context = build_context(self, PRE_RUN)
+        for listener, _ in iterate_pairs(self.listeners[PRE_RUN]):
             listener(context)
         for action in self.actions:
             self.run_action(action)
-        for listener, _ in iterate_pairs(self.listeners['post_run']):
+        context = build_context(self, POST_RUN)
+        for listener, _ in iterate_pairs(self.listeners[POST_RUN]):
             listener(context)
         self.end_message()
 
