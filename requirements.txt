@@ -1,0 +1,7 @@
+coverage
+jinja2
+pylint
+requests
+Sphinx
+six
+tox==1.9.2

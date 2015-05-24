@@ -16,6 +16,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import codecs
 import collections
+import json
 import logging
 import os
 import pprint
@@ -26,10 +27,6 @@ from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict
 import sys
 import time
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 
 LOGGER_NAME = "scriptharness.script"

@@ -13,16 +13,13 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import argparse
 from copy import deepcopy
+import json
 import logging
 import os
 import requests
 import six
 import six.moves.urllib as urllib
 import sys
-try:
-    import simplejson as json
-except ImportError:
-    import json
 
 from scriptharness.exceptions import ScriptHarnessException, to_unicode
 from scriptharness.actions import Action
