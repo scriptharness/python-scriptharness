@@ -93,14 +93,20 @@ class TestVersionString(unittest.TestCase):
         """
         if os.name == 'nt':
             command = [sys.executable]
+            version_py = "scriptharness/version.py"
+            version_json = "version.json"
         else:
             command = [
                 os.path.join(os.path.dirname(sys.executable), "coverage"),
                 "run", "-a", "--branch",
             ]
-        parent_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)))
-        version_py = os.path.join(parent_dir, 'scriptharness', 'version.py')
-        version_json = os.path.join(parent_dir, 'version.json')
+            parent_dir = os.path.join(
+                os.path.dirname(os.path.dirname(__file__))
+            )
+            version_py = os.path.join(
+                parent_dir, 'scriptharness', 'version.py'
+            )
+            version_json = os.path.join(parent_dir, 'version.json')
         try:
             os.rename(version_json, TEST_VERSION_JSON)
             self.helper_write_version(subprocess.call, command + [version_py])
