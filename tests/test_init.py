@@ -28,16 +28,17 @@ class FakeAction(object):  # pylint: disable=too-few-public-methods
 class FakeScript(object):
     """Pretend Script class"""
     def __init__(self, *args, **kwargs):
-        self.silence_pylint(args, kwargs)
+        if args or kwargs:  # silence pylint
+            pass
+        self.logger = True
     def add_config(self):
         """add self.config"""
         self.config = {  # pylint: disable=attribute-defined-outside-init
             "fakescript": True
         }
-    def silence_pylint(self, *args):
-        """silence pylint"""
-        if args and self:
-            pass
+    def get_logger(self):
+        """get logger"""
+        return self.logger
 
 
 # TestHelperFunctions {{{1
@@ -137,6 +138,8 @@ class TestScriptManager(unittest.TestCase):
         script.add_config()
         config = scriptharness.get_config("root")
         self.assertTrue(config['fakescript'] is True)
+        logger = scriptharness.get_logger("root")
+        self.assertTrue(logger is script.logger)
 
     def test_illegal_get_config(self):
         """test_init | illegal get_config
@@ -148,6 +151,14 @@ class TestScriptManager(unittest.TestCase):
         )
         self.assertRaises(
             ScriptHarnessException, scriptharness.get_config,
+            "nonexistent_script"
+        )
+
+    def test_illegal_get_logger(self):
+        """test_init | illegal get_config
+        """
+        self.assertRaises(
+            ScriptHarnessException, scriptharness.get_logger,
             "nonexistent_script"
         )
 
