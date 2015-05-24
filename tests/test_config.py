@@ -101,7 +101,8 @@ class TestUrlFunctionss(unittest.TestCase):
 
     def test_is_not_url(self):
         """test_config | Verify not is_url(real_url)"""
-        for url in ("example.com", "/usr/local/bin/python"):
+        for url in ("example.com", "/usr/local/bin/python",
+                    "c:\\temp\\"):
             print(url)
             self.assertFalse(shconfig.is_url(url))
 

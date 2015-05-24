@@ -99,7 +99,7 @@ def is_url(resource):
       bool
     """
     parsed = urllib.parse.urlparse(resource)
-    if parsed.scheme:
+    if parsed.scheme and '/' in resource:
         return True
     return False
 
