@@ -29,11 +29,12 @@ def build_readme_rst():
     with open("README.rst", "w") as filehandle:
         filehandle.write(template.render())
 
-def indent_output(command, **kwargs):
+def indent_output(command, required_string="INFO", **kwargs):
     output = ""
     kwargs.setdefault('stderr', subprocess.STDOUT)
     for line in subprocess.check_output(command, **kwargs).splitlines():
         output += "    {}{}".format(line.decode(), os.linesep)
+    assert required_string in output
     return output
 
 def build_quickstart():
@@ -58,13 +59,16 @@ def build_quickstart():
     )
     list_actions_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--list-actions"],
+        required_string="clobber",
     )
     dump_config_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--new-argument",
          "foo", "--dump-config"],
+        required_string="Dumping",
     )
     help_output = indent_output(
         [sys.executable, "../examples/quickstart.py", "--help"],
+        required_string="usage:"
     )
     with open("quickstart.rst", "w") as filehandle:
         filehandle.write(
