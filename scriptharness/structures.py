@@ -207,6 +207,7 @@ class LoggingClass(object):
         of descendents' names leading up to (and including) self.
 
         Args:
+
           child_list (list, automatically generated): in a multi-level nested
             Logging* class, generate the list of children's names. This list
             will be built by prepending our name and calling
@@ -214,7 +215,7 @@ class LoggingClass(object):
 
         Returns:
           (ancestor, child_list) (LoggingClass, list): for self.full_name and
-            self.log_change support
+          self.log_change support
         """
         child_list = child_list or []
         if self.parent:

@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Scriptharness version.
+"""Deal with the scriptharness version in semver format.
+
+However, since writing this I've discovered that setuptools and sphinx don't
+accept all semver formatted versions.  It's not clear if this will go away.
+
+When called as a script, this will update ../version.json with the appropriate
+version info.
 
 Attributes:
   __version__ (tuple): semver version - three integers and an optional string.
@@ -45,10 +51,19 @@ __version_string__ = get_version_string(__version__)
 
 def write_version(name=None, path=None):
     """Write the version info to ../version.json, for setup.py
+
+    Args:
+      name (str, optional): this is for the ``write_version(name=__name__)``
+        below.  That's one way to both follow the
+        ``if __name__ == '__main__':`` convention but also allow for full
+        coverage without ignoring parts of the file.
+
+      path (str, optional): the path to write the version json to.  Defaults
+        to ../version.json
     """
     # Written like this for coverage purposes.
     # http://stackoverflow.com/questions/5850268/how-to-test-or-mock-if-name-main-contents/27084447#27084447
-    if name is None or name == '__main__':
+    if name in (None, '__main__'):
         path = path or os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                     "version.json")
         contents = {

@@ -6,7 +6,7 @@ Not wrapping subprocess.call() or subprocess.check_call() because they don't
 support using subprocess.PIPE for stdout/stderr; redirecting stdout and stderr
 assumes synchronous behavior.
 
-This is starting very small, but there are plans to add equivalents to
+This module is starting very small, but there are plans to add equivalents to
 run_command() and get_output_from_command() from mozharness shortly.
 
 Attributes:
@@ -32,6 +32,7 @@ def makedirs(path, level=logging.INFO):
 
     Args:
       path (str): path to the directory
+      level (int, optional): the logging level to log with.
     """
     logger = logging.getLogger(LOGGER_NAME)
     logger.log(level, "Creating directory %s", path)
@@ -46,25 +47,32 @@ def make_parent_dir(path, **kwargs):
 
     Args:
       path (str): path to the file.
+      **kwargs: These are passed to makedirs().
     """
     dirname = os.path.dirname(path)
     if dirname:
         makedirs(dirname, **kwargs)
 
 def check_output(command, logger_name="scriptharness.commands.check_output",
-                 log_level=logging.INFO, log_output=True, **kwargs):
+                 level=logging.INFO, log_output=True, **kwargs):
     """Wrap subprocess.check_output with logging
 
     Args:
+      command (str or list): The command to run.
+      logger_name (str, optional): the logger name to log with.
+      level (int, optional): the logging level to log with.  Defaults to
+        logging.INFO
+      log_output (bool, optional): When true, log the output of the command.
+        Defaults to True.
       **kwargs: sent to `subprocess.check_output()`
     """
     logger = logging.getLogger(logger_name)
-    logger.log(log_level, STRINGS['check_output']['pre_msg'],
+    logger.log(level, STRINGS['check_output']['pre_msg'],
                {'args': (), 'kwargs': kwargs})
     output = subprocess.check_output(command, **kwargs)
     if log_output:
         logger = logging.getLogger(logger_name)
         logger.info("Output:")
         for line in output.splitlines():
-            logger.log(log_level, " %s", line)
+            logger.log(level, " %s", line)
     return output
