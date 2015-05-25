@@ -48,8 +48,8 @@ class ScriptHarnessBaseException(Exception):
     instead.
     """
     def __str__(self):
-        """This method will become __unicode__ in py2 via the
-        six.python_2_unicode_compatible decorator.
+        """This method will become __unicode__() in py2 via the
+        @six.python_2_unicode_compatible decorator.
         """
         if six.PY3:
             string = super(ScriptHarnessBaseException, self).__str__()

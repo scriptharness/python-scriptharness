@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Modular actions.
+"""Scripts control the running of Actions.
 
 Attributes:
   LOGGER_NAME (str): logging.Logger name to use
@@ -42,6 +42,12 @@ ALL_PHASES = tuple(list(LISTENER_PHASES) + [RUN_ACTION])
 Context = collections.namedtuple(
     'Context', ['script', 'config', 'logger', 'action', 'phase']
 )
+"""This is a namedtuple passed to each
+listener and action function so they can reference the config, logger, etc.
+easily.  It contains pointers to the Script, config, logger, and phase.
+During action phases it also contains a pointer to the Action; during other
+phases, Context.action is None.
+"""
 
 
 # Helper functions {{{1
@@ -57,13 +63,21 @@ def save_config(config, path):
     with codecs.open(path, 'w', encoding='utf-8') as filehandle:
         filehandle.write(json.dumps(config, sort_keys=True, indent=4))
 
+
 def build_context(script, phase, action=None):
     """Build context for functions called by Actions.
 
     Args:
-      script (Script): the calling script
-      phase (str): the current script phase
-      action (Action, optional): The active Action.
+      script (Script): The calling Script
+      phase (str): The current script phase (one of ALL_PHASES)
+      action (Action, optional): The active Action, if applicable.
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessException: if there is an invalid
+        phase.
+
+    Returns:
+      scriptharness.script.Context namedtuple.
     """
     if phase not in ALL_PHASES:
         raise ScriptHarnessException(
@@ -86,7 +100,8 @@ class Script(object):
       config (LoggingDict): the config for the script
       actions (tuple): Action objects to run.
       name (string): The name of the script
-      listeners (dict): callbacks for run()
+      listeners (dict): Callbacks for run().  Listener functions can be
+        set for each of LISTENER_PHASES.
       logger (logging.Logger): the logger for the script
     """
     config = None
@@ -97,6 +112,13 @@ class Script(object):
         Args:
           actions (tuple): Action objects to run.
           parser (ArgumentParser): parser to use
+          name (str, optional): The name of the Script in
+            scriptharness.ScriptManager
+          **kwargs: These are passed to self.build_config()
+
+        Raises:
+          scriptharness.exceptions.ScriptHarnessException: if there is a
+            non-Action in actions.
         """
         for action in actions:
             if not isinstance(action, Action):

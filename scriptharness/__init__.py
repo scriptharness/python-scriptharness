@@ -11,7 +11,7 @@ The top-level module has two main purposes:
  1. to serve shortcuts for simple scripts.  A single import, and a few function
     calls should serve for simple workflows.
  2. the ScriptManager can keep track of all Script objects if and when
-    a script calls for running tasks in parallel.
+    a script requires multiple Script objects.
  """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -48,8 +48,8 @@ class ScriptManager(object):
     def get_script(self, *args, **kwargs):
         """Back end for scriptharness.get_script().
 
-        Most python scripts will have a single `script`, but there may be more
-        when parallel execution is desired.
+        Most python scripts will have a single Script, but there may be more
+        than one.
         """
         name = kwargs.get('name', 'root')
         if name not in self.all_scripts:
