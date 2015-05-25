@@ -52,6 +52,7 @@ class ScriptManager(object):
         than one.
         """
         name = kwargs.get('name', 'root')
+        kwargs.setdefault('name', name)
         if name not in self.all_scripts:
             self.all_scripts[name] = self.script_class(*args, **kwargs)
         return self.all_scripts[name]
