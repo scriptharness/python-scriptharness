@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Allow for full logging.
+"""The goal of `full logging` is to be able to debug problems purely through
+the log.
 
 Attributes:
   DEFAULT_DATEFMT (str): default logging date format
   DEFAULT_FMT (str): default logging format
   DEFAULT_LEVEL (int): default logging level
-  LOGGING_DEFAULTS (dict): provide defaults for logging.basicConfig().
 """
 
 from __future__ import absolute_import, division, print_function, \
@@ -14,10 +14,9 @@ from __future__ import absolute_import, division, print_function, \
 from copy import deepcopy
 import logging
 import os
-import six
-
 from scriptharness.commands import make_parent_dir
 from scriptharness.exceptions import ScriptHarnessException
+import six
 
 
 DEFAULT_DATEFMT = '%H:%M:%S'
@@ -27,10 +26,10 @@ DEFAULT_LEVEL = logging.INFO
 
 # UnicodeFormatter {{{1
 class UnicodeFormatter(logging.Formatter):
-    """Subclass logging.Formatter to not barf on unicode strings in py2.
+    """Subclass logging.Formatter to handle unicode strings in py2.
 
     Attributes:
-        encoding (str): defaults to utf-8.
+      encoding (str): defaults to utf-8.
     """
     encoding = 'utf-8'
 
@@ -73,10 +72,9 @@ def prepare_simple_logging(path, mode='w', logger_name='', level=DEFAULT_LEVEL,
         don't create a file handler.  Default ''
       mode (char, optional): the mode to open the file log.  Default 'w'
       logger_name (str, optional): the name of the logger to use. Default ''
-      file_level (int, optional): the level to log to the file.  If this is
-        None, don't create a file handler.  Default DEFAULT_LEVEL
-      console_level (int, optional): the level to log to the console.  If this
-        is None, don't create a console handler.  Default DEFAULT_LEVEL
+      level (int, optional): the level to log.  Default DEFAULT_LEVEL
+      formatter (Formatter, optional): a logging Formatter to use; to handle
+        unicode, subclass UnicodeFormatter.
 
     Returns:
         logger (Logger object).  This is also easily retrievable via
@@ -104,7 +102,6 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
     Returns:
       handler (logging.FileHandler):  This can be added to a logger
       via logger.addHandler(handler)
-
     """
     make_parent_dir(path, level=logging.DEBUG)
     if not formatter:
@@ -115,6 +112,7 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
     if logger:
         logger.addHandler(handler)
     return handler
+
 
 def get_console_handler(formatter=None, logger=None, level=logging.INFO):
     """Create a stream handler to add to a logger.
@@ -141,11 +139,13 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 # LogMethod decorator {{{1
 class LogMethod(object):
     """Wrapper decorator object for logging and error detection.
+    This is here as a shortcut to wrap functions with basic logging.
 
     Attributes:
+
       default_config (dict): contains the config defaults that can be
-      overridden via __init__ **kwargs.  Changing default_config directly
-      may carry over to other decorated LogMethod functions!
+        overridden via __init__ \**kwargs.  Changing default_config directly
+        may carry over to other decorated LogMethod functions!
     """
     default_config = {
         'level': logging.INFO,
@@ -162,6 +162,7 @@ class LogMethod(object):
         """Set instance attributes from the decorator.
 
         Usage::
+
           # with arguments
           @LogMethod(foo='bar')
           def decorated_function(...):
@@ -209,14 +210,14 @@ class LogMethod(object):
         # pylint: disable=anomalous-backslash-in-string
         """Wrap the function call as a decorator.
 
-        When there are decorator arguments, \_\_call\_\_ is only called once, at
-        decorator time.  \*args and \*\*kwargs only show up when func is called,
+        When there are decorator arguments, \__call__ is only called once, at
+        decorator time.  args and kwargs only show up when func is called,
         so we need to create and return a wrapping function.
 
         Args:
           func (function): this is the decorated function.
-          *args: the function's \*args
-          **kwargs: the function's \*\*kwargs
+          *args: the args from the wrapped function call.
+          **kwargs: the kwargs from the wrapped function call.
         """
         self.func = func
         def wrapped_func(*args, **kwargs):
