@@ -55,7 +55,6 @@ setup(
         "Operating System :: POSIX",
         "Operating System :: POSIX :: BSD",
         "Operating System :: POSIX :: Linux",
-        "Framework :: Scriptharness",
         "Topic :: Software Development",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
