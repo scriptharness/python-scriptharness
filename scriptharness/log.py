@@ -138,6 +138,7 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 
 # LogMethod decorator {{{1
 class LogMethod(object):
+    # pylint: disable=anomalous-backslash-in-string
     """Wrapper decorator object for logging and error detection.
     This is here as a shortcut to wrap functions with basic logging.
 

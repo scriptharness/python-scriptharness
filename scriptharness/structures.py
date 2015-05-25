@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 """Data structures for configs.
 
-There are two config dict models here:: one is to recursively lock the
-dictionary.  This is to aid in debugging; one can assume the config hasn't
-changed from the moment of locking.  This is the original mozharness model.
+There are two config dict models here:
+ * LoggingDict logs any changes to the dict or its children.  When debugging,
+   config changes will be marked in the log.  This is the default model.
 
-The second model is to log any changes to the dict or its children.  When
-debugging, config changes will be marked in the log.
+ * ReadOnlyDict recursively locks the dictionary.  This is to aid in debugging;
+   one can assume the config hasn't changed from the moment of locking.
+   This is the original `mozharness` model.
 
 Attributes:
   DEFAULT_LEVEL (int): the default logging level to set
@@ -150,12 +151,11 @@ class LoggingClass(object):
     parent = None
     level = None
     logger_name = None
-    logger_name = None
 
     def items(self):
         """Return dict.items() for dicts, and enumerate(self) for lists+tuples.
 
-        This both simplifies recursively_set_parent() and shushes pylint
+        This both simplifies recursively_set_parent() and silences pylint
         complaining that LoggingClass doesn't have an items() method.
 
         The main negative here might be adding an attr items to non-dict
@@ -178,8 +178,9 @@ class LoggingClass(object):
         For each child, set name automatically.  For dicts, the name is the
         key.  For everything else, the name is the index.
 
-        name (str): set self.name, for later logging purposes.
-        parent (Logging*, optional): set self.parent, for logging purposes.
+        Args:
+          name (str, optional): set self.name, for later logging purposes.
+          parent (Logging*, optional): set self.parent, for logging purposes.
         """
         if name is not None:
             self.name = name
@@ -207,13 +208,13 @@ class LoggingClass(object):
 
         Args:
           child_list (list, automatically generated): in a multi-level nested
-          Logging* class, generate the list of children's names. This list
-          will be built by prepending our name and calling
-          ancestor_child_list() on self.parent.
+            Logging* class, generate the list of children's names. This list
+            will be built by prepending our name and calling
+            ancestor_child_list() on self.parent.
 
         Returns:
           (ancestor, child_list) (LoggingClass, list): for self.full_name and
-          self.log_change support
+            self.log_change support
         """
         child_list = child_list or []
         if self.parent:
@@ -270,6 +271,7 @@ class LoggingClass(object):
 # LoggingList {{{2
 class LoggingList(LoggingClass, list):
     """A list that logs any changes, as do its children.
+
     Attributes:
       level (int): the logging level for changes
       logger_name (str): the logger name to use
@@ -584,6 +586,9 @@ SUPPORTED_LOGGING_TYPES = {
 
 def is_logging_class(item):
     """Determine if a class is one of the Logging* classes.
+
+    Args:
+      item (object): the object to check.
     """
     return issubclass(item.__class__, LoggingClass)
 

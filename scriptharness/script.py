@@ -182,7 +182,7 @@ class Script(object):
         self.config = LoggingDict(
             config, logger_name=config.get('logger_name', LOGGER_NAME)
         )
-        self.config.recursively_set_parent(name="config")
+        self.config.recursively_set_parent(name="%s.config" % self.name)
 
     def enable_actions(self, parsed_args):
         """If parsed_args has 'actions' set, use those as the enabled actions.
