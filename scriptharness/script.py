@@ -40,7 +40,7 @@ LISTENER_PHASES = (PRE_RUN, POST_RUN, PRE_ACTION, POST_ACTION, POST_FATAL)
 ALL_PHASES = tuple(list(LISTENER_PHASES) + [RUN_ACTION])
 
 Context = collections.namedtuple(
-    'Context', ['script', 'config', 'logger', 'action', 'phase', 'script_name']
+    'Context', ['script', 'config', 'logger', 'action', 'phase']
 )
 
 
@@ -71,7 +71,7 @@ def build_context(script, phase, action=None):
         )
     return Context(
         script=script, config=script.config, logger=script.get_logger(),
-        action=action, phase=phase, script_name=script.name
+        action=action, phase=phase
     )
 
 # Script {{{1
