@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Allow for flexible configuration.
+"""The goal of `flexible configuration` is to make each script useful in a
+variety of contexts and environments.
 
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
 
   SCRIPTHARNESS_INITIAL_CONFIG (dict): These key/value pairs are available
     in all scriptharness scripts.
-
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -17,13 +17,12 @@ import json
 import logging
 import os
 import requests
+from scriptharness.actions import Action
+from scriptharness.exceptions import ScriptHarnessException, to_unicode
+from scriptharness.structures import iterate_pairs
 import six
 import six.moves.urllib as urllib
 import sys
-
-from scriptharness.exceptions import ScriptHarnessException, to_unicode
-from scriptharness.actions import Action
-from scriptharness.structures import iterate_pairs
 
 
 LOGGER_NAME = "scriptharness.config"
@@ -39,17 +38,17 @@ SCRIPTHARNESS_INITIAL_CONFIG = {
 # parse_config_file() {{{1
 def parse_config_file(path):
     """Read a config file and return a dictionary.
-
     For now, only support json.
 
     Args:
       path (str): path or url to config file.
 
     Returns:
-      config (dict)
+      config (dict): the parsed json dict.
 
     Raises:
-      ScriptHarnessException on error
+      scriptharness.exceptions.ScriptHarnessException: if the path is
+        unreadable or not valid json.
     """
     if is_url(path):
         path = download_url(path)
@@ -92,29 +91,34 @@ def get_filename_from_url(url):
 def is_url(resource):
     """Is it a url?
 
+    .. note:: This function will return False for `file://` strings
+
     Args:
       resource (str): possible url
 
     Returns:
-      bool
+      bool: True if it's a url, False otherwise.
     """
     parsed = urllib.parse.urlparse(resource)
-    if parsed.scheme and '/' in resource:
+    if parsed.scheme and parsed.netloc:
         return True
     return False
 
 
-def download_url(url, path=None, timeout=None, mode='wb'):
-    """Download a url to a path
+def download_url(url, path=None, timeout=None):
+    """Download a url to a path.
 
     Args:
       url (str): the url to download
-      path (str, optional): the path to write to
-      timeout (float, optional): how long to wait before timing out
-      mode (str, optional): the mode to open the file with
+      path (str, optional): the path to write the contents to.
+      timeout (float, optional): how long to wait before timing out.
+
+    Returns:
+      path (str): the path to the downloaded file.
 
     Raises:
-      ScriptHarnessException on error
+      scriptharness.exceptions.ScriptHarnessException: if there are download
+        issues, or if we can't write to path.
     """
     if path is None:
         path = get_filename_from_url(url)
@@ -124,7 +128,7 @@ def download_url(url, path=None, timeout=None, mode='wb'):
         session = requests.Session()
         session.mount(url, requests.adapters.HTTPAdapter(max_retries=5))
         response = session.get(url, timeout=timeout, stream=True)
-        with open(path, mode) as filehandle:
+        with open(path, 'wb') as filehandle:
             for chunk in response.iter_content(  # pragma: no branch
                     chunk_size=1024):
                 if chunk:  # pragma: no branch
@@ -148,6 +152,9 @@ def get_list_actions_string(action_name, enabled):
     Args:
       action_name (str):  name of the action
       enabled (bool): whether the action is enabled by default
+
+    Returns:
+      string (str): a line of --list-actions output.
     """
     string = "  "
     if enabled:
@@ -272,10 +279,11 @@ def parse_args(parser, cmdln_args=None):
 
 def update_dirs(config, max_depth=2):
     """Directory paths for the script are defined in config.
-    Absolute paths help avoid chdir issues.  `scriptharness_base_dir` (or
-    any other directory path, or any config value) can be overridden during
-    build_config().  Defining the directory paths as formattable strings
-    is configurable but not overly complex.
+    Absolute paths help avoid chdir issues.
+
+    `scriptharness_base_dir` (or any other directory path, or any config value)
+    can be overridden during build_config().  Defining the directory paths as
+    formattable strings is configurable but not overly complex.
 
     Any key in `config` named scriptharness_SOMETHING_dir will be % formatted
     with the other dirs as the replacement dictionary.
@@ -297,15 +305,16 @@ def update_dirs(config, max_depth=2):
 def build_config(parser, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
 
-    The configuration is built in this order::
+    The configuration is built in this order:
 
       * parser defaults
       * initial_config
       * parsed_args.config_files, in order
+      * parsed_args.opt_config_files, in order, if they exist
       * non-default parser args (cmdln_args)
 
     So the commandline args can override everything else, as long as there are
-    options to do so (commandline args will need to be a subset of the parser
+    options to do so. (Commandline args will need to be a subset of the parser
     args).  The final configuration file can override everything but the
     commandline args, and its config isn't restricted as a subset of the
     parser options.

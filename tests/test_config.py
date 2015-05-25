@@ -95,8 +95,7 @@ class TestUrlFunctionss(unittest.TestCase):
 
     def test_is_url(self):
         """test_config | Verify is_url(real_url)"""
-        for url in ("http://example.com", "https://example.com/foo/bar",
-                    "file:///home/example/.bashrc"):
+        for url in ("http://example.com", "https://example.com/foo/bar"):
             self.assertTrue(shconfig.is_url(url))
 
     def test_is_not_url(self):
