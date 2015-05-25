@@ -138,10 +138,14 @@ class Script(object):
     def build_config(self, parser, cmdln_args=None, initial_config=None):
         """Create self.config from the parsed args.
 
+        If --dump-config is in the commandline arguments, the script will
+        dump the config to screen and disk, and exit.
+
         Args:
-          parser (ArgumentParser): parser to use
+          parser (ArgumentParser): parser to use to parse the commandline
+            args.
           cmdln_args (tuple, optional): override the commandline args
-          initial_config (dict, optional): initial config dict to apply
+          initial_config (dict, optional): initial config dict to apply.
 
         Returns:
           parsed_args from parse_args()
@@ -170,7 +174,10 @@ class Script(object):
         )
 
     def dict_to_config(self, config):
-        """Here for subclassing.
+        """Convert the config dict to a LoggingDict.
+
+        This method is mainly here for subclassing; otherwise it could have
+        easily stayed part of self.build_config().
         """
         self.config = LoggingDict(
             config, logger_name=config.get('logger_name', LOGGER_NAME)
@@ -234,6 +241,10 @@ class Script(object):
 
         Args:
           action (Action object).
+
+        Raises:
+          scriptharness.exceptions.ScriptHarnessFatal: when the Action
+          raises ScriptHarnessFatal, this method re-raises.
         """
         repl_dict = {
             'name': action.name,
@@ -323,6 +334,11 @@ class Script(object):
 class StrictScript(Script):
     """A subclass of Script that uses a ReadOnlyDict for config, and locks
     its attributes.
+
+    As for naming, there were the following choices:
+      * Locking sounds like Logging;
+      * ReadOnlyScript is a misnomer;
+      * StrictScript is a tongue-twister.
 
     Attributes:
       _lock (bool): Similar to the ReadOnlyDict _lock.  Once set,
