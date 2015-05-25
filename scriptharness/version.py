@@ -18,6 +18,7 @@ import json
 import os
 
 
+# get_version_string {{{1
 def get_version_string(version):
     """Translate a version tuple into a string.
 
@@ -44,11 +45,13 @@ def get_version_string(version):
     return version_string
 
 
+# 1}}}
 # Semantic versioning 2.0.0  http://semver.org/
-__version__ = (0, 1, 0, 'alpha')
+__version__ = (0, 2, 0, 'alpha')
 __version_string__ = get_version_string(__version__)
 
 
+# write_version {{{1
 def write_version(name=None, path=None):
     """Write the version info to ../version.json, for setup.py
 
