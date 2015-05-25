@@ -5,14 +5,14 @@
 
 .. include:: README.rst
 
-Contents:
-
 .. toctree::
-   :maxdepth: 4
+   :caption: Table of Contents
+   :maxdepth: 3
 
-   README
    quickstart
-   modules
+   scriptharness
+   releasenotes/0.1.0
+   README
 
 Indices and tables
 ==================

@@ -1,0 +1,40 @@
+Scriptharness 0.1.0 Release Notes
+=================================
+
+:date: 2015/05/25
+
+This is the first scriptharness release.
+
+What's New
+----------
+* python 2.7, 3.2-3.5 support
+* unicode support on 2.7 (3.x gets it for free)
+* no more mixins
+* argparse instead of optparse
+* virtualenv instead of clone-and-run
+* because of virtualenv model, requests instead of urllib2
+* LoggingDict to allow and log config changes
+* ScriptManager object like logging.Manager
+* Action functions can be module-level functions
+* multiple Script model, though running multiple Scripts is currently untested
+* choice of StrictScript for ReadOnlyDict usage
+* all preflight and postflight functions are listeners
+* quickstart.py for faster learning curve
+* readthedocs + full docstrings for faster learning curve
+* 100% coverage
+* pylint 10.00
+
+Known Issues
+------------
+* run_command() and get_output_from_command() are not yet ported
+* test_config.py hardcodes port 8001
+* 1 broken test on Windows python 2.7: cgi httpserver call downloads cgi script
+* 5 disabled tests on Windows python 3.4
+
+ * windows console doesn't print or input Unicode http://bugs.python.org/issue1602
+ * subprocess failing in GUI applications on Windows http://bugs.python.org/issue3905
+
+* currently only one way to enable/disable actions: --actions
+
+..  uncomment this include statment for 0.2.0
+    .. include:: ../releasenotes.rst
