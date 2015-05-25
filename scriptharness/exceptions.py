@@ -1,6 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Scriptharness exceptions.
+"""Scriptharness exceptions, and to_unicode() which wasn't quite enough to
+create a scriptharness.unicode module, though that may happen in the future.
+
+These exceptions are written with several things in mind:
+
+ #. the exceptions should be unicode-capable in python 2.7 (py3 gets that
+    for free),
+ #. the exceptions should differentiate between user-facing exceptions and
+    developer-facing exceptions, and
+ #. ScriptHarnessFatal should exit the script.
+
+There may be more exceptions in the future, to further differentiate between
+errors.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -27,6 +39,7 @@ def to_unicode(obj, encoding='utf-8'):
             pass
     return obj
 
+
 @six.python_2_unicode_compatible
 class ScriptHarnessBaseException(Exception):
     """All scriptharness exceptions should inherit this exception.
@@ -35,7 +48,8 @@ class ScriptHarnessBaseException(Exception):
     instead.
     """
     def __str__(self):
-        """
+        """This method will become __unicode__ in py2 via the
+        six.python_2_unicode_compatible decorator.
         """
         if six.PY3:
             string = super(ScriptHarnessBaseException, self).__str__()
@@ -44,19 +58,25 @@ class ScriptHarnessBaseException(Exception):
         string = to_unicode(string, 'utf-8')
         return string
 
-class ScriptHarnessException(ScriptHarnessBaseException):
-    """All developer-facing exceptions should inherit this class.
 
-    There is a problem in how scriptharness is being called.
+class ScriptHarnessException(ScriptHarnessBaseException):
+    """There is a problem in how scriptharness is being called.
+    All developer-facing exceptions should inherit this class.
+
     If you want to catch all developer-facing scriptharness exceptions,
     catch ScriptHarnessException.
     """
+
 
 class ScriptHarnessError(ScriptHarnessBaseException):
     """User-facing exception.
 
     Scriptharness has detected an error in the running process.
+
+    Since this exception is not designed to always exit, it's best to
+    catch these and deal with the error.
     """
+
 
 class ScriptHarnessFatal(SystemExit, ScriptHarnessBaseException):
     """User-facing exception.
