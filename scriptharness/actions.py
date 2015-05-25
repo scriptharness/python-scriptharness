@@ -47,12 +47,12 @@ def get_function_by_name(function_name):
     Args:
       function_name (str): The name of the function to find.
 
+    Returns:
+      function: the function found.
+
     Raises:
       scriptharness.exceptions.ScriptHarnesException: if the function is
         not found or not callable.
-
-    Returns:
-      function
     """
     if hasattr(sys.modules['__main__'], function_name):
         function = getattr(sys.modules['__main__'], function_name)
@@ -127,6 +127,9 @@ class Action(object):
 
         Args:
           context (Context): the context from the calling Script.
+
+        Returns:
+          status (int): one of SUCCESS, ERROR, or FATAL.
 
         Raises:
           scriptharness.exceptions.ScriptHarnessFatal: when the function
