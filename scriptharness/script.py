@@ -20,7 +20,7 @@ import json
 import logging
 import os
 import pprint
-from scriptharness.actions import Action, STRINGS, ACTION_MSG_PREFIX
+from scriptharness.actions import Action
 from scriptharness.commands import make_parent_dir
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
@@ -215,18 +215,18 @@ class Script(object):
         """
         repl_dict = {
             'name': action.name,
-            'action_msg_prefix': ACTION_MSG_PREFIX,
+            'action_msg_prefix': action.strings['action_msg_prefix'],
         }
         logger = self.get_logger()
         if not action.enabled:
-            logger.info(STRINGS['action']['skip_message'], repl_dict)
+            logger.info(action.strings['skip_message'], repl_dict)
             return
         context = build_context(self, PRE_ACTION, action=action)
         for listener, actions in iterate_pairs(self.listeners[PRE_ACTION]):
             if actions and action.name not in actions:
                 continue
             listener(context)
-        logger.info(STRINGS['action']['run_message'], repl_dict)
+        logger.info(action.strings['run_message'], repl_dict)
         try:
             context = build_context(self, RUN_ACTION, action=action)
             action.run(context)
