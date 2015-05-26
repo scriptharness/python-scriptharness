@@ -10,10 +10,12 @@ What's New
 * python 2.7, 3.2-3.5 support
 * unicode support on 2.7 (3.x gets it for free)
 * no more mixins
+* no more query_abs_dirs()
 * argparse instead of optparse
 * virtualenv instead of clone-and-run
 * because of virtualenv model, requests instead of urllib2
 * LoggingDict to allow and log config changes
+* LogMethod decorator to add simple logging to any function or method
 * ScriptManager object like logging.Manager
 * Action functions can be module-level functions
 * multiple Script model, though running multiple Scripts is currently untested
