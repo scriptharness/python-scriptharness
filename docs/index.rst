@@ -11,7 +11,7 @@
 
    quickstart
    scriptharness
-   releasenotes/0.1.0
+   releasenotes
    README
 
 Indices and tables
@@ -20,4 +20,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

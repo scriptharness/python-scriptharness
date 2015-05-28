@@ -178,6 +178,7 @@ class TestScript(unittest.TestCase):
         """test_script | post_fatal listeners
         """
         scr = self.get_script()
+        scr.actions = list(scr.actions)
         scr.actions[1] = actions.Action(
             "two", function=self.raise_fatal, enabled=True)
         scr.add_listener(self.get_timing_func("post_fatal1"), "post_fatal")
@@ -197,6 +198,20 @@ class TestScript(unittest.TestCase):
             ScriptHarnessException, script.build_context,
             scr, "bad_phase"
         )
+
+    def test_dup_action_name(self):
+        """test_script | dup action name
+        """
+        action_list = [
+            self.get_action("one"),
+            self.get_action("two"),
+            self.get_action("one", enabled=False),
+            self.get_action("four"),
+        ]
+        parser = get_parser(action_list)
+        cmdln_args = []
+        self.assertRaises(ScriptHarnessException, script.Script,
+                          action_list, parser, cmdln_args=cmdln_args)
 
     def test_dump_config(self):
         """test_script | --dump-config
