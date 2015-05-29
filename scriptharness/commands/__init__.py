@@ -19,8 +19,11 @@ import logging
 import os
 import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
-    ScriptHarnessException, ScriptHarnessFatal
+    ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
+import scriptharness.status
+import six
 import subprocess
+import time
 
 LOGGER_NAME = "scriptharness.commands"
 STRINGS = {
@@ -34,6 +37,10 @@ STRINGS = {
         "start_with_cwd": "Running command: %(command)s in %(cwd)s",
         "start_without_cwd": "Running command: %(command)s",
         "copy_paste": "Copy/paste: %(command)s",
+        "output_timeout":
+            "Command %(command)s timed out after %(output_timeout)d seconds.",
+        "timeout":
+            "Command %(command)s timed out after %(run_time)d seconds.",
     },
 }
 
@@ -90,6 +97,9 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
     return output
 
 
+# Command and helpers {{{1
+
+
 def detect_errors(command):
     """ Very basic detect_errors_cb for Command.
 
@@ -100,10 +110,11 @@ def detect_errors(command):
     Args:
       command (Command obj):
     """
-    return command.history.get('return_value', True)
+    status = scriptharness.status.SUCCESS
+    if command.history.get('return_value', True):
+        status = scriptharness.status.ERROR
+    return status
 
-
-# Command {{{1
 class Command(object):
     """Basic command: run and log output.
 
@@ -130,6 +141,7 @@ class Command(object):
         self.history = {'timestamps': {}}
         self.kwargs = kwargs or {}
         self.strings = deepcopy(STRINGS['command'])
+        self.process = None
 
     def log_start(self):
         """Log the start of the command, also checking for the existence of
@@ -158,15 +170,96 @@ class Command(object):
                 self.strings["copy_paste"],
                 {'command': subprocess.list2cmdline(self.command)}
             )
+        if 'env' in self.kwargs:
+            self.logger.info(
+                "Using env: %s" % pprint.pformat(self.kwargs['env'])
+            )
 
     def log_end(self):
         """Log the end of the command.
         """
         pass
 
+    def get_process(self, command, stdout=None, stderr=None, **kwargs):
+        """Create a subprocess.Popen and return it.
+        Here for subclassing.
+
+        Args:
+          command (list or string): command for subprocess.Popen
+          **kwargs: kwargs for subprocess.Popen
+        """
+        stdout = stdout or subprocess.PIPE
+        stderr = stderr or subprocess.STDOUT
+        if six.PY3:
+            timeout_exception = getattr(subprocess, 'TimeoutExpired')
+        else:
+            # this will never raise from subprocess.Popen, but
+            timeout_exception = ScriptHarnessTimeout
+        try:
+            process = subprocess.Popen(
+                command, stdout=stdout, stderr=stderr, **kwargs
+            )
+            yield process
+        except timeout_exception as exc_info:
+            self.history['end_time'] = time.time()
+            run_time = self.history['end_time'] - self.history['start_time']
+            self.logger.error(
+                self.strings["timeout"], {
+                    'command': self.command, 'run_time': run_time
+                },
+                exc_info
+            )
+            self.history['timeout'] = 'timeout'
+        finally:
+            if process:
+                # TODO strings
+                self.logger.warning("Killing process that's still here")
+                process.kill()
+                # will this timeout too?
+                process.communicate()
+                # log
+                # verify
+
+    def add_line(self, line):
+        """Log the output.  Here for subclassing.
+
+        Args:
+          line (str): a line of output
+        """
+        self.logger.info(line)
+
+    def wait_for_process(self, process, output_timeout=None):
+        """Wait for process to finish, handling the output as it comes.
+        This also checks for output timeout.
+        """
+        loop = True
+        while loop:
+            if process.poll() is not None:
+            # avoid losing the final lines of the log
+                loop = False
+                while True:
+                    line = process.stdout.readline()
+                    if not line:
+                        break
+                    self.add_line(line)
+                    self.history['last_output'] = time.time()
+            elif output_timeout:
+                if self.history['last_output'] + output_timeout > \
+                        time.time():
+                    self.logger.error(
+                        self.strings['output_timeout'], {
+                            'command': self.command,
+                            'output_timeout': output_timeout,
+                        }
+                    )
+                    process.terminate()
+                    self.history['timeout'] = 'output'
+
     def run(self):
         """Run the command.
         """
+        # TODO timeouts http://stackoverflow.com/questions/10756383/timeout-on-subprocess-readline-in-python#10759061
+        # also mozprocess is an option for py27?
         self.log_start()
         output_timeout = self.kwargs.get('output_timeout', None)
         if 'output_timeout' in self.kwargs:
@@ -175,7 +268,17 @@ class Command(object):
             self.kwargs.setdefault('shell', False)
         else:
             self.kwargs.setdefault('shell', True)
-        # output_timeout
+        with self.get_process(self.command, **self.kwargs) as process:
+            self.history['start_time'] = time.time()
+            self.history['last_output'] = self.history['start_time']
+            self.wait_for_process(process, output_timeout=output_timeout)
+            self.history['end_time'] = time.time()
+        try:
+            self.history['return_value'] = process.returncode
+        except AttributeError:
+            self.history['return_value'] = None
+        self.history['status'] = self.detect_error_cb(self)
+        return self.history['status']
 
 
 ##error_list=None,
