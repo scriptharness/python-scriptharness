@@ -2,6 +2,8 @@
 # is defined in setup.py.
 coverage
 jinja2
+mock
+nose
 pylint
 requests
 Sphinx

@@ -8,9 +8,6 @@ Attributes:
   LOGGER_NAME (str): logging.Logger name to use
   STRINGS (dict): strings for actions.  In the future these may be in a
     function to allow for localization.
-  SUCCESS (int): Constant for Action.history['status']
-  ERROR (int): Constant for Action.history['status']
-  FATAL (int): Constant for Action.history['status']
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -18,6 +15,7 @@ from copy import deepcopy
 import logging
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal
+from scriptharness.status import SUCCESS, ERROR, FATAL
 import sys
 import time
 
@@ -35,9 +33,6 @@ STRINGS = {
         "action_msg_prefix": "### ",
     }
 }
-SUCCESS = 0
-ERROR = 1
-FATAL = -1
 
 def get_function_by_name(function_name):
     """If function isn't passed to Action, find the function with the same name
