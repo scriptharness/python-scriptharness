@@ -258,6 +258,9 @@ class Command(object):
 
     def run(self):
         """Run the command.
+
+        Raises:
+          scriptharness.exceptions.ScriptHarnessError on error
         """
         # TODO timeouts http://stackoverflow.com/questions/10756383/timeout-on-subprocess-readline-in-python#10759061
         # also mozprocess is an option for py27?
@@ -279,7 +282,10 @@ class Command(object):
         except AttributeError:
             self.history['return_value'] = None
         self.history['status'] = self.detect_error_cb(self)
-        return self.history['status']
+        if self.history['status'] != scriptharness.status.SUCCESS:
+            raise ScriptHarnessError(
+                self.strings["error"], {'command': self.command,}
+            )
 
 
 ##error_list=None,
@@ -287,10 +293,6 @@ class Command(object):
 ##return_type='status', output_parser=None,
 ##output_timeout=None
 #    """Run a command, with logging and error parsing.
-#
-#    output_timeout is the number of seconds without output before the process
-#    is killed.
-#
 #
 #    output_parser lets you provide an instance of your own OutputParser
 #    subclass, or pass None to use OutputParser.
@@ -302,29 +304,6 @@ class Command(object):
 #    ]
 #    (context_lines isn't written yet)
 #    """
-#    if success_codes is None:
-#        success_codes = [0]
-#    if cwd is not None:
-#        if not os.path.isdir(cwd):
-#            level = error_level
-#            if halt_on_failure:
-#                level = logging.FATAL
-#            context.logger.log("Can't run command %s in non-existent directory '%s'!" %
-#                     (command, cwd), level=level)
-#            return -1
-#        context.logger.info("Running command: %s in %s" % (command, cwd))
-#    else:
-#        context.logger.info("Running command: %s" % command)
-#    shell = True
-#    if isinstance(command, (list, tuple)):
-#        context.logger.info("Copy/paste: %s" % subprocess.list2cmdline(command))
-#    if env is not None:
-#        context.logger.info("Using env: %s" % pprint.pformat(env))
-#    if output_parser is None:
-#        parser = OutputParser(context=context, error_list=error_list)
-#    else:
-#        parser = output_parser
-#
 #    try:
 #        p = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE,
 #                             cwd=cwd, stderr=subprocess.STDOUT, env=env)
@@ -346,13 +325,6 @@ class Command(object):
 #        context.logger.log('caught OS error %s: %s while running %s' % (e.errno,
 #                 e.strerror, command), level=level)
 #        return -1
-#
-#    return_level = logging.INFO
-#    if returncode not in success_codes:
-#        return_level = error_level
-#        if throw_exception:
-#            raise subprocess.CalledProcessError(returncode, command)
-#    context.logger.log.log("Return code: %d" % returncode, level=return_level)
 #
 #    if halt_on_failure:
 #        _fail = False
