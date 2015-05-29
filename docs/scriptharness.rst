@@ -18,7 +18,9 @@ Submodules
    scriptharness.exceptions
    scriptharness.log
    scriptharness.script
+   scriptharness.status
    scriptharness.structures
+   scriptharness.unicode
    scriptharness.version
 
 Module contents
