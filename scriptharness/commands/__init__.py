@@ -14,6 +14,7 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import os
@@ -21,6 +22,7 @@ import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
 import scriptharness.status
+from scriptharness.unicode import to_unicode
 import six
 import subprocess
 import time
@@ -181,6 +183,7 @@ class Command(object):
         if 'env' in self.kwargs:
             self.log_env(self.kwargs['env'])
 
+    @contextmanager
     def get_process(self, command, stdout=None, stderr=None, **kwargs):
         """Create a subprocess.Popen and return it.
         Here for subclassing.
@@ -212,7 +215,8 @@ class Command(object):
             )
             self.history['timeout'] = 'timeout'
         finally:
-            if process:
+            process.poll()
+            if process.returncode is None:
                 # TODO strings
                 self.logger.warning("Killing process that's still here")
                 process.kill()
@@ -227,7 +231,7 @@ class Command(object):
         Args:
           line (str): a line of output
         """
-        self.logger.info(line)
+        self.logger.info(" %s", to_unicode(line.rstrip()))
 
     def wait_for_process(self, process, output_timeout=None):
         """Wait for process to finish, handling the output as it comes.
