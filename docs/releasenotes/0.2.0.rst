@@ -1,0 +1,16 @@
+Scriptharness 0.2.0 Release Notes
+=================================
+
+**UNRELEASED**
+
+.. :date: DATE
+
+Changelog for the unreleased 0.2.0 version.
+
+What's New
+----------
+* Script.actions is now a namedtuple
+
+Known Issues
+------------
+*

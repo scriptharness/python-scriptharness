@@ -120,16 +120,11 @@ class Script(object):
           scriptharness.exceptions.ScriptHarnessException: if there is a
             non-Action in actions.
         """
-        for action in actions:
-            if not isinstance(action, Action):
-                raise ScriptHarnessException(
-                    "Script action is not an instance of Action!", action
-                )
-        self.actions = actions
         self.name = name
         self.listeners = {}
         for phase in LISTENER_PHASES:
             self.listeners.setdefault(phase, [])
+        self.verify_actions(actions)
         self.build_config(parser, **kwargs)
         self.logger = self.get_logger()
         self.start_message()
@@ -183,6 +178,30 @@ class Script(object):
             config, logger_name=config.get('logger_name', LOGGER_NAME)
         )
         self.config.recursively_set_parent(name="%s.config" % self.name)
+
+    def verify_actions(self, actions):
+        """Make sure actions consists of Action objects, with no duplicate
+        names.
+
+        Then set self.actions to a namedtuple so we can find each action
+        by name easily.
+
+        Args:
+          actions (list of Action objects): these are passed from __init__().
+        """
+        action_dict = collections.OrderedDict()
+        for action in actions:
+            if not isinstance(action, Action):
+                raise ScriptHarnessException(
+                    "Script action is not an instance of Action!", action
+                )
+            if action.name in action_dict:
+                raise ScriptHarnessException(
+                    "%s action is defined more than once!" % action.name
+                )
+            action_dict[action.name] = action
+        action_tuple = collections.namedtuple('Actions', action_dict.keys())
+        self.actions = action_tuple(**action_dict)
 
     def enable_actions(self, parsed_args):
         """If parsed_args has 'actions' set, use those as the enabled actions.

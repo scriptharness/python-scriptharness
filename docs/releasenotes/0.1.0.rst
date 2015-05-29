@@ -37,6 +37,3 @@ Known Issues
  * subprocess failing in GUI applications on Windows http://bugs.python.org/issue3905
 
 * currently only one way to enable/disable actions: --actions
-
-..  uncomment this include statment for 0.2.0
-    .. include:: ../releasenotes.rst
