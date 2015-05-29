@@ -20,8 +20,9 @@ import requests
 from requests.exceptions import RequestException, Timeout
 from scriptharness.actions import Action
 from scriptharness.exceptions import ScriptHarnessException, \
-    ScriptHarnessTimeout, to_unicode
+    ScriptHarnessTimeout
 from scriptharness.structures import iterate_pairs
+from scriptharness.unicode import to_unicode
 import six
 import six.moves.urllib as urllib
 import sys

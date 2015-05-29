@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Scriptharness exceptions, and to_unicode() which wasn't quite enough to
-create a scriptharness.unicode module, though that may happen in the future.
+"""Scriptharness exceptions.
 
 These exceptions are written with several things in mind:
 
@@ -16,28 +15,8 @@ errors.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from scriptharness.unicode import to_unicode
 import six
-
-
-# py2 unicode help.  This may move into a separate file later.
-def to_unicode(obj, encoding='utf-8'):
-    """Encode a string as unicode in python2.
-
-    http://farmdev.com/talks/unicode/
-
-    Args:
-        obj (str): the string to encode
-        encoding (str, optional): the encoding to use
-
-    Returns:
-        obj (unicode): the encoded string
-    """
-    if not isinstance(obj, six.text_type):
-        try:
-            obj = six.text_type(obj, encoding)
-        except TypeError:
-            pass
-    return obj
 
 
 @six.python_2_unicode_compatible
