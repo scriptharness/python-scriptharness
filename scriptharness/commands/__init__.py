@@ -98,8 +98,6 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
 
 
 # Command and helpers {{{1
-
-
 def detect_errors(command):
     """ Very basic detect_errors_cb for Command.
 
@@ -143,6 +141,16 @@ class Command(object):
         self.strings = deepcopy(STRINGS['command'])
         self.process = None
 
+    def log_env(self, env):
+        """Log environment variables.  Here for subclassing.
+
+        Args:
+          env (dict): the environment we'll be passing to subprocess.Popen.
+        """
+        self.logger.info(
+            "Using env: %s" % pprint.pformat(env)
+        )
+
     def log_start(self):
         """Log the start of the command, also checking for the existence of
         cwd if defined.
@@ -171,14 +179,7 @@ class Command(object):
                 {'command': subprocess.list2cmdline(self.command)}
             )
         if 'env' in self.kwargs:
-            self.logger.info(
-                "Using env: %s" % pprint.pformat(self.kwargs['env'])
-            )
-
-    def log_end(self):
-        """Log the end of the command.
-        """
-        pass
+            self.log_env(self.kwargs['env'])
 
     def get_process(self, command, stdout=None, stderr=None, **kwargs):
         """Create a subprocess.Popen and return it.
