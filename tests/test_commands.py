@@ -8,6 +8,7 @@ import mock
 import os
 import pprint
 import scriptharness.commands as commands
+from scriptharness.exceptions import ScriptHarnessException
 import scriptharness.status as status
 import shutil
 import subprocess
@@ -25,6 +26,8 @@ def cleanup():
         shutil.rmtree(TEST_DIR)
 
 def get_command(command=None, **kwargs):
+    """Create a Command for testing
+    """
     if command is None:
         command = [
             sys.executable, "-c",
@@ -131,8 +134,8 @@ class TestCommand(unittest.TestCase):
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
-        command = get_command()
         env = {"foo": "bar"}
+        command = get_command(env=env)
         command.log_env(env)
         self.assertEqual(
             logger.all_messages[0][1], commands.STRINGS['command']['env'],
@@ -140,3 +143,10 @@ class TestCommand(unittest.TestCase):
         self.assertEqual(
             logger.all_messages[0][2][0]["env"], pprint.pformat(env)
         )
+        command.run()
+
+    def test_bad_cwd(self):
+        """test_commands | Command bad cwd
+        """
+        command = get_command(cwd=TEST_DIR)
+        self.assertRaises(ScriptHarnessException, command.run)
