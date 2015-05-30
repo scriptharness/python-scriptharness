@@ -46,6 +46,7 @@ STRINGS = {
         "timeout":
             "Command %(command)s timed out after %(run_time)d seconds.",
         "error": "Command %(command)s failed.",
+        "env": "Using env: %(env)s",
     },
 }
 
@@ -114,7 +115,8 @@ def detect_errors(command):
       command (Command obj):
     """
     status = scriptharness.status.SUCCESS
-    if command.history.get('return_value', True):
+    return_value = command.history.get('return_value')
+    if return_value is None or return_value:
         status = scriptharness.status.ERROR
     return status
 
@@ -155,9 +157,7 @@ class Command(object):
         Args:
           env (dict): the environment we'll be passing to subprocess.Popen.
         """
-        self.logger.info(
-            "Using env: %s" % pprint.pformat(env)
-        )
+        self.logger.info(self.strings['env'], {'env': pprint.pformat(env)})
 
     def log_start(self):
         """Log the start of the command, also checking for the existence of
