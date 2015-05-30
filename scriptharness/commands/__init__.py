@@ -280,16 +280,12 @@ class Command(object):
         Raises:
           scriptharness.exceptions.ScriptHarnessError on error
         """
-        # TODO timeouts http://stackoverflow.com/questions/10756383/timeout-on-subprocess-readline-in-python#10759061
-        # also mozprocess is an option for py27?
         self.log_start()
         output_timeout = self.kwargs.get('output_timeout', None)
         if 'output_timeout' in self.kwargs:
             del self.kwargs['output_timeout']
-        max_timeout = None
-#        if six.PY2 and 'timeout' in self.kwargs:
+        max_timeout = self.kwargs.get('timeout', None)
         if 'timeout' in self.kwargs:
-            max_timeout = self.kwargs['timeout']
             del self.kwargs['timeout']
         if isinstance(self.command, (list, tuple)):
             self.kwargs.setdefault('shell', False)
@@ -316,7 +312,6 @@ class Command(object):
 ##error_list=None,
 ##halt_on_failure=False, success_codes=None,
 ##return_type='status', output_parser=None,
-##output_timeout=None
 #    """Run a command, with logging and error parsing.
 #
 #    output_parser lets you provide an instance of your own OutputParser
@@ -330,26 +325,7 @@ class Command(object):
 #    (context_lines isn't written yet)
 #    """
 #    try:
-#        p = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE,
-#                             cwd=cwd, stderr=subprocess.STDOUT, env=env)
-#        loop = True
-#        while loop:
-#            if p.poll() is not None:
-#                """Avoid losing the final lines of the log?"""
-#                loop = False
-#            while True:
-#                line = p.stdout.readline()
-#                if not line:
-#                    break
 #                parser.add_lines(line)
-#        returncode = p.returncode
-#    except OSError as e:
-#        level = error_level
-#        if halt_on_failure:
-#            level = logging.FATAL
-#        context.logger.log('caught OS error %s: %s while running %s' % (e.errno,
-#                 e.strerror, command), level=level)
-#        return -1
 #
 #    if halt_on_failure:
 #        _fail = False
@@ -373,6 +349,9 @@ class Command(object):
 class ParsedCommand(Command):
     """
     TODO: context_lines
+    TODO: worst_level
+    TODO: parser
+    TODO: error_strings
     """
 
 class Output(Command):
