@@ -25,6 +25,7 @@ import scriptharness.status
 from scriptharness.unicode import to_unicode
 import six
 import subprocess
+import sys
 import time
 
 LOGGER_NAME = "scriptharness.commands"
@@ -40,9 +41,11 @@ STRINGS = {
         "start_without_cwd": "Running command: %(command)s",
         "copy_paste": "Copy/paste: %(command)s",
         "output_timeout":
-            "Command %(command)s timed out after %(output_timeout)d seconds.",
+            "Command %(command)s timed out after %(output_timeout)d "
+            "seconds without output.",
         "timeout":
             "Command %(command)s timed out after %(run_time)d seconds.",
+        "error": "Command %(command)s failed.",
     },
 }
 
@@ -130,7 +133,10 @@ class Command(object):
         the command.
 
       kwargs (dict): These kwargs will be passed to subprocess.Popen, except
-        for the optional 'output_timeout', which is processed by Command.
+        for the optional 'output_timeout' and 'timeout', which are processed by
+        Command.  `output_timeout` is how long a command can run without
+        outputting anything to the screen/log.  `timeout` is how long the
+        command can run, total.
 
       strings (dict): Strings to log.
     """
@@ -194,26 +200,27 @@ class Command(object):
         """
         stdout = stdout or subprocess.PIPE
         stderr = stderr or subprocess.STDOUT
+        timeout_exceptions = (ScriptHarnessTimeout, )
         if six.PY3:
-            timeout_exception = getattr(subprocess, 'TimeoutExpired')
-        else:
-            # this will never raise from subprocess.Popen, but
-            timeout_exception = ScriptHarnessTimeout
+            timeout_exceptions = (ScriptHarnessTimeout,
+                                  getattr(subprocess, 'TimeoutExpired'))
         try:
             process = subprocess.Popen(
                 command, stdout=stdout, stderr=stderr, **kwargs
             )
             yield process
-        except timeout_exception as exc_info:
+        except timeout_exceptions as exc_info:
             self.history['end_time'] = time.time()
             run_time = self.history['end_time'] - self.history['start_time']
-            self.logger.error(
-                self.strings["timeout"], {
+            self.history['timeout'] = 'timeout'
+            if isinstance(exc_info, ScriptHarnessTimeout):
+                six.reraise(*sys.exc_info())
+            raise ScriptHarnessTimeout(
+                self.strings["timeout"] % {
                     'command': self.command, 'run_time': run_time
                 },
                 exc_info
             )
-            self.history['timeout'] = 'timeout'
         finally:
             process.poll()
             if process.returncode is None:
@@ -233,11 +240,13 @@ class Command(object):
         """
         self.logger.info(" %s", to_unicode(line.rstrip()))
 
-    def wait_for_process(self, process, output_timeout=None):
+    def wait_for_process(self, process, output_timeout=None, max_timeout=None):
         """Wait for process to finish, handling the output as it comes.
         This also checks for output timeout.
         """
         loop = True
+        timeout = False
+        repl_dict = {'command': self.command}
         while loop:
             if process.poll() is not None:
             # avoid losing the final lines of the log
@@ -248,17 +257,22 @@ class Command(object):
                         break
                     self.add_line(line)
                     self.history['last_output'] = time.time()
-            elif output_timeout:
-                if self.history['last_output'] + output_timeout > \
-                        time.time():
-                    self.logger.error(
-                        self.strings['output_timeout'], {
-                            'command': self.command,
-                            'output_timeout': output_timeout,
-                        }
-                    )
+            else:
+                now = time.time()
+                if output_timeout and (self.history['last_output'] + \
+                        output_timeout < now):
+                    timeout = 'output_timeout'
+                    repl_dict['output_timeout'] = output_timeout
+                elif max_timeout and (self.history['start_time'] + \
+                        max_timeout < now):
+                    timeout = 'timeout'
+                    repl_dict['run_time'] = now - self.history['start_time']
+                if timeout:
                     process.terminate()
-                    self.history['timeout'] = 'output'
+                    self.history['timeout'] = timeout
+                    raise ScriptHarnessTimeout(
+                        self.strings[timeout] % repl_dict
+                    )
 
     def run(self):
         """Run the command.
@@ -272,6 +286,11 @@ class Command(object):
         output_timeout = self.kwargs.get('output_timeout', None)
         if 'output_timeout' in self.kwargs:
             del self.kwargs['output_timeout']
+        max_timeout = None
+#        if six.PY2 and 'timeout' in self.kwargs:
+        if 'timeout' in self.kwargs:
+            max_timeout = self.kwargs['timeout']
+            del self.kwargs['timeout']
         if isinstance(self.command, (list, tuple)):
             self.kwargs.setdefault('shell', False)
         else:
@@ -279,7 +298,9 @@ class Command(object):
         with self.get_process(self.command, **self.kwargs) as process:
             self.history['start_time'] = time.time()
             self.history['last_output'] = self.history['start_time']
-            self.wait_for_process(process, output_timeout=output_timeout)
+            self.wait_for_process(
+                process, output_timeout=output_timeout, max_timeout=max_timeout
+            )
             self.history['end_time'] = time.time()
         try:
             self.history['return_value'] = process.returncode
