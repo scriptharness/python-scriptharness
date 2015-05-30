@@ -150,6 +150,29 @@ class TestUrlFunctionss(unittest.TestCase):
             timeout=.1
         )
 
+    @mock.patch('scriptharness.config.requests')
+    def test_bad_download_url(self, mock_requests):
+        """test_config | Bad download_url()
+        """
+        class BadUrl(object):
+            """Test timeout class"""
+            @staticmethod
+            def mount(*args, **kwargs):
+                """raise RequestException"""
+                if args or kwargs:  # silence pylint
+                    pass
+                raise requests.exceptions.RequestException("Bad url")
+            @staticmethod
+            def silence_pyint():
+                """silence pylint"""
+                pass
+        bad_url = BadUrl()
+        mock_requests.Session.return_value = bad_url
+        self.assertRaises(
+            ScriptHarnessException,
+            shconfig.download_url, "http://%s" % TEST_FILE,
+        )
+
     def test_ioerror_download_url(self):
         """test_config | Download with unwritable target file.
         """
