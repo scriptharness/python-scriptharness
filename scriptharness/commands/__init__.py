@@ -47,6 +47,7 @@ STRINGS = {
             "Command %(command)s timed out after %(run_time)d seconds.",
         "error": "Command %(command)s failed.",
         "env": "Using env: %(env)s",
+        "kill_hung_process": "Killing process that's still here",
     },
 }
 
@@ -200,32 +201,20 @@ class Command(object):
         """
         stdout = stdout or subprocess.PIPE
         stderr = stderr or subprocess.STDOUT
-        timeout_exceptions = (ScriptHarnessTimeout, )
-        if six.PY3:
-            timeout_exceptions = (ScriptHarnessTimeout,
-                                  getattr(subprocess, 'TimeoutExpired'))
         try:
             process = subprocess.Popen(
                 command, stdout=stdout, stderr=stderr, **kwargs
             )
             yield process
-        except timeout_exceptions as exc_info:
+        # If we ever use the subprocess timeout, we'll also need to check
+        # for subprocess.TimeoutExpired in py3.
+        except ScriptHarnessTimeout:
             self.history['end_time'] = time.time()
-            run_time = self.history['end_time'] - self.history['start_time']
             self.history['timeout'] = 'timeout'
-            if isinstance(exc_info, ScriptHarnessTimeout):
-                six.reraise(*sys.exc_info())
-            raise ScriptHarnessTimeout(
-                self.strings["timeout"] % {
-                    'command': self.command, 'run_time': run_time
-                },
-                exc_info
-            )
+            six.reraise(*sys.exc_info())
         finally:
-            process.poll()
-            if process.returncode is None:
-                # TODO strings
-                self.logger.warning("Killing process that's still here")
+            if process.poll() is None:
+                self.logger.warning(self.strings['kill_hung_process'])
                 process.kill()
                 # will this timeout too?
                 process.communicate()
@@ -298,10 +287,7 @@ class Command(object):
                 process, output_timeout=output_timeout, max_timeout=max_timeout
             )
             self.history['end_time'] = time.time()
-        try:
-            self.history['return_value'] = process.returncode
-        except AttributeError:
-            self.history['return_value'] = None
+        self.history['return_value'] = process.poll()
         self.history['status'] = self.detect_error_cb(self)
         if self.history['status'] != scriptharness.status.SUCCESS:
             raise ScriptHarnessError(

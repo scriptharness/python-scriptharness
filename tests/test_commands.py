@@ -8,7 +8,8 @@ import mock
 import os
 import pprint
 import scriptharness.commands as commands
-from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.exceptions import ScriptHarnessError, \
+    ScriptHarnessException, ScriptHarnessTimeout
 import scriptharness.status as status
 import shutil
 import subprocess
@@ -150,3 +151,32 @@ class TestCommand(unittest.TestCase):
         """
         command = get_command(cwd=TEST_DIR)
         self.assertRaises(ScriptHarnessException, command.run)
+
+    @staticmethod
+    def test_cover_log_start():
+        """test_commands | Command log_start
+        """
+        # The theory is running every line of code is a good thing, even
+        # if I don't know what to check for here.
+        command = get_command(command="ls", cwd=os.getcwd())
+        command.run()
+
+    def test_output_timeout(self):
+        """test_commands | Command output_timeout
+        """
+        command = get_command(command=["sleep", "300"], output_timeout=.1)
+        self.assertRaises(ScriptHarnessTimeout, command.run)
+
+    def test_timeout(self):
+        """test_commands | Command timeout
+        """
+        command = get_command(command=["sleep", "300"], timeout=.1)
+        self.assertRaises(ScriptHarnessTimeout, command.run)
+
+    def test_command_error(self):
+        """test_commands | Command.run() with error
+        """
+        command = get_command(
+            command=[sys.executable, "-c", 'import sys; sys.exit(1)']
+        )
+        self.assertRaises(ScriptHarnessError, command.run)
