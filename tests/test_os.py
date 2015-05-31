@@ -4,7 +4,6 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-import mock
 import os
 import scriptharness.os as sh_os
 import shutil
@@ -14,13 +13,26 @@ from . import LoggerReplacement
 TEST_DIR = "this_dir_should_not_exist"
 
 
+class TestContext(object):
+    """Context for test logging
+    """
+    logger = None
+    def __init__(self):
+        self.new_logger()
+    def new_logger(self):
+        """Create a new logger"""
+        self.logger = LoggerReplacement()
+    def silence_pylint(self):
+        """silence pylint"""
+        assert self
+
 def cleanup():
     """Cleanliness"""
     if os.path.exists(TEST_DIR):
         shutil.rmtree(TEST_DIR)
 
 class TestFunctions(unittest.TestCase):
-    """Test the command functions
+    """Test the os functions
     """
     def setUp(self):
         """Cleanliness"""
@@ -32,19 +44,18 @@ class TestFunctions(unittest.TestCase):
         assert self  # silence pylint
         cleanup()
 
-    @mock.patch('scriptharness.commands.os.logging')
-    def test_makedirs(self, mock_logging):
-        """test_commands_os | make_parent_dir()
+    def test_makedirs(self):
+        """test_os | make_parent_dir()
         """
-        logger = LoggerReplacement()
-        mock_logging.getLogger.return_value = logger
+        context = TestContext()
         self.assertFalse(os.path.exists(TEST_DIR))
-        sh_os.make_parent_dir(os.path.join(TEST_DIR, "foo", "bar"))
+        sh_os.make_parent_dir(os.path.join(TEST_DIR, "foo", "bar"),
+                              context=context)
         self.assertTrue(os.path.isdir(os.path.join(TEST_DIR, "foo")))
-        messages = logger.all_messages[:]
+        messages = context.logger.all_messages[:]
         # This should be noop; verifying by no change in all_messages
-        sh_os.make_parent_dir(TEST_DIR)
-        self.assertEqual(messages, logger.all_messages)
+        sh_os.make_parent_dir(TEST_DIR, context=context)
+        self.assertEqual(messages, context.logger.all_messages)
         # This should also be noop.  Boo hardcoded string.
-        sh_os.makedirs(TEST_DIR)
-        self.assertEqual(logger.all_messages[-1][1], "Already exists.")
+        sh_os.makedirs(TEST_DIR, context=context)
+        self.assertEqual(context.logger.all_messages[-1][1], "Already exists.")

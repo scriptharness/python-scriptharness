@@ -147,7 +147,8 @@ class TestCommand(unittest.TestCase):
     def test_output_timeout(self):
         """test_commands | Command output_timeout
         """
-        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+#        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+        for cmdln in (["sleep", "300"], ):
             command = get_command(command=cmdln, output_timeout=.1)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)
@@ -155,7 +156,8 @@ class TestCommand(unittest.TestCase):
     def test_timeout(self):
         """test_commands | Command timeout
         """
-        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+#        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+        for cmdln in (["sleep", "300"], ):
             command = get_command(command=cmdln, timeout=.1)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)

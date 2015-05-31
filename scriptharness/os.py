@@ -20,8 +20,10 @@ def makedirs(path, level=logging.INFO, context=None):
       path (str): path to the directory
       level (int, optional): the logging level to log with.
     """
-    context = context or {}
-    logger = context.logger or logging.getLogger(LOGGER_NAME)
+    if context:
+        logger = context.logger
+    else:
+        logger = logging.getLogger(LOGGER_NAME)
     logger.log(level, "Creating directory %s", path)
     if not os.path.exists(path):
         os.makedirs(path)
