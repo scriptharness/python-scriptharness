@@ -296,8 +296,18 @@ class LogMethod(object):
 class ErrorList(object):
     """Error lists, to describe how to parse output.  In object form for
     better validation.
+
+    Attributes:
+      strict (bool): If True, be more strict about well-formed error_lists.
+      pre_context_lines (int): The max number of lines the error_list defines
+        in pre_context_lines.
+      post_context_lines (int): The max number of lines the error_list defines
+        in post_context_lines.
+      error_list (list of dicts): The error list.
     """
-    def __init__(self, error_list):
+    # TODO describe error_list format in the docstring
+    def __init__(self, error_list, strict=True):
+        self.strict = strict
         (self.pre_context_lines, self.post_context_lines) = \
             self.validate_error_list(error_list)
         self.error_list = error_list
@@ -379,6 +389,13 @@ class ErrorList(object):
                 "%s %s is not of type %s!" % (error_check, key, six.text_type)
             )
 
+    def check_ignore(self, ignore, name, error_check, messages):
+        if ignore and self.strict:
+            messages.append(
+                "%s '%s' will be ignored because 'level' < 0." %
+                (error_check, name)
+            )
+
     def validate_error_list(self, error_list):
         """Validate an error_list.
         This is going to be a pain to unit test properly.
@@ -399,39 +416,46 @@ class ErrorList(object):
         pre_context_lines = 0
         post_context_lines = 0
         for error_check in error_list:
+            ignore = False
             error_check_str = six.text_type(error_check)
             if not isinstance(error_check, dict):
                 messages.append("%s is not a dict!" % error_check_str)
                 continue
-            if self.exactly_one('level', 'exception', error_check, messages):
-                if 'level' in error_check:
-                    if not isinstance(error_check['level'], int):
-                        messages.append(
-                            "%s level must be an int!" % error_check_str
-                        )
-                elif 'exception' in error_check and not \
-                        issubclass(error_check['level'], Exception):
+            self.exactly_one('level', 'exception', error_check, messages)
+            if 'level' in error_check:
+                if not isinstance(error_check['level'], int):
                     messages.append(
-                        "%s exception must be a subclass of Exception!" %
-                        error_check_str
+                        "%s level must be an int!" % error_check_str
                     )
-            if self.exactly_one('substr', 'regex', error_check, messages):
-                self.verify_unicode('substr', error_check, messages)
-                if 'regex' in error_check and not \
-                        isinstance(error_check['regex'], re_compile_class):
-                    messages.append(
-                        "%s regex needs to be re.compile'd!" % error_check_str
-                    )
+                if error_check['level'] < 0:
+                    ignore = True
+            elif 'exception' in error_check and not \
+                    issubclass(error_check['level'], Exception):
+                messages.append(
+                    "%s exception must be a subclass of Exception!" %
+                    error_check_str
+                )
+            self.exactly_one('substr', 'regex', error_check, messages)
+            self.verify_unicode('substr', error_check, messages)
+            if 'regex' in error_check and not \
+                    isinstance(error_check['regex'], re_compile_class):
+                messages.append(
+                    "%s regex needs to be re.compile'd!" % error_check_str
+                )
             if 'pre_context_lines' in error_check:
                 pre_context_lines = self.check_context_lines(
                     error_check['pre_context_lines'], pre_context_lines,
                     "pre_context_lines", messages
                 )
+                self.check_ignore(ignore, 'pre_context_lines', error_check,
+                                  messages)
             if 'post_context_lines' in error_check:
                 post_context_lines = self.check_context_lines(
                     error_check['post_context_lines'], post_context_lines,
                     "post_context_lines", messages
                 )
+                self.check_ignore(ignore, 'post_context_lines', error_check,
+                                  messages)
             self.verify_unicode('explanation', error_check, messages)
         if messages:
             raise ScriptHarnessException(messages)
