@@ -18,7 +18,7 @@ from copy import deepcopy
 import logging
 import os
 import re
-from scriptharness.commands import make_parent_dir
+from scriptharness.os import make_parent_dir
 from scriptharness.exceptions import ScriptHarnessException
 import six
 import time
@@ -297,6 +297,32 @@ class ErrorList(object):
     """Error lists, to describe how to parse output.  In object form for
     better validation.
 
+    An example error_list::
+
+        [
+            {
+                "regex": re.compile("^Error: not actually an error!"),
+                level=-1
+            }, {
+                "regex": re.compile("^Error:"),
+                "level": logging.ERROR,
+                "pre_context_lines": 5,
+                "post_context_lines": 5
+            }, {
+                "substr": "Obscure error #94382",
+                "explanation":
+                    "This is a fatal program error."
+                "exception": ScriptHarnessFatal
+            }
+        ]
+
+    Any output line that matches the first regex will be ignored (discarded),
+    because level is negative.  Because the list is matched in order, the
+    more specific regex is placed before the more general 2nd regex.  If the
+    order were reversed, the more specific regex would never match anything.
+    The second regex sets the level to logging.ERROR for this line, and 5
+    lines above and 5 lines below this message.
+
     Attributes:
       strict (bool): If True, be more strict about well-formed error_lists.
       pre_context_lines (int): The max number of lines the error_list defines
@@ -305,7 +331,6 @@ class ErrorList(object):
         in post_context_lines.
       error_list (list of dicts): The error list.
     """
-    # TODO describe error_list format in the docstring
     def __init__(self, error_list, strict=True):
         self.strict = strict
         (self.pre_context_lines, self.post_context_lines) = \
@@ -474,6 +499,7 @@ class ErrorList(object):
         return (pre_context_lines, post_context_lines)
 
 
+# OutputBuffer {{{1
 class OutputBuffer(object):
     """Buffer output for context lines: essentially, an error_check can set
     the level of X lines in the past or Y lines in the future.  If multiple
@@ -567,17 +593,21 @@ class OutputBuffer(object):
             self.logger.log(current_level, line)
 
 
+# OutputParser {{{1
 class OutputParser(object):
     """Helper object to parse command output.
     """
 
-    def __init__(self, error_list, logger=None):
+    def __init__(self, error_list, logger=None, **kwargs):
         """Initialization method for the OutputParser class
 
         Args:
           error_list (list of dicts): list of errors to look for.
 
           logger (logging.Logger, optional): logger to use.
+
+          **kwargs: These are ignored, and are here so we can subclass
+            ParsedCommand.
         """
         self.logger = logger or logging.getLogger(LOGGER_NAME)
         self.error_list = error_list

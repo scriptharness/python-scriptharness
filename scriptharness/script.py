@@ -21,7 +21,7 @@ import logging
 import os
 import pprint
 from scriptharness.actions import Action
-from scriptharness.commands import make_parent_dir
+from scriptharness.os import make_parent_dir
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 from scriptharness.structures import iterate_pairs, LoggingDict, ReadOnlyDict

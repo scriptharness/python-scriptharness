@@ -2,14 +2,8 @@
 # -*- coding: utf-8 -*-
 """Commands, largely through subprocess.
 
-Not wrapping subprocess.call() or subprocess.check_call() because they don't
-support using subprocess.PIPE for stdout/stderr; redirecting stdout and stderr
-assumes synchronous behavior.
-
-This module is starting very small, but there are plans to add equivalents to
-run_command() and get_output_from_command() from mozharness shortly.
-
 Attributes:
+  LOGGER_NAME (str): default logging.Logger name.
   STRINGS (dict): Strings for logging.
 """
 from __future__ import absolute_import, division, print_function, \
@@ -21,6 +15,7 @@ import os
 import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
+from scriptharness.log import OutputParser, ErrorList
 import scriptharness.status
 from scriptharness.unicode import to_unicode
 import six
@@ -53,32 +48,6 @@ STRINGS = {
 
 
 # Functions {{{1
-def makedirs(path, level=logging.INFO):
-    """os.makedirs() wrapper.
-
-    Args:
-      path (str): path to the directory
-      level (int, optional): the logging level to log with.
-    """
-    logger = logging.getLogger(LOGGER_NAME)
-    logger.log(level, "Creating directory %s", path)
-    if not os.path.exists(path):
-        os.makedirs(path)
-        logger.log(level, "Done.")
-    else:
-        logger.log(level, "Already exists.")
-
-def make_parent_dir(path, **kwargs):
-    """Create the parent of path if it doesn't exist.
-
-    Args:
-      path (str): path to the file.
-      **kwargs: These are passed to makedirs().
-    """
-    dirname = os.path.dirname(path)
-    if dirname:
-        makedirs(dirname, **kwargs)
-
 def check_output(command, logger_name="scriptharness.commands.check_output",
                  level=logging.INFO, log_output=True, **kwargs):
     """Wrap subprocess.check_output with logging
@@ -228,7 +197,7 @@ class Command(object):
         Args:
           line (str): a line of output
         """
-        self.logger.info(" %s", to_unicode(line.rstrip()))
+        self.logger.info(" %s", line)
 
     def wait_for_process(self, process, output_timeout=None, max_timeout=None):
         """Wait for process to finish, handling the output as it comes.
@@ -239,13 +208,14 @@ class Command(object):
         repl_dict = {'command': self.command}
         while loop:
             if process.poll() is not None:
-            # avoid losing the final lines of the log
+                # avoid losing the final lines of the log
                 loop = False
                 while True:
+                    # TODO does this hang on partial output? May need threading
                     line = process.stdout.readline()
                     if not line:
                         break
-                    self.add_line(line)
+                    self.add_line(to_unicode(line.rstrip()))
                     self.history['last_output'] = time.time()
             else:
                 now = time.time()
@@ -260,9 +230,16 @@ class Command(object):
                 if timeout:
                     process.terminate()
                     self.history['timeout'] = timeout
+                    self.finish_process()
                     raise ScriptHarnessTimeout(
                         self.strings[timeout] % repl_dict
                     )
+        self.finish_process()
+
+    def finish_process(self):
+        """Here for subclassing.
+        """
+        pass
 
     def run(self):
         """Run the command.
@@ -296,9 +273,7 @@ class Command(object):
             )
 
 
-##error_list=None,
-##halt_on_failure=False, success_codes=None,
-##return_type='status', output_parser=None,
+##halt_on_failure=False
 #    """Run a command, with logging and error parsing.
 #
 #    output_parser lets you provide an instance of your own OutputParser
@@ -309,7 +284,6 @@ class Command(object):
 #     {'regex': re.compile('^Error:'), level=ERROR, contextLines='5:5'},
 #     {'substr': 'THE WORLD IS ENDING', level=FATAL, contextLines='20:'}
 #    ]
-#    (context_lines isn't written yet)
 #    """
 #    try:
 #                parser.add_lines(line)
@@ -328,19 +302,18 @@ class Command(object):
 #        if _fail:
 #            return_code = fatal_exit_code
 #            raise ScriptHarnessFatal("Halting on failure while running %s" % command)
-#    if return_type == 'num_errors':
-#        return parser.num_errors
 #    return returncode
 
 
-class ParsedCommand(Command):
+# ParsedCommand {{{1
+class ParsedCommand(OutputParser, Command):
     """
-    TODO: context_lines
-    TODO: worst_level
-    TODO: parser
-    TODO: error_strings
     """
+    def __init__(self, command, error_list, **kwargs):
+        OutputParser.__init__(self, error_list)
+        Command.__init__(self, command, **kwargs)
 
+# Output {{{1
 class Output(Command):
     """
     TODO: binary mode? silent is kinda like that.

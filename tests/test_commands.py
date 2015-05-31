@@ -50,23 +50,6 @@ class TestFunctions(unittest.TestCase):
         cleanup()
 
     @mock.patch('scriptharness.commands.logging')
-    def test_makedirs(self, mock_logging):
-        """test_commands | make_parent_dir()
-        """
-        logger = LoggerReplacement()
-        mock_logging.getLogger.return_value = logger
-        self.assertFalse(os.path.exists(TEST_DIR))
-        commands.make_parent_dir(os.path.join(TEST_DIR, "foo", "bar"))
-        self.assertTrue(os.path.isdir(os.path.join(TEST_DIR, "foo")))
-        messages = logger.all_messages[:]
-        # This should be noop; verifying by no change in all_messages
-        commands.make_parent_dir(TEST_DIR)
-        self.assertEqual(messages, logger.all_messages)
-        # This should also be noop.  Boo hardcoded string.
-        commands.makedirs(TEST_DIR)
-        self.assertEqual(logger.all_messages[-1][1], "Already exists.")
-
-    @mock.patch('scriptharness.commands.logging')
     def test_check_output(self, mock_logging):
         """test_commands | check_output()
         """
@@ -164,14 +147,18 @@ class TestCommand(unittest.TestCase):
     def test_output_timeout(self):
         """test_commands | Command output_timeout
         """
-        command = get_command(command=["sleep", "300"], output_timeout=.1)
-        self.assertRaises(ScriptHarnessTimeout, command.run)
+        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+            command = get_command(command=cmdln, output_timeout=.1)
+            print(cmdln)
+            self.assertRaises(ScriptHarnessTimeout, command.run)
 
     def test_timeout(self):
         """test_commands | Command timeout
         """
-        command = get_command(command=["sleep", "300"], timeout=.1)
-        self.assertRaises(ScriptHarnessTimeout, command.run)
+        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+            command = get_command(command=cmdln, timeout=.1)
+            print(cmdln)
+            self.assertRaises(ScriptHarnessTimeout, command.run)
 
     def test_command_error(self):
         """test_commands | Command.run() with error
