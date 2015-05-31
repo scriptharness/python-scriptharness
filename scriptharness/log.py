@@ -147,7 +147,7 @@ class LogMethod(object):
     Attributes:
 
       default_config (dict): contains the config defaults that can be
-        overridden via __init__ **kwargs.  Changing default_config directly
+        overridden via __init__ kwargs.  Changing default_config directly
         may carry over to other decorated LogMethod functions!
     """
     default_config = {
