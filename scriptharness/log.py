@@ -18,8 +18,9 @@ from copy import deepcopy
 import logging
 import os
 import re
-from scriptharness.os import make_parent_dir
 from scriptharness.exceptions import ScriptHarnessException
+from scriptharness.os import make_parent_dir
+from scriptharness.unicode import to_unicode
 import six
 import time
 
@@ -657,6 +658,7 @@ class OutputParser(object):
           line (str): a line of output to parse.
           *args: Optional args to format the line with.
         """
+        line = to_unicode(line.rstrip())
         for error_check in self.error_list:
             match = False
             if 'substr' in error_check:

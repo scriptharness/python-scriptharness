@@ -197,7 +197,7 @@ class Command(object):
         Args:
           line (str): a line of output
         """
-        self.logger.info(" %s", line)
+        self.logger.info(" %s", to_unicode(line.rstrip()))
 
     def wait_for_process(self, process, output_timeout=None, max_timeout=None):
         """Wait for process to finish, handling the output as it comes.
@@ -215,7 +215,7 @@ class Command(object):
                     line = process.stdout.readline()
                     if not line:
                         break
-                    self.add_line(to_unicode(line.rstrip()))
+                    self.add_line(line.rstrip())
                     self.history['last_output'] = time.time()
             else:
                 now = time.time()
