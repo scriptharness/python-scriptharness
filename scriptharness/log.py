@@ -10,6 +10,8 @@ Attributes:
   DEFAULT_LEVEL (int): default logging level
 """
 
+# TODO summary support -- Context has a summary object? Script builds summary?
+
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from copy import deepcopy
@@ -290,87 +292,168 @@ class LogMethod(object):
             )
 
 
-# OutputParser and helpers{{{1
-def _check_context_lines(context_lines, orig_context_lines, name, messages):
+# ErrorList {{{1
+class ErrorList(object):
+    """Error lists, to describe how to parse output.  In object form for
+    better validation.
     """
-    """
-    if not isinstance(context_lines, int) or context_lines < 0:
-        messages.append(
-            "%s %s must be a positive int!" % (name,
-                                               six.text_type(context_lines)))
-        return orig_context_lines
-    return max(context_lines, orig_context_lines)
+    def __init__(self, error_list):
+        (self.pre_context_lines, self.post_context_lines) = \
+            self.validate_error_list(error_list)
+        self.error_list = error_list
 
-def validate_error_list(error_list):
-    """Validate an error_list.
-    This is going to be a pain to unit test properly.
+    @staticmethod
+    def check_context_lines(context_lines, orig_context_lines, name, messages):
+        """Verifies and returns the larger int of context_lines and
+        orig_context_lines.
 
-    Args:
-      error_list (list of dicts): an error_list.
+        Args:
+          context_lines (value): The value of pre_context_lines or
+            post_context_lines to validate.
 
-    Returns:
-      (pre_context_lines, post_context_lines) (tuple of int, int)
+          orig_context_lines (int): The previous max int sent to
+            check_context_lines
 
-    Raises:
-      scriptharness.exceptions.ScriptHarnessException: if error_list is not
-        well-formed.
-    """
-    messages = []
-    context_lines_re = re.compile(r'^(\d+):(\d+)')
-    re_compile_class = context_lines_re.__class__
-    pre_context_lines = 0
-    post_context_lines = 0
-    for error_check in error_list:
-        if not isinstance(error_check, dict):
-            messages.append("%s is not a dict!" % six.text_type(error_check))
-            continue
-        if 'level' not in error_check or not \
-                isinstance(error_check['level'], int):
+          name (str): The name of the field (pre_context_lines or
+            post_context_lines)
+
+          messages (list): The list of error messages so far.
+
+        Returns:
+          int: If context_lines is a non-int or negative, an error is appended
+            to messages and we return orig_context_lines.  Otherwise, we return
+            the max of context_lines or orig_context_lines.
+        """
+        if not isinstance(context_lines, int) or context_lines < 0:
             messages.append(
-                "%s doesn't contain an int 'level'!" % six.text_type(
-                    error_check)
+                "%s %s must be a positive int!" %
+                (name, six.text_type(context_lines))
             )
-        if 'substr' not in error_check and 'regex' not in error_check:
-            messages.append("%s must contain either 'substr' or 'regex'!",
-                            six.text_type(error_check))
-            continue
-        if 'substr' in error_check and not \
-                isinstance(error_check['substr'], six.text_type):
+            return orig_context_lines
+        return max(context_lines, orig_context_lines)
+
+    @staticmethod
+    def exactly_one(key1, key2, error_check, messages):
+        """Make sure one, and only one, of key1 and key2 are in error_check.
+        If that's not the case, append an error message in messages.
+
+        Args:
+          key1 (str): Dictionary key.
+
+          key2 (str): Dictionary key.
+
+          error_check (dict): a single item of error_list.
+
+          messages (list): the list of error messages so far.
+
+        Returns:
+          Bool: True if there is exactly one of the two keys in error_check.
+        """
+        status = True
+        error_check_str = six.text_type(error_check)
+        if key1 not in error_check and key2 not in error_check:
             messages.append(
-                "substr %s is not of type %s!" % (error_check['substr'],
-                                                  six.text_type)
+                "%s must contain '%s' or '%s'!" % (error_check_str, key1, key2)
             )
-        if 'regex' in error_check and not isinstance(error_check['regex'],
-                                                     re_compile_class):
+            status = False
+        elif key1 in error_check and key2 in error_check:
             messages.append(
-                "regex %s needs to be re.compile()d!" % error_check['regex']
+                "%s has both '%s' and '%s'!" % (error_check_str, key1, key2)
             )
-        if 'regex' in error_check and 'substr' in error_check:
+            status = False
+        return status
+
+    @staticmethod
+    def verify_unicode(key, error_check, messages):
+        """If key is in error_check, it must be of type six.text_type.
+        If not, append an error message to messages.
+
+        Args:
+          key (str): a dict key
+          error_check (dict): a single item of error_list
+          messages (list): The error messages so far
+        """
+        if key in error_check and not \
+                isinstance(error_check[key], six.text_type):
             messages.append(
-                "%s has both 'regex' and 'substr'!" % six.text_type(
-                    error_check)
+                "%s %s is not of type %s!" % (error_check, key, six.text_type)
             )
-        if 'pre_context_lines' in error_check:
-            pre_context_lines = _check_context_lines(
-                error_check['pre_context_lines'], pre_context_lines,
-                "pre_context_lines", messages
-            )
-        if 'post_context_lines' in error_check:
-            post_context_lines = _check_context_lines(
-                error_check['post_context_lines'], post_context_lines,
-                "post_context_lines", messages
-            )
-        # add check for explanation
-        # TODO fatal support -- exception=ScriptHarnessFatal ?
-        # TODO summary support -- Context has a summary object? Script
-        # builds a summary?
-    if messages:
-        raise ScriptHarnessException(messages)
-    return (pre_context_lines, post_context_lines)
+
+    def validate_error_list(self, error_list):
+        """Validate an error_list.
+        This is going to be a pain to unit test properly.
+
+        Args:
+          error_list (list of dicts): an error_list.
+
+        Returns:
+          (pre_context_lines, post_context_lines) (tuple of int, int)
+
+        Raises:
+          scriptharness.exceptions.ScriptHarnessException: if error_list is not
+            well-formed.
+        """
+        messages = []
+        context_lines_re = re.compile(r'^(\d+):(\d+)')
+        re_compile_class = context_lines_re.__class__
+        pre_context_lines = 0
+        post_context_lines = 0
+        for error_check in error_list:
+            error_check_str = six.text_type(error_check)
+            if not isinstance(error_check, dict):
+                messages.append("%s is not a dict!" % error_check_str)
+                continue
+            if self.exactly_one('level', 'exception', error_check, messages):
+                if 'level' in error_check:
+                    if not isinstance(error_check['level'], int):
+                        messages.append(
+                            "%s level must be an int!" % error_check_str
+                        )
+                elif 'exception' in error_check and not \
+                        issubclass(error_check['level'], Exception):
+                    messages.append(
+                        "%s exception must be a subclass of Exception!" %
+                        error_check_str
+                    )
+            if self.exactly_one('substr', 'regex', error_check, messages):
+                self.verify_unicode('substr', error_check, messages)
+                if 'regex' in error_check and not \
+                        isinstance(error_check['regex'], re_compile_class):
+                    messages.append(
+                        "%s regex needs to be re.compile'd!" % error_check_str
+                    )
+            if 'pre_context_lines' in error_check:
+                pre_context_lines = self.check_context_lines(
+                    error_check['pre_context_lines'], pre_context_lines,
+                    "pre_context_lines", messages
+                )
+            if 'post_context_lines' in error_check:
+                post_context_lines = self.check_context_lines(
+                    error_check['post_context_lines'], post_context_lines,
+                    "post_context_lines", messages
+                )
+            self.verify_unicode('explanation', error_check, messages)
+        if messages:
+            raise ScriptHarnessException(messages)
+        return (pre_context_lines, post_context_lines)
 
 
 class OutputBuffer(object):
-    """Buffer output for context lines
+    """Buffer output for context lines: essentially, an error_check can set
+    the level of X lines in the past or Y lines in the future.  If multiple
+    error_checks set the level for a line, currently the higher level wins.
+
+    For instance, if a ``make: *** [all] Error 2`` sets the level to
+    logging.ERROR for 10 pre_context_lines, we'll need to buffer at least 10
+    lines in case we hit that error.  If a second error_check sets the level
+    to logging.WARNING 5 lines above the ``make: *** [all] Error 2``, the ERROR
+    wins out, and that line is still marked as an ERROR.
+
+    This restricts the buffer size to pre_context_lines.  In years past
+    I've also ordered Visual Studio output by thread, and set the error all the
+    way up until we match some other pattern, so the buffer had to grow to an
+    arbitrary size.  Those could be represented by separate classes/subclasses
+    if needed.
     """
     def __init__(self, logger, pre_context_lines, post_context_lines):
         self.logger = logger
@@ -381,17 +464,51 @@ class OutputBuffer(object):
         self.post_levels = []
 
     def update_buffer_levels(self, level, pre_context_lines):
+        """Set the level for each buffer line to level if it's higher than
+        the existing level.
+
+        Args:
+          level (int):  The logging level to set the lines to
+
+          pre_context_lines (int): The number of lines to affect.  Since these
+            are relative to the current line, these will be counted backwards
+            from the end of the buffer.
+        """
         start = max(len(self.buffer) - pre_context_lines, 0)
         for position, buf in enumerate(self.buffer, start=start):
             self.buffer[position][0] = max(buf[0], level)
 
-    def pop_buffer(self, num):
+    def pop_buffer(self, num=1):
+        """Pop num lines from the front of the buffer and log them at the
+        level set for each line.
+
+        Args:
+          num (int): The number of lines to pop and log.
+        """
         for _ in range(0, num):
             self.logger.log(
                 self.buffer[0][0], self.buffer[0][1], *self.buffer[0][2]
             )
 
+    def dump_buffer(self):
+        """Write all the buffered log lines to the log.
+        """
+        self.pop_buffer(num=len(self.buffer))
+
     def add_line(self, level, line, pre_context_lines=0, post_context_lines=0):
+        """Add a line to the buffer.
+
+        Args:
+          level (int): the logging level for the line.
+
+          line (str): the line to log
+
+          pre_context_lines (int, optional): the number of lines before this
+            one to set to log level `level`.  This defaults to 0.
+
+          post_context_lines (int, optional): the number of lines after this
+            one to set to log level `level`.  This defaults to 0.
+        """
         current_level = level
         if self.post_context_lines:
             if self.post_levels:
@@ -409,7 +526,7 @@ class OutputBuffer(object):
             self.buffer.append(current_level, line, time.time())
             num_pop = max(len(self.buffer) - self.pre_context_lines, 0)
             if num_pop > 0:
-                self.pop_buffer(num_pop)
+                self.pop_buffer(num=num_pop)
         else:
             self.logger.log(current_level, line)
 
@@ -422,13 +539,11 @@ class OutputParser(object):
         """Initialization method for the OutputParser class
 
         Args:
-          error_list (list): list of errors to look for.
-            # TODO document what it looks like
+          error_list (list of dicts): list of errors to look for.
+
           logger (logging.Logger, optional): logger to use.
         """
         self.logger = logger or logging.getLogger(LOGGER_NAME)
-        (pre_context_lines, post_context_lines) = \
-            validate_error_list(error_list)
         self.error_list = error_list
         if not hasattr(self, 'history'):
             self.history = {}
@@ -436,11 +551,24 @@ class OutputParser(object):
         self.history['num_warnings'] = 0
         self.history['worst_level'] = 0
         self.context_buffer = None
-        if pre_context_lines or post_context_lines:
-            self.context_buffer = OutputBuffer(logger, pre_context_lines,
-                                               post_context_lines)
+        if error_list.pre_context_lines or error_list.post_context_lines:
+            self.context_buffer = OutputBuffer(
+                logger, error_list.pre_context_lines,
+                error_list.post_context_lines
+            )
 
-    def add_buffer(self, level, line, error_check):
+    def add_buffer(self, level, line, error_check=None):
+        """Add the line to self.context_buffer if it exists, otherwise log it.
+
+        Args:
+          level (int): logging level to log the line at
+
+          line (str): line to log
+
+          error_check (dict, optional): the error_check in error_list that
+            first matched line, if applicable.  Defaults to None.
+        """
+        error_check = error_check or {}
         if self.context_buffer:
             self.context_buffer.add_line(
                 level, line, error_check.get('pre_context_lines', 0),
@@ -448,6 +576,12 @@ class OutputParser(object):
             )
         else:
             self.logger.log(level, line)
+        if level > logging.WARNING:
+            self.history['num_errors'] += 1
+        elif level > logging.INFO:
+            self.history['num_warnings'] += 1
+        self.history['worst_level'] = max(self.history['worst_level'],
+                                          level)
 
     def add_line(self, line, *args):
         """parse a line and check if it matches one in `error_list`,
@@ -462,22 +596,21 @@ class OutputParser(object):
             if 'substr' in error_check:
                 if error_check['substr'] in line:
                     match = True
-            else:
-                if error_check['regex'].search(line):
-                    match = True
+            elif error_check['regex'].search(line):
+                match = True
             if match:
-                level = error_check['level']
                 messages = [' {}'.format(line % args)]
                 if error_check.get('explanation'):
                     messages.append(' %s' % error_check['explanation'])
+                if error_check.get('exception'):
+                    if self.context_buffer:
+                        self.context_buffer.dump_buffer()
+                    raise error_check['exception'](messages)
+                level = error_check['level']
+                if level < 0:  # IGNORE
+                    break
                 for message in messages:
                     self.add_buffer(level, message, error_check)
-                if level > logging.WARNING:
-                    self.history['num_errors'] += 1
-                elif level > logging.INFO:
-                    self.history['num_warnings'] += 1
-                self.history['worst_level'] = max(self.history['worst_level'],
-                                                  level)
                 break
         else:
-            self.logger.info(' %s' % line)
+            self.add_buffer(logging.INFO, ' %s' % line)
