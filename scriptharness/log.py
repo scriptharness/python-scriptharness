@@ -4,6 +4,7 @@
 the log.
 
 Attributes:
+  LOGGER_NAME (str): the default name to use for logging.getLogger()
   DEFAULT_DATEFMT (str): default logging date format
   DEFAULT_FMT (str): default logging format
   DEFAULT_LEVEL (int): default logging level
@@ -14,11 +15,13 @@ from __future__ import absolute_import, division, print_function, \
 from copy import deepcopy
 import logging
 import os
+import re
 from scriptharness.commands import make_parent_dir
 from scriptharness.exceptions import ScriptHarnessException
 import six
+import time
 
-
+LOGGER_NAME = "scriptharness.log"
 DEFAULT_DATEFMT = '%H:%M:%S'
 DEFAULT_FMT = '%(asctime)s %(levelname)8s - %(message)s'
 DEFAULT_LEVEL = logging.INFO
@@ -138,14 +141,13 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 
 # LogMethod decorator {{{1
 class LogMethod(object):
-    # pylint: disable=anomalous-backslash-in-string
-    """Wrapper decorator object for logging and error detection.
+    r"""Wrapper decorator object for logging and error detection.
     This is here as a shortcut to wrap functions with basic logging.
 
     Attributes:
 
       default_config (dict): contains the config defaults that can be
-        overridden via __init__ \**kwargs.  Changing default_config directly
+        overridden via __init__ **kwargs.  Changing default_config directly
         may carry over to other decorated LogMethod functions!
     """
     default_config = {
@@ -208,10 +210,9 @@ class LogMethod(object):
             raise ScriptHarnessException(os.linesep.join(messages))
 
     def __call__(self, func, *args, **kwargs):
-        # pylint: disable=anomalous-backslash-in-string
-        """Wrap the function call as a decorator.
+        r"""Wrap the function call as a decorator.
 
-        When there are decorator arguments, \__call__ is only called once, at
+        When there are decorator arguments, __call__ is only called once, at
         decorator time.  args and kwargs only show up when func is called,
         so we need to create and return a wrapping function.
 
@@ -287,3 +288,196 @@ class LogMethod(object):
             raise self.config['exception'](
                 self.config['post_failure_msg'].format(**self.repl_dict)
             )
+
+
+# OutputParser and helpers{{{1
+def _check_context_lines(context_lines, orig_context_lines, name, messages):
+    """
+    """
+    if not isinstance(context_lines, int) or context_lines < 0:
+        messages.append(
+            "%s %s must be a positive int!" % (name,
+                                               six.text_type(context_lines)))
+        return orig_context_lines
+    return max(context_lines, orig_context_lines)
+
+def validate_error_list(error_list):
+    """Validate an error_list.
+    This is going to be a pain to unit test properly.
+
+    Args:
+      error_list (list of dicts): an error_list.
+
+    Returns:
+      (pre_context_lines, post_context_lines) (tuple of int, int)
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessException: if error_list is not
+        well-formed.
+    """
+    messages = []
+    context_lines_re = re.compile(r'^(\d+):(\d+)')
+    re_compile_class = context_lines_re.__class__
+    pre_context_lines = 0
+    post_context_lines = 0
+    for error_check in error_list:
+        if not isinstance(error_check, dict):
+            messages.append("%s is not a dict!" % six.text_type(error_check))
+            continue
+        if 'level' not in error_check or not \
+                isinstance(error_check['level'], int):
+            messages.append(
+                "%s doesn't contain an int 'level'!" % six.text_type(
+                    error_check)
+            )
+        if 'substr' not in error_check and 'regex' not in error_check:
+            messages.append("%s must contain either 'substr' or 'regex'!",
+                            six.text_type(error_check))
+            continue
+        if 'substr' in error_check and not \
+                isinstance(error_check['substr'], six.text_type):
+            messages.append(
+                "substr %s is not of type %s!" % (error_check['substr'],
+                                                  six.text_type)
+            )
+        if 'regex' in error_check and not isinstance(error_check['regex'],
+                                                     re_compile_class):
+            messages.append(
+                "regex %s needs to be re.compile()d!" % error_check['regex']
+            )
+        if 'regex' in error_check and 'substr' in error_check:
+            messages.append(
+                "%s has both 'regex' and 'substr'!" % six.text_type(
+                    error_check)
+            )
+        if 'pre_context_lines' in error_check:
+            pre_context_lines = _check_context_lines(
+                error_check['pre_context_lines'], pre_context_lines,
+                "pre_context_lines", messages
+            )
+        if 'post_context_lines' in error_check:
+            post_context_lines = _check_context_lines(
+                error_check['post_context_lines'], post_context_lines,
+                "post_context_lines", messages
+            )
+        # add check for explanation
+        # TODO fatal support -- exception=ScriptHarnessFatal ?
+        # TODO summary support -- Context has a summary object? Script
+        # builds a summary?
+    if messages:
+        raise ScriptHarnessException(messages)
+    return (pre_context_lines, post_context_lines)
+
+
+class OutputBuffer(object):
+    """Buffer output for context lines
+    """
+    def __init__(self, logger, pre_context_lines, post_context_lines):
+        self.logger = logger
+        self.pre_context_lines = pre_context_lines
+        self.post_context_lines = post_context_lines
+        # level, line, time
+        self.buffer = []
+        self.post_levels = []
+
+    def update_buffer_levels(self, level, pre_context_lines):
+        start = max(len(self.buffer) - pre_context_lines, 0)
+        for position, buf in enumerate(self.buffer, start=start):
+            self.buffer[position][0] = max(buf[0], level)
+
+    def pop_buffer(self, num):
+        for _ in range(0, num):
+            self.logger.log(
+                self.buffer[0][0], self.buffer[0][1], *self.buffer[0][2]
+            )
+
+    def add_line(self, level, line, pre_context_lines=0, post_context_lines=0):
+        current_level = level
+        if self.post_context_lines:
+            if self.post_levels:
+                current_level = self.post_levels.pop()
+            if post_context_lines:
+                for position, post_level in enumerate(self.post_levels):
+                    self.post_levels[position] = max(post_level, level)
+                length = len(self.post_levels)
+                if length < post_context_lines:
+                    for _ in range(length, post_context_lines):
+                        self.post_levels.append(level)
+        if self.pre_context_lines:
+            if pre_context_lines and self.buffer:
+                self.update_buffer_levels(level, pre_context_lines)
+            self.buffer.append(current_level, line, time.time())
+            num_pop = max(len(self.buffer) - self.pre_context_lines, 0)
+            if num_pop > 0:
+                self.pop_buffer(num_pop)
+        else:
+            self.logger.log(current_level, line)
+
+
+class OutputParser(object):
+    """Helper object to parse command output.
+    """
+
+    def __init__(self, error_list, logger=None):
+        """Initialization method for the OutputParser class
+
+        Args:
+          error_list (list): list of errors to look for.
+            # TODO document what it looks like
+          logger (logging.Logger, optional): logger to use.
+        """
+        self.logger = logger or logging.getLogger(LOGGER_NAME)
+        (pre_context_lines, post_context_lines) = \
+            validate_error_list(error_list)
+        self.error_list = error_list
+        if not hasattr(self, 'history'):
+            self.history = {}
+        self.history['num_errors'] = 0
+        self.history['num_warnings'] = 0
+        self.history['worst_level'] = 0
+        self.context_buffer = None
+        if pre_context_lines or post_context_lines:
+            self.context_buffer = OutputBuffer(logger, pre_context_lines,
+                                               post_context_lines)
+
+    def add_buffer(self, level, line, error_check):
+        if self.context_buffer:
+            self.context_buffer.add_line(
+                level, line, error_check.get('pre_context_lines', 0),
+                error_check.get('post_context_lines', 0),
+            )
+        else:
+            self.logger.log(level, line)
+
+    def add_line(self, line, *args):
+        """parse a line and check if it matches one in `error_list`,
+        if so then log it.
+
+        Args:
+          line (str): a line of output to parse.
+          *args: Optional args to format the line with.
+        """
+        for error_check in self.error_list:
+            match = False
+            if 'substr' in error_check:
+                if error_check['substr'] in line:
+                    match = True
+            else:
+                if error_check['regex'].search(line):
+                    match = True
+            if match:
+                level = error_check['level']
+                messages = [' {}'.format(line % args)]
+                if error_check.get('explanation'):
+                    messages.append(' %s' % error_check['explanation'])
+                for message in messages:
+                    self.add_buffer(level, message, error_check)
+                if level > logging.WARNING:
+                    self.history['num_errors'] += 1
+                elif level > logging.INFO:
+                    self.history['num_warnings'] += 1
+                self.history['worst_level'] = max(self.history['worst_level'],
+                                                  level)
+                break
+        else:
+            self.logger.info(' %s' % line)
