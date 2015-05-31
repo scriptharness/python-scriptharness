@@ -390,6 +390,18 @@ class ErrorList(object):
             )
 
     def check_ignore(self, ignore, name, error_check, messages):
+        """If the level of an error_check is negative, it will be ignored.
+        There is currently no pre_context_lines or post_context_lines support
+        for ignored lines.  When self.strict is True, append an error to
+        messages.
+
+        Args:
+          ignore (bool): True when 'level' is in error_check and negative.
+          name (str): The name of the key (pre_context_lines,
+            post_context_lines)
+          error_check (dict): A single item of error_list
+          messages (list): The error messages so far.
+        """
         if ignore and self.strict:
             messages.append(
                 "%s '%s' will be ignored because 'level' < 0." %
