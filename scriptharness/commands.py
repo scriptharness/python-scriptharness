@@ -235,6 +235,9 @@ class Command(object):
 def run(command, halt_on_failure=False, **kwargs):
     """Shortcut for running a Command.
 
+    Not entirely sure if this should also catch ScriptHarnessFatal, as those
+    are explicitly trying to kill the script.
+
     Args:
       command (list or str): Command line to run.
       **kwargs: kwargs for subprocess.Popen.
@@ -243,10 +246,7 @@ def run(command, halt_on_failure=False, **kwargs):
       command exit code (int)
 
     Raises:
-      scriptharness.exceptions.ScriptHarnessError: on error
       scriptharness.exceptions.ScriptHarnessFatal: on fatal error
-      scriptharness.exceptions.ScriptHarnessTimeout: on output_timeout or
-        max_timeout
     """
     message = ""
     try:
