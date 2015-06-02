@@ -182,37 +182,6 @@ class Command(object):
             # https://mail.python.org/pipermail/python-dev/2011-December/114740.html
             self.log_env(self.kwargs['env'])
 
-#    @contextmanager
-#    def get_process(self, command, stdout=None, stderr=None, **kwargs):
-#        """Create a subprocess.Popen and return it.
-#        Here for subclassing.
-#
-#        Args:
-#          command (list or string): command for subprocess.Popen
-#          **kwargs: kwargs for subprocess.Popen
-#        """
-#        stdout = stdout or subprocess.PIPE
-#        stderr = stderr or subprocess.STDOUT
-#        try:
-#            process = subprocess.Popen(
-#                command, stdout=stdout, stderr=stderr, **kwargs
-#            )
-#            yield process
-#        # If we ever use the subprocess timeout, we'll also need to check
-#        # for subprocess.TimeoutExpired in py3.
-#        except ScriptHarnessTimeout:
-#            self.history['end_time'] = time.time()
-#            self.history['timeout'] = 'timeout'
-#            six.reraise(*sys.exc_info())
-#        finally:
-#            if process.poll() is None:
-#                self.logger.warning(self.strings['kill_hung_process'])
-#                process.kill()
-#                # will this timeout too?
-#                process.communicate()
-#                # log
-#                # verify
-
     def add_line(self, line):
         """Log the output.  Here for subclassing.
 
@@ -220,43 +189,6 @@ class Command(object):
           line (str): a line of output
         """
         self.logger.info(" %s", to_unicode(line.rstrip()))
-
-#    def wait_for_process(self, process, output_timeout=None, max_timeout=None):
-#        """Wait for process to finish, handling the output as it comes.
-#        This also checks for output timeout.
-#        """
-#        loop = True
-#        timeout = False
-#        repl_dict = {'command': self.command}
-#        while loop:
-#            if process.poll() is not None:
-#                # avoid losing the final lines of the log
-#                loop = False
-#                while True:
-#                    # TODO does this hang on partial output? May need threading
-#                    line = process.stdout.readline()
-#                    if not line:
-#                        break
-#                    self.add_line(line.rstrip())
-#                    self.history['last_output'] = time.time()
-#            else:
-#                now = time.time()
-#                if output_timeout and (self.history['last_output'] + \
-#                        output_timeout < now):
-#                    timeout = 'output_timeout'
-#                    repl_dict['output_timeout'] = output_timeout
-#                elif max_timeout and (self.history['start_time'] + \
-#                        max_timeout < now):
-#                    timeout = 'timeout'
-#                    repl_dict['run_time'] = now - self.history['start_time']
-#                if timeout:
-#                    process.terminate()
-#                    self.history['timeout'] = timeout
-#                    self.finish_process()
-#                    raise ScriptHarnessTimeout(
-#                        self.strings[timeout] % repl_dict
-#                    )
-#        self.finish_process()
 
     def finish_process(self):
         """Here for subclassing.
@@ -299,6 +231,25 @@ class Command(object):
                 self.strings["error"] % {'command': self.command,}
             )
 
+
+def run(command, halt_on_failure=True, **kwargs):
+    """Shortcut for running a Command.
+
+    Args:
+      command (list or str): Command line to run.
+      **kwargs: kwargs for subprocess.Popen.
+
+    Returns:
+      command exit code (int)
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessError: on error
+      scriptharness.exceptions.ScriptHarnessFatal: on fatal error
+      scriptharness.exceptions.ScriptHarnessTimeout: on output_timeout or
+        max_timeout
+    """
+    cmd = Command(command, **kwargs)
+    return cmd.run()
 
 ##halt_on_failure=False
 #    """Run a command, with logging and error parsing.
