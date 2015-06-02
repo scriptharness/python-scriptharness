@@ -147,13 +147,11 @@ class TestCommand(unittest.TestCase):
         env_line = "'foo': 'bar'"
         if os.name != 'nt' and six.PY2:
             env_line = "u'foo': u'bar'"
-        count = 0
         for line in logger.all_messages:
             if line[1] == commands.STRINGS['command']['env']:
                 print(line)
                 self.assertTrue(env_line in line[2][0]["env"])
-                count += 1
-        self.assertEqual(count, 2)
+                break
 
     def test_bad_cwd(self):
         """test_commands | Command bad cwd
