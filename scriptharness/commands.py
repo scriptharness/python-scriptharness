@@ -13,10 +13,6 @@ import logging
 import multiprocessing
 import os
 import six
-if os.name == 'nt' and six.PY2:
-    if 'MULTIPROCESSING_FREEZE' not in globals():
-        multiprocessing.freeze_support()
-        MULTIPROCESSING_FREEZE_SUPPORT = 1
 import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException
