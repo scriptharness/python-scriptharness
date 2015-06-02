@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, print_function, \
     unicode_literals
 import os
 import psutil
+from psutil import NoSuchProcess
 from scriptharness.exceptions import ScriptHarnessFatal, ScriptHarnessTimeout
 from six.moves.queue import Empty
 import subprocess
@@ -46,7 +47,7 @@ def kill_runner(runner):
     """
     try:
         kill_proc_tree(runner.pid, include_parent=True)
-    except psutil.NoSuchProcess:
+    except NoSuchProcess:
         pass
 
 
