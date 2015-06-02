@@ -165,6 +165,12 @@ class Command(object):
             if os.name == 'nt':
                 self.kwargs['env'].setdefault("SystemRoot",
                                               os.environ['SystemRoot'])
+                if six.PY2:
+                    new_env = {}
+                    # Py2 unhappy with unicode env vars
+                    for key, value in self.kwargs.items():
+                        new_env[six.b(key)] = value
+                    self.kwargs['env'] = new_env
             self.log_env(self.kwargs['env'])
 
 #    @contextmanager
