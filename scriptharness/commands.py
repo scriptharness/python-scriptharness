@@ -131,7 +131,29 @@ class Command(object):
         Args:
           env (dict): the environment we'll be passing to subprocess.Popen.
         """
+        self.fix_env(env)
         self.logger.info(self.strings['env'], {'env': pprint.pformat(env)})
+
+    @staticmethod
+    def fix_env(env):
+        """Windows environments are fiddly.
+
+        Args:
+          env (dict): the environment we'll be passing to subprocess.Popen.
+        """
+        if os.name == 'nt':
+            env.setdefault("SystemRoot", os.environ["SystemRoot"])
+            if six.PY2:
+                new_env = {}
+                # Win Py2 unhappy with unicode env vars
+                for key, value in env.items():
+                    if isinstance(key, six.text_type):
+                        key = six.binary_type(key)
+                    if isinstance(value, six.text_type):
+                        value = six.binary_type(value)
+                    new_env[key] = value
+                env = new_env
+        return env
 
     def log_start(self):
         """Log the start of the command, also checking for the existence of
@@ -162,15 +184,6 @@ class Command(object):
             )
         if 'env' in self.kwargs:
             # https://mail.python.org/pipermail/python-dev/2011-December/114740.html
-            if os.name == 'nt':
-                self.kwargs['env'].setdefault("SystemRoot",
-                                              os.environ['SystemRoot'])
-                if six.PY2:
-                    new_env = {}
-                    # Py2 unhappy with unicode env vars
-                    for key, value in self.kwargs.items():
-                        new_env[six.b(key)] = value
-                    self.kwargs['env'] = new_env
             self.log_env(self.kwargs['env'])
 
 #    @contextmanager
@@ -260,6 +273,8 @@ class Command(object):
         Raises:
           scriptharness.exceptions.ScriptHarnessError on error
         """
+        if 'env' in self.kwargs:
+            self.kwargs['env'] = self.fix_env(self.kwargs['env'])
         self.log_start()
         output_timeout = self.kwargs.get('output_timeout', None)
         if 'output_timeout' in self.kwargs:

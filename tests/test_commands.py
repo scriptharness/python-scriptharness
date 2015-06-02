@@ -144,10 +144,10 @@ class TestCommand(unittest.TestCase):
         )
         command.log_env(env)
         command.run()
-        count = 0
         env_line = "'foo': 'bar'"
         if os.name != 'nt' and six.PY2:
             env_line = "u'foo': u'bar'"
+        count = 0
         for line in logger.all_messages:
             if line[1] == commands.STRINGS['command']['env']:
                 print(line)
