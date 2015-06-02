@@ -9,6 +9,7 @@ import psutil
 from scriptharness.exceptions import ScriptHarnessFatal, ScriptHarnessTimeout
 from six.moves.queue import Empty
 import subprocess
+import sys
 import time
 
 
@@ -71,7 +72,8 @@ def run_subprocess(queue, *args, **kwargs):
             if not line:
                 break
             queue.put(line)
-    return handle.returncode
+#    return handle.returncode
+    sys.exit(handle.returncode)
 
 
 def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
@@ -135,7 +137,7 @@ def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
                 logger.error(message + "  Killing process...")
                 kill_runner(runner)
                 raise ScriptHarnessTimeout(message)
-            if start_time + max_timeout < now:
+            if max_timeout and (start_time + max_timeout < now):
                 message = "Hit max timeout of %d seconds!" % max_timeout
                 logger.error(message + "  Killing process...")
                 kill_runner(runner)

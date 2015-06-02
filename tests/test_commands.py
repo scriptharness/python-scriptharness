@@ -14,6 +14,7 @@ import scriptharness.status as status
 import shutil
 import subprocess
 import sys
+import time
 import unittest
 from . import LoggerReplacement
 
@@ -110,6 +111,7 @@ class TestCommand(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         command = get_command()
         command.run()
+        pprint.pprint(logger.all_messages)
         self.assertEqual(logger.all_messages[-1][2][0], "hello")
 
     @mock.patch('scriptharness.commands.logging')
@@ -147,20 +149,24 @@ class TestCommand(unittest.TestCase):
     def test_output_timeout(self):
         """test_commands | Command output_timeout
         """
-#        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
-        for cmdln in (["sleep", "300"], ):
-            command = get_command(command=cmdln, output_timeout=.1)
+        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+#        for cmdln in (["sleep", "300"], ):
+            now = time.time()
+            command = get_command(command=cmdln, output_timeout=1)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)
+            self.assertTrue(now + 2 > time.time())
 
     def test_timeout(self):
         """test_commands | Command timeout
         """
-#        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
-        for cmdln in (["sleep", "300"], ):
-            command = get_command(command=cmdln, timeout=.1)
+        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
+#        for cmdln in (["sleep", "300"], ):
+            now = time.time()
+            command = get_command(command=cmdln, timeout=1)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)
+            self.assertTrue(now + 2 > time.time())
 
     def test_command_error(self):
         """test_commands | Command.run() with error

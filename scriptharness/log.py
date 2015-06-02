@@ -610,6 +610,8 @@ class OutputParser(object):
           **kwargs: These are ignored, and are here so we can subclass
             ParsedCommand.
         """
+        if kwargs:  # silence pylint
+            pass
         self.logger = logger or logging.getLogger(LOGGER_NAME)
         self.error_list = error_list
         if not hasattr(self, 'history'):

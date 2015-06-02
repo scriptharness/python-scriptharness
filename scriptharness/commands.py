@@ -8,20 +8,18 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-from contextlib import contextmanager
 from copy import deepcopy
 import logging
+import multiprocessing
 import os
 import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
-    ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
+    ScriptHarnessException
 from scriptharness.log import OutputParser, ErrorList
+import scriptharness.process
 import scriptharness.status
 from scriptharness.unicode import to_unicode
-import six
 import subprocess
-import sys
-import time
 
 LOGGER_NAME = "scriptharness.commands"
 STRINGS = {
@@ -160,36 +158,36 @@ class Command(object):
         if 'env' in self.kwargs:
             self.log_env(self.kwargs['env'])
 
-    @contextmanager
-    def get_process(self, command, stdout=None, stderr=None, **kwargs):
-        """Create a subprocess.Popen and return it.
-        Here for subclassing.
-
-        Args:
-          command (list or string): command for subprocess.Popen
-          **kwargs: kwargs for subprocess.Popen
-        """
-        stdout = stdout or subprocess.PIPE
-        stderr = stderr or subprocess.STDOUT
-        try:
-            process = subprocess.Popen(
-                command, stdout=stdout, stderr=stderr, **kwargs
-            )
-            yield process
-        # If we ever use the subprocess timeout, we'll also need to check
-        # for subprocess.TimeoutExpired in py3.
-        except ScriptHarnessTimeout:
-            self.history['end_time'] = time.time()
-            self.history['timeout'] = 'timeout'
-            six.reraise(*sys.exc_info())
-        finally:
-            if process.poll() is None:
-                self.logger.warning(self.strings['kill_hung_process'])
-                process.kill()
-                # will this timeout too?
-                process.communicate()
-                # log
-                # verify
+#    @contextmanager
+#    def get_process(self, command, stdout=None, stderr=None, **kwargs):
+#        """Create a subprocess.Popen and return it.
+#        Here for subclassing.
+#
+#        Args:
+#          command (list or string): command for subprocess.Popen
+#          **kwargs: kwargs for subprocess.Popen
+#        """
+#        stdout = stdout or subprocess.PIPE
+#        stderr = stderr or subprocess.STDOUT
+#        try:
+#            process = subprocess.Popen(
+#                command, stdout=stdout, stderr=stderr, **kwargs
+#            )
+#            yield process
+#        # If we ever use the subprocess timeout, we'll also need to check
+#        # for subprocess.TimeoutExpired in py3.
+#        except ScriptHarnessTimeout:
+#            self.history['end_time'] = time.time()
+#            self.history['timeout'] = 'timeout'
+#            six.reraise(*sys.exc_info())
+#        finally:
+#            if process.poll() is None:
+#                self.logger.warning(self.strings['kill_hung_process'])
+#                process.kill()
+#                # will this timeout too?
+#                process.communicate()
+#                # log
+#                # verify
 
     def add_line(self, line):
         """Log the output.  Here for subclassing.
@@ -199,42 +197,42 @@ class Command(object):
         """
         self.logger.info(" %s", to_unicode(line.rstrip()))
 
-    def wait_for_process(self, process, output_timeout=None, max_timeout=None):
-        """Wait for process to finish, handling the output as it comes.
-        This also checks for output timeout.
-        """
-        loop = True
-        timeout = False
-        repl_dict = {'command': self.command}
-        while loop:
-            if process.poll() is not None:
-                # avoid losing the final lines of the log
-                loop = False
-                while True:
-                    # TODO does this hang on partial output? May need threading
-                    line = process.stdout.readline()
-                    if not line:
-                        break
-                    self.add_line(line.rstrip())
-                    self.history['last_output'] = time.time()
-            else:
-                now = time.time()
-                if output_timeout and (self.history['last_output'] + \
-                        output_timeout < now):
-                    timeout = 'output_timeout'
-                    repl_dict['output_timeout'] = output_timeout
-                elif max_timeout and (self.history['start_time'] + \
-                        max_timeout < now):
-                    timeout = 'timeout'
-                    repl_dict['run_time'] = now - self.history['start_time']
-                if timeout:
-                    process.terminate()
-                    self.history['timeout'] = timeout
-                    self.finish_process()
-                    raise ScriptHarnessTimeout(
-                        self.strings[timeout] % repl_dict
-                    )
-        self.finish_process()
+#    def wait_for_process(self, process, output_timeout=None, max_timeout=None):
+#        """Wait for process to finish, handling the output as it comes.
+#        This also checks for output timeout.
+#        """
+#        loop = True
+#        timeout = False
+#        repl_dict = {'command': self.command}
+#        while loop:
+#            if process.poll() is not None:
+#                # avoid losing the final lines of the log
+#                loop = False
+#                while True:
+#                    # TODO does this hang on partial output? May need threading
+#                    line = process.stdout.readline()
+#                    if not line:
+#                        break
+#                    self.add_line(line.rstrip())
+#                    self.history['last_output'] = time.time()
+#            else:
+#                now = time.time()
+#                if output_timeout and (self.history['last_output'] + \
+#                        output_timeout < now):
+#                    timeout = 'output_timeout'
+#                    repl_dict['output_timeout'] = output_timeout
+#                elif max_timeout and (self.history['start_time'] + \
+#                        max_timeout < now):
+#                    timeout = 'timeout'
+#                    repl_dict['run_time'] = now - self.history['start_time']
+#                if timeout:
+#                    process.terminate()
+#                    self.history['timeout'] = timeout
+#                    self.finish_process()
+#                    raise ScriptHarnessTimeout(
+#                        self.strings[timeout] % repl_dict
+#                    )
+#        self.finish_process()
 
     def finish_process(self):
         """Here for subclassing.
@@ -258,14 +256,17 @@ class Command(object):
             self.kwargs.setdefault('shell', False)
         else:
             self.kwargs.setdefault('shell', True)
-        with self.get_process(self.command, **self.kwargs) as process:
-            self.history['start_time'] = time.time()
-            self.history['last_output'] = self.history['start_time']
-            self.wait_for_process(
-                process, output_timeout=output_timeout, max_timeout=max_timeout
-            )
-            self.history['end_time'] = time.time()
-        self.history['return_value'] = process.poll()
+        queue = multiprocessing.Queue()
+        runner = multiprocessing.Process(
+            target=scriptharness.process.run_subprocess,
+            args=(queue, self.command),
+            kwargs=self.kwargs,
+        )
+        runner.start()
+        self.history['return_value'] = scriptharness.process.watch_runner(
+            self.logger, queue, runner, self.add_line,
+            output_timeout=output_timeout, max_timeout=max_timeout
+        )
         self.history['status'] = self.detect_error_cb(self)
         if self.history['status'] != scriptharness.status.SUCCESS:
             raise ScriptHarnessError(
@@ -307,7 +308,7 @@ class Command(object):
 
 # ParsedCommand {{{1
 class ParsedCommand(OutputParser, Command):
-    """
+    """Parse each line of output for errors.
     """
     def __init__(self, command, error_list, **kwargs):
         OutputParser.__init__(self, error_list)
