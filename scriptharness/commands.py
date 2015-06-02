@@ -131,7 +131,7 @@ class Command(object):
         Args:
           env (dict): the environment we'll be passing to subprocess.Popen.
         """
-        self.fix_env(env)
+        env = self.fix_env(env)
         self.logger.info(self.strings['env'], {'env': pprint.pformat(env)})
 
     @staticmethod
