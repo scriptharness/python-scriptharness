@@ -147,9 +147,7 @@ class TestCommand(unittest.TestCase):
         count = 0
         for line in logger.all_messages:
             if line[1] == commands.STRINGS['command']['env']:
-                self.assertEqual(
-                    line[2][0]["env"], pprint.pformat(env)
-                )
+                self.assertTrue("'foo': 'bar'" in line[2][0]["env"])
                 count += 1
         self.assertEqual(count, 2)
 
