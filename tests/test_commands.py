@@ -156,15 +156,6 @@ class TestCommand(unittest.TestCase):
         command = get_command(cwd=TEST_DIR)
         self.assertRaises(ScriptHarnessException, command.run)
 
-    @staticmethod
-    def test_cover_log_start():
-        """test_commands | Command log_start
-        """
-        # The theory is running every line of code is a good thing, even
-        # if I don't know what to check for here.
-        command = get_command(command="ls", cwd=os.getcwd())
-        command.run()
-
     def test_output_timeout(self):
         """test_commands | Command output_timeout
         """
