@@ -4,6 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from copy import deepcopy
 import mock
 import os
 import pprint
@@ -33,7 +34,7 @@ def get_command(command=None, **kwargs):
     if command is None:
         command = [
             sys.executable, "-c",
-            'from __future__ import print_function; print("hello")'
+            'from __future__ import print_function; print("hello");'
         ]
     return commands.Command(command, **kwargs)
 
@@ -138,15 +139,19 @@ class TestCommand(unittest.TestCase):
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
         env = {"foo": "bar"}
-        command = get_command(env=env)
+        command = get_command(
+            env=env,
+        )
         command.log_env(env)
-        self.assertEqual(
-            logger.all_messages[0][1], commands.STRINGS['command']['env'],
-        )
-        self.assertEqual(
-            logger.all_messages[0][2][0]["env"], pprint.pformat(env)
-        )
         command.run()
+        count = 0
+        for line in logger.all_messages:
+            if line[1] == commands.STRINGS['command']['env']:
+                self.assertEqual(
+                    line[2][0]["env"], pprint.pformat(env)
+                )
+                count += 1
+        self.assertEqual(count, 2)
 
     def test_bad_cwd(self):
         """test_commands | Command bad cwd

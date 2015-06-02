@@ -156,6 +156,10 @@ class Command(object):
                 {'command': subprocess.list2cmdline(self.command)}
             )
         if 'env' in self.kwargs:
+            # https://mail.python.org/pipermail/python-dev/2011-December/114740.html
+            if os.name == 'nt':
+                self.kwargs['env'].setdefault("SystemRoot",
+                                              os.environ['SystemRoot'])
             self.log_env(self.kwargs['env'])
 
 #    @contextmanager
@@ -270,7 +274,7 @@ class Command(object):
         self.history['status'] = self.detect_error_cb(self)
         if self.history['status'] != scriptharness.status.SUCCESS:
             raise ScriptHarnessError(
-                self.strings["error"], {'command': self.command,}
+                self.strings["error"] % {'command': self.command,}
             )
 
 
