@@ -37,6 +37,23 @@ def get_command(command=None, **kwargs):
         ]
     return commands.Command(command, **kwargs)
 
+def get_timeout_cmdlns():
+    """Create a list of commandline commands to run to test timeouts.
+    """
+    cmdlns = []
+    if os.name != "nt":
+        cmdlns += [["sleep", "300"], "echo -n 'foo' && sleep 300"]
+    cmdlns += [
+        [sys.executable, "-c",
+         "from __future__ import print_function; import time;"
+         "time.sleep(300);"],
+        [sys.executable, "-c",
+         "from __future__ import print_function; import time;"
+         "print('foo', end=' ');"
+         "time.sleep(300);"],
+    ]
+    return cmdlns
+
 class TestFunctions(unittest.TestCase):
     """Test the command functions
     """
@@ -149,24 +166,22 @@ class TestCommand(unittest.TestCase):
     def test_output_timeout(self):
         """test_commands | Command output_timeout
         """
-        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
-#        for cmdln in (["sleep", "300"], ):
+        for cmdln in get_timeout_cmdlns():
             now = time.time()
-            command = get_command(command=cmdln, output_timeout=1)
+            command = get_command(command=cmdln, output_timeout=.5)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)
-            self.assertTrue(now + 2 > time.time())
+            self.assertTrue(now + 1 > time.time())
 
     def test_timeout(self):
         """test_commands | Command timeout
         """
-        for cmdln in (["sleep", "300"], "echo -n 'foo' && sleep 300"):
-#        for cmdln in (["sleep", "300"], ):
+        for cmdln in get_timeout_cmdlns():
             now = time.time()
-            command = get_command(command=cmdln, timeout=1)
+            command = get_command(command=cmdln, timeout=.5)
             print(cmdln)
             self.assertRaises(ScriptHarnessTimeout, command.run)
-            self.assertTrue(now + 2 > time.time())
+            self.assertTrue(now + 1 > time.time())
 
     def test_command_error(self):
         """test_commands | Command.run() with error
