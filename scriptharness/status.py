@@ -12,8 +12,10 @@ from __future__ import absolute_import, division, print_function, \
 
 
 # We'll most likely need more of these later.
-# I'm wondering how be best to be programmatic about it.
+# I'm wondering how be best to be programmatic about it, and avoid collisions
+# with command return values.
 # The history dict may become a class.
 SUCCESS = 0
-ERROR = 1
-FATAL = -1
+ERROR = 10
+TIMEOUT = 15
+FATAL = 100

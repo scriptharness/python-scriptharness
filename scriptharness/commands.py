@@ -15,7 +15,7 @@ import os
 import six
 import pprint
 from scriptharness.exceptions import ScriptHarnessError, \
-    ScriptHarnessException
+    ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
 from scriptharness.log import OutputParser, ErrorList
 import scriptharness.process
 import scriptharness.status
@@ -232,7 +232,7 @@ class Command(object):
             )
 
 
-def run(command, **kwargs):
+def run(command, halt_on_failure=False, **kwargs):
     """Shortcut for running a Command.
 
     Args:
@@ -248,8 +248,20 @@ def run(command, **kwargs):
       scriptharness.exceptions.ScriptHarnessTimeout: on output_timeout or
         max_timeout
     """
-    cmd = Command(command, **kwargs)
-    return cmd.run()
+    message = ""
+    try:
+        cmd = Command(command, **kwargs)
+        return cmd.run()
+    except ScriptHarnessError as exc_info:
+        message = "error: %s" % exc_info
+        status = scriptharness.status.ERROR
+    except ScriptHarnessTimeout as exc_info:
+        message = "timeout: %s" % exc_info
+        status = scriptharness.status.TIMEOUT
+    if halt_on_failure and message:
+        raise ScriptHarnessFatal("Fatal %s" % message)
+    else:
+        return status
 
 
 # ParsedCommand {{{1
