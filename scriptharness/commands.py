@@ -232,7 +232,7 @@ class Command(object):
             )
 
 
-def run(command, halt_on_failure=True, **kwargs):
+def run(command, **kwargs):
     """Shortcut for running a Command.
 
     Args:
@@ -251,43 +251,17 @@ def run(command, halt_on_failure=True, **kwargs):
     cmd = Command(command, **kwargs)
     return cmd.run()
 
-##halt_on_failure=False
-#    """Run a command, with logging and error parsing.
-#
-#    output_parser lets you provide an instance of your own OutputParser
-#    subclass, or pass None to use OutputParser.
-#
-#    error_list example:
-#    [{'regex': re.compile('^Error: LOL J/K'), level=IGNORE},
-#     {'regex': re.compile('^Error:'), level=ERROR, contextLines='5:5'},
-#     {'substr': 'THE WORLD IS ENDING', level=FATAL, contextLines='20:'}
-#    ]
-#    """
-#    try:
-#                parser.add_lines(line)
-#
-#    if halt_on_failure:
-#        _fail = False
-#        if returncode not in success_codes:
-#            context.logger.log(
-#                "%s not in success codes: %s" % (returncode, success_codes),
-#                level=error_level
-#            )
-#            _fail = True
-#        if parser.num_errors:
-#            context.logger.log("failures found while parsing output", level=error_level)
-#            _fail = True
-#        if _fail:
-#            return_code = fatal_exit_code
-#            raise ScriptHarnessFatal("Halting on failure while running %s" % command)
-#    return returncode
-
 
 # ParsedCommand {{{1
 class ParsedCommand(OutputParser, Command):
     """Parse each line of output for errors.
     """
     def __init__(self, command, error_list, **kwargs):
+        if not isinstance(error_list, ErrorList):
+            raise ScriptHarnessException(
+                "error_list must be an ErrorList!",
+                error_list
+            )
         OutputParser.__init__(self, error_list)
         Command.__init__(self, command, **kwargs)
 

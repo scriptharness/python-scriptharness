@@ -10,8 +10,6 @@ Attributes:
   DEFAULT_LEVEL (int): default logging level
 """
 
-# TODO summary support -- Context has a summary object? Script builds summary?
-
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 from copy import deepcopy
