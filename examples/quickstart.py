@@ -9,6 +9,7 @@ https://github.com/scriptharness/python-scriptharness
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import scriptharness
+import scriptharness.commands
 
 """First, define functions for all actions.  Each action MUST have a function
 defined.  The function should be named the same as the action.  (If the
@@ -41,6 +42,10 @@ def build(context):
 def package(context):
     """Package source"""
     context.logger.info("log message from package")
+    scriptharness.commands.run(
+        ['python', '-c',
+         "from __future__ import print_function; print('hello world!')"]
+    )
 
 def upload(context):
     """Upload packages"""
@@ -51,11 +56,6 @@ def notify(context):
     context.logger.info("log message from notify")
 
 
-"""If you're going to use scriptharness.commands.Command or any of its
-subclasses on Windows py27, you need to have an |if __name__ == '__main__':|
-block, or the multiprocessing module will throw an exception about calling
-multiprocessing.freeze_support(). https://bugs.python.org/issue11240#msg151479
-"""
 if __name__ == '__main__':
     """Enable logging to screen + artifacts/log.txt.  Not required, but
     without it the script will run silently.
