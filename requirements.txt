@@ -4,6 +4,7 @@ coverage
 jinja2
 mock
 nose
+psutil
 pylint
 requests
 Sphinx

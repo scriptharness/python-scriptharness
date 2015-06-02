@@ -1,51 +1,67 @@
 #!/usr/bin/env python
-# http://stackoverflow.com/questions/1230669/subprocess-deleting-child-processes-in-windows/4229404#4229404
-
+# -*- coding: utf-8 -*-
+"""Scriptharness multiprocessing support.
+"""
 from __future__ import absolute_import, division, print_function, \
     unicode_literals
-import logging
-import multiprocessing
 import os
-import psutil  # requires venv update
-import signal
-import six
+import psutil
+from scriptharness.exceptions import ScriptHarnessFatal, ScriptHarnessTimeout
 from six.moves.queue import Empty
 import subprocess
-import sys
 import time
 
-def kill_proc_tree(pid, including_parent=False):
+
+def kill_proc_tree(pid, include_parent=False, wait=5):
+    """Find the children of a process and kill them; optionally also kill
+    the process.  Uses psutil, which is cross-platform and py2&3 compatible.
+
+    From http://stackoverflow.com/a/4229404
+
+    Args:
+      pid (int): The process ID of the parent.
+
+      include_parent (bool, optional): kill the parent as well if True.
+        Defaults to False.
+
+      wait (int, optional): How long to wait for the children and parent to
+        die.  Defaults to 5.
+    """
     parent = psutil.Process(pid)
     children = parent.children(recursive=True)
     for child in children:
         child.kill()
-    psutil.wait_procs(children, timeout=5)
-    if including_parent:
+    psutil.wait_procs(children, timeout=wait)
+    if include_parent:
         parent.kill()
-        parent.wait(5)
+        parent.wait(wait)
+
 
 def kill_runner(runner):
+    """Kill the runner process and children.
+
+    Args:
+      runner (multiprocessing.Process): the process to kill.
+    """
     try:
-        kill_proc_tree(runner.pid, including_parent=True)
+        kill_proc_tree(runner.pid, include_parent=True)
     except psutil.NoSuchProcess:
         pass
 
+
 def run_subprocess(queue, *args, **kwargs):
-    handle = subprocess.Popen(
-#        [sys.executable, "-c",
-#         'from __future__ import print_function; import time;'
-#         'print("one ");time.sleep(2);print("two", end=" ");time.sleep(5);'
-#         'print("three ");time.sleep(4);print("four", end=" ");time.sleep(7);'
-#         'print("five ");time.sleep(6);print("six", end=" ");time.sleep(9);'
-#         'print("seven ");time.sleep(8);print("eight", end=" ");time.sleep(11);'
-#        ],
-        "/bin/echo 'one' && sleep 5 && "
-        "/bin/echo -n 'two' && sleep 7 && "
-        "/bin/echo 'three' && sleep 9 && "
-        "/bin/echo -n 'bar' && sleep 300", shell=True,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        bufsize=0
-    )
+    """Run a subprocess as a multiprocess.Process.
+    Use this with watch_runner().
+
+    Args:
+      queue (multiprocessing.Queue): the queue to write to
+      *args: sent to subprocess.Popen
+      **kwargs: sent to subprocess.Popen
+    """
+    kwargs['stdout'] = subprocess.PIPE
+    kwargs['stderr'] = subprocess.STDOUT
+    kwargs['bufsize'] = 0
+    handle = subprocess.Popen(*args, **kwargs)
     loop = True
     while loop:
         if handle.poll() is not None:
@@ -55,48 +71,72 @@ def run_subprocess(queue, *args, **kwargs):
             if not line:
                 break
             queue.put(line)
+    return handle.returncode
 
-def watch_runner(queue, runner, max_timeout=None, output_timeout=None):
+
+def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
+                 add_line_cb, max_timeout=None, output_timeout=None):
+    """This function watches the queue of the runner process.
+
+    Usage::
+
+      queue = multiprocessing.Queue()
+      runner = multiprocessing.Process(target=run_subprocess, args=(queue,))
+      runner.start()
+      watch_runner(logger, queue, runner, add_line_cb,
+                   output_timeout=output_timeout, max_timeout=max_timeout)
+
+    Args:
+      logger (logging.Logger): the logger to use.
+
+      queue (multiprocessing.Queue): the queue that the runner is writing to.
+
+      runner (multiprocessing.Process): the runner Process to watch.
+
+      add_line_cb (function): any output lines read will be sent here.
+
+      max_timeout (int, optional): when specified, the process will be killed
+        if it takes longer than this number of seconds.  Default: None
+
+      output_timeout (int, optional): when specified, the process will be
+        killed if it doesn't produce any output for this number of seconds.
+        Default: None
+
+    Returns:
+      runner.exitcode (int): on non-timeout.
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessFatal: on KeyboardInterrupt
+
+      scriptharness.exceptions.ScriptHarnessTimeout: on output_timeout or
+        max_timeout.
+    """
     last_output = start_time = time.time()
-    empty = False
     while True:
+        empty = False
         try:
             line = queue.get(block=True, timeout=.001)
-            print(six.text_type(time.time()) + six.text_type(line).rstrip())
+            add_line_cb(line)
             last_output = time.time()
+        except KeyboardInterrupt:
+            logger.warning("KeyboardInterrupt: Killing processes!")
+            kill_proc_tree(os.getpid(), include_parent=True)
+            raise ScriptHarnessFatal()
         except Empty:
+            # This is to avoid "During handling of the above exception,
+            #                   another exception occurred:"
             empty = True
         if empty:
             if not runner.is_alive():
-                sys.exit(runner.exitcode)
+                return runner.exitcode
             now = time.time()
             if output_timeout and (last_output + output_timeout < now):
-                print("output_timeout")
+                message = "%d seconds without output!" % output_timeout
+                logger.error(message + "  Killing process...")
                 kill_runner(runner)
-                # output timeout
-                # TODO get this in statuses
-                raise Exception("output timeout")
+                raise ScriptHarnessTimeout(message)
             if start_time + max_timeout < now:
-                print("timeout")
+                message = "Hit max timeout of %d seconds!" % max_timeout
+                logger.error(message + "  Killing process...")
                 kill_runner(runner)
-                raise Exception("max timeout")
-
-# TODO catch signals and terminate processes
-if __name__ == "__main__":
-    queue = multiprocessing.Queue()
-    output_timeout = 17
-    max_timeout = 150
-
-    runner = multiprocessing.Process(target=run, args=(queue,))
-    runner.start()
-
-#    watcher = multiprocessing.Process(
-#        target=watch_runner, args=(queue, runner),
-#        kwargs={
-#            'output_timeout': output_timeout,
-#            'max_timeout': max_timeout,
-#        },
-#    )
-#    watcher.start()
-#    watcher.join()
-    watch_runner(queue, runner, output_timeout=output_timeout, max_timeout=max_timeout)
+                raise ScriptHarnessTimeout(message)
