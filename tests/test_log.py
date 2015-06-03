@@ -15,6 +15,7 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
+import re
 import scriptharness.log as log
 import six
 import unittest
@@ -560,4 +561,40 @@ class TestErrorList(unittest.TestCase):
             self.assertRaises(
                 ScriptHarnessException, log.ErrorList,
                 error_list, strict=True
+            )
+            # shouldn't raise when strict is False
+            log.ErrorList(error_list, strict=False)
+
+    def test_context_lines(self):
+        """test_log | ErrorList context lines
+        """
+        for var in None, -1:
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList,
+                [{'level': 0, 'substr': 'foo', 'pre_context_lines': var}]
+            )
+        error_list = log.ErrorList([
+            {'level': 0, 'substr': 'foo', 'pre_context_lines': 2,
+             'post_context_lines': 9},
+            {'level': 0, 'substr': 'bar', 'pre_context_lines': 5,
+             'post_context_lines': 3},
+            {'level': 0, 'substr': 'baz', 'pre_context_lines': 9,
+             'post_context_lines': 1},
+        ])
+        self.assertEqual(error_list.pre_context_lines, 9)
+        self.assertEqual(error_list.post_context_lines, 9)
+
+    def test_exactly_one(self):
+        """test_log | ErrorList.exactly_one()
+        """
+        elists = [
+            [{'level': 0, 'exception': ScriptHarnessError, 'substr': 'foo'}],
+            [{'substr': 'foo'}],
+            [{'level': 0}],
+            [{'level': 0, 'substr': 'foo', 'regex': re.compile("foo")}],
+        ]
+        for error_list in elists:
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList,
+                error_list
             )
