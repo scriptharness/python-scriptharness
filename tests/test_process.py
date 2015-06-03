@@ -5,11 +5,9 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import mock
-import pprint
 import psutil
 import scriptharness.process as shprocess
 from scriptharness.unicode import to_unicode
-import six
 from six.moves.queue import Queue
 import sys
 import unittest
@@ -69,7 +67,8 @@ class TestProcess(unittest.TestCase):
         queue = Queue()
         self.assertRaises(
             SystemExit, shprocess.run_subprocess,
-            queue, [sys.executable, "-c",
+            queue,
+            [sys.executable, "-c",
              "from __future__ import print_function;print('foo')"],
         )
         line = queue.get(block=True, timeout=.1)
