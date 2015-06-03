@@ -538,7 +538,7 @@ class OutputBuffer(object):
         """
         start = max(len(self.buffer) - pre_context_lines, 0)
         for position, buf in enumerate(self.buffer, start=start):
-            self.buffer[position][0] = max(buf[0], level)
+            self.buffer[position]['level'] = max(buf['level'], level)
 
     def pop_buffer(self, num=1):
         """Pop num lines from the front of the buffer and log them at the
@@ -549,7 +549,8 @@ class OutputBuffer(object):
         """
         for _ in range(0, num):
             self.logger.log(
-                self.buffer[0][0], self.buffer[0][1], *self.buffer[0][2]
+                self.buffer[0]['level'], self.buffer[0]['line'],
+                *self.buffer[0]['args']
             )
 
     def dump_buffer(self):
@@ -557,7 +558,7 @@ class OutputBuffer(object):
         """
         self.pop_buffer(num=len(self.buffer))
 
-    def add_line(self, level, line, pre_context_lines=0, post_context_lines=0):
+    def add_line(self, level, line, *args, **kwargs):
         """Add a line to the buffer.
 
         Args:
@@ -572,6 +573,8 @@ class OutputBuffer(object):
             one to set to log level `level`.  This defaults to 0.
         """
         current_level = level
+        pre_context_lines = kwargs.get('pre_context_lines')
+        post_context_lines = kwargs.get('post_context_lines')
         if self.post_context_lines:
             if self.post_levels:
                 current_level = self.post_levels.pop()
@@ -585,7 +588,10 @@ class OutputBuffer(object):
         if self.pre_context_lines:
             if pre_context_lines and self.buffer:
                 self.update_buffer_levels(level, pre_context_lines)
-            self.buffer.append(current_level, line, time.time())
+            self.buffer.append({
+                'level': current_level, 'line': line, 'args': args,
+                'time': time.time()
+            })
             num_pop = max(len(self.buffer) - self.pre_context_lines, 0)
             if num_pop > 0:
                 self.pop_buffer(num=num_pop)

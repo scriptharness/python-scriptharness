@@ -614,3 +614,20 @@ class TestErrorList(unittest.TestCase):
             self.assertRaises(
                 ScriptHarnessException, log.ErrorList, error_list
             )
+
+
+# TestOutputBuffer {{{1
+class TestOutputBuffer(unittest.TestCase):
+    """Test OutputBuffer.
+    """
+    def test_single_pop(self):
+        """test_log | OutputBuffer single pop_buffer
+        """
+        logger = mock.MagicMock()
+        buf = log.OutputBuffer(logger, 3, 0)
+        buf.add_line(0, "foo%s", "a")
+        buf.add_line(0, "bar%s", "b")
+        buf.add_line(0, "baz")
+        self.assertFalse(logger.log.called)
+        buf.add_line(0, "x")
+        logger.log.assert_called_once_with(0, "foo%s", "a")
