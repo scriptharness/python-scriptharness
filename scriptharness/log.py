@@ -463,10 +463,11 @@ class ErrorList(object):
                     messages.append(
                         "%s level must be an int!" % error_check_str
                     )
-                if error_check['level'] < 0:
+                elif error_check['level'] < 0:
                     ignore = True
-            elif 'exception' in error_check and not \
-                    issubclass(error_check['level'], Exception):
+            elif 'exception' in error_check and (not \
+                    isinstance(error_check['exception'], type) or not \
+                    issubclass(error_check['exception'], Exception)):
                 messages.append(
                     "%s exception must be a subclass of Exception!" %
                     error_check_str

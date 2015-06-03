@@ -592,9 +592,25 @@ class TestErrorList(unittest.TestCase):
             [{'substr': 'foo'}],
             [{'level': 0}],
             [{'level': 0, 'substr': 'foo', 'regex': re.compile("foo")}],
+            [['level', 0, 'substr', 'foo', 'regex', re.compile("foo")]],
         ]
         for error_list in elists:
+            print(error_list)
             self.assertRaises(
-                ScriptHarnessException, log.ErrorList,
-                error_list
+                ScriptHarnessException, log.ErrorList, error_list
+            )
+
+    def test_illegal_values(self):
+        """test_log | ErrorList illegal values
+        """
+        elists = [
+            [{'level': None}],
+            [{'exception': "foo"}],
+            [{'level': 1, 'substr': b'lksjdf'}],
+            [{'level': 1, 'regex': 'lksjdf'}],
+        ]
+        for error_list in elists:
+            print(error_list)
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList, error_list
             )
