@@ -543,3 +543,21 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with codecs.open(TEST_CONSOLE, 'r', 'utf-8') as console_fh:
                 self.assertEqual(string, console_fh.read().rstrip())
+
+
+# TestErrorList {{{1
+class TestErrorList(unittest.TestCase):
+    """Test ErrorList.
+    """
+    def test_check_ignore(self):
+        """test_log | ErrorList check_ignore()
+        """
+        elists = [
+            [{'level': -1, 'substr': 'foo', 'pre_context_lines': 5}],
+            [{'level': -1, 'substr': 'foo', 'post_context_lines': 5}],
+        ]
+        for error_list in elists:
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList,
+                error_list, strict=True
+            )
