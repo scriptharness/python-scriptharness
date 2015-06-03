@@ -580,9 +580,11 @@ class OutputBuffer(object):
         post_context_lines = kwargs.get('post_context_lines')
         if self.post_context_lines:
             if self.post_levels:
-                current_level = self.post_levels.pop()
+                current_level = max(current_level, self.post_levels.pop(0))
             if post_context_lines:
                 for position, post_level in enumerate(self.post_levels):
+                    if position >= post_context_lines:
+                        break
                     self.post_levels[position] = max(post_level, level)
                 length = len(self.post_levels)
                 if length < post_context_lines:
@@ -599,7 +601,7 @@ class OutputBuffer(object):
             if num_pop > 0:
                 self.pop_buffer(num=num_pop)
         else:
-            self.logger.log(current_level, line)
+            self.logger.log(current_level, line, *args)
 
 
 # OutputParser {{{1

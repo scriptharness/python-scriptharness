@@ -633,8 +633,8 @@ class TestOutputBuffer(unittest.TestCase):
         logger.log.assert_called_once_with(0, "foo%s", "a")
 
     @mock.patch('scriptharness.log.logging')
-    def test_update_buffer_levels(self, mock_logging):
-        """test_log | OutputBuffer update_buffer_levels()
+    def test_pre_context_lines(self, mock_logging):
+        """test_log | OutputBuffer pre_context_lines
         """
         logger = LoggerReplacement()
         mock_logging.getLogger.return_value = logger
@@ -649,3 +649,24 @@ class TestOutputBuffer(unittest.TestCase):
         self.assertEqual(logger.all_messages[1], (10, "bar", ()))
         self.assertEqual(logger.all_messages[2], (10, "baz", ("c", )))
         self.assertEqual(logger.all_messages[3], (10, "x", ()))
+
+    @mock.patch('scriptharness.log.logging')
+    def test_post_context_lines(self, mock_logging):
+        """test_log | OutputBuffer post_context_lines
+        """
+        logger = LoggerReplacement()
+        mock_logging.getLogger.return_value = logger
+        buf = log.OutputBuffer(logger, 0, 3)
+        buf.add_line(0, "foo")
+        buf.add_line(10, "bar", post_context_lines=3)
+        buf.add_line(15, "baz", "c", post_context_lines=1)
+        buf.add_line(0, "x")
+        buf.add_line(0, "y")
+        buf.add_line(0, "z")
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(logger.all_messages[0], (0, "foo", ()))
+        self.assertEqual(logger.all_messages[1], (10, "bar", ()))
+        self.assertEqual(logger.all_messages[2], (15, "baz", ("c", )))
+        self.assertEqual(logger.all_messages[3], (15, "x", ()))
+        self.assertEqual(logger.all_messages[4], (10, "y", ()))
+        self.assertEqual(logger.all_messages[5], (0, "z", ()))
