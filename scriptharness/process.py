@@ -73,7 +73,6 @@ def run_subprocess(queue, *args, **kwargs):
             if not line:
                 break
             queue.put(line)
-#    return handle.returncode
     sys.exit(handle.returncode)
 
 
@@ -124,7 +123,7 @@ def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
         except KeyboardInterrupt:
             logger.warning("KeyboardInterrupt: Killing processes!")
             kill_proc_tree(os.getpid(), include_parent=True)
-            raise ScriptHarnessFatal()
+            raise ScriptHarnessFatal("KeyboardInterrupt")
         except Empty:
             # This is to avoid "During handling of the above exception,
             #                   another exception occurred:"
