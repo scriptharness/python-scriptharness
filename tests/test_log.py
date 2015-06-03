@@ -15,6 +15,7 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
+import pprint
 import re
 import scriptharness.log as log
 import six
@@ -181,7 +182,6 @@ class TestLogMethodInit(unittest.TestCase):
         def test_func(*args, **kwargs):
             """test method"""
             return args, kwargs
-        import pprint
         pprint.pprint(log.LogMethod.default_config)
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
@@ -631,3 +631,21 @@ class TestOutputBuffer(unittest.TestCase):
         self.assertFalse(logger.log.called)
         buf.add_line(0, "x")
         logger.log.assert_called_once_with(0, "foo%s", "a")
+
+    @mock.patch('scriptharness.log.logging')
+    def test_update_buffer_levels(self, mock_logging):
+        """test_log | OutputBuffer update_buffer_levels()
+        """
+        logger = LoggerReplacement()
+        mock_logging.getLogger.return_value = logger
+        buf = log.OutputBuffer(logger, 4, 0)
+        buf.add_line(0, "foo", "a")
+        buf.add_line(0, "bar")
+        buf.add_line(0, "baz", "c")
+        buf.add_line(10, "x", pre_context_lines=2)
+        buf.dump_buffer()
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(logger.all_messages[0], (0, "foo", ("a", )))
+        self.assertEqual(logger.all_messages[1], (10, "bar", ()))
+        self.assertEqual(logger.all_messages[2], (10, "baz", ("c", )))
+        self.assertEqual(logger.all_messages[3], (10, "x", ()))

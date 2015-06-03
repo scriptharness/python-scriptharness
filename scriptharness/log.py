@@ -537,7 +537,9 @@ class OutputBuffer(object):
             from the end of the buffer.
         """
         start = max(len(self.buffer) - pre_context_lines, 0)
-        for position, buf in enumerate(self.buffer, start=start):
+        for position, buf in enumerate(self.buffer):
+            if position < start:
+                continue
             self.buffer[position]['level'] = max(buf['level'], level)
 
     def pop_buffer(self, num=1):
@@ -552,6 +554,7 @@ class OutputBuffer(object):
                 self.buffer[0]['level'], self.buffer[0]['line'],
                 *self.buffer[0]['args']
             )
+            self.buffer.pop(0)
 
     def dump_buffer(self):
         """Write all the buffered log lines to the log.
