@@ -685,25 +685,45 @@ class TestOutputParser(unittest.TestCase):
             error_list, logger=logger
         )
 
-    def test_substr_add_line(self):
-        """test_log | OutputParser substr add_line()
+    def test_simple_add_line(self):
+        """test_log | OutputParser simple add_line()
         """
-        error_list = log.ErrorList(
-            [{'substr': 'asdf', 'level': logging.ERROR}]
-        )
+        for error_list in (
+                [{'substr': 'asdf', 'level': logging.ERROR,
+                  'explanation': "because"}],
+                [{'regex': re.compile('asdf'), 'level': logging.ERROR,
+                  'explanation': "because"}]):
+            print(error_list)
+            error_list = log.ErrorList(error_list)
+            output_parser = self.get_output_parser(error_list)
+            output_parser.add_line("foo")
+            self.assertEqual(
+                output_parser.logger.all_messages[0],
+                (logging.INFO, ' foo', ())
+            )
+            output_parser.add_line("barasdfbaz")
+            self.assertEqual(
+                output_parser.logger.all_messages[1],
+                (logging.ERROR, ' barasdfbaz', ())
+            )
+            self.assertEqual(
+                output_parser.logger.all_messages[2],
+                (logging.ERROR, ' because', ())
+            )
+
+    def test_ignore(self):
+        """test_log | OutputParser ignore
+        """
+        error_list = log.ErrorList([{'substr': 'asdf', 'level': -1}])
         output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("barasdfbaz")
+        self.assertEqual(0, len(output_parser.logger.all_messages))
         output_parser.add_line("foo")
         self.assertEqual(
-            output_parser.logger.all_messages[0],
-            (logging.INFO, ' foo', ())
-        )
-        output_parser.add_line("barasdfbaz")
-        self.assertEqual(
-            output_parser.logger.all_messages[1],
-            (logging.ERROR, ' barasdfbaz', ())
+            output_parser.logger.all_messages,
+            [(logging.INFO, ' foo', ())]
         )
 
-    # regex
+    # num_errors
     # exception with context_buffer
-    # ignore
-    # warning
+    # warning / num_warnings
