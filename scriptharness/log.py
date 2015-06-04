@@ -457,7 +457,6 @@ class ErrorList(list):
             if not isinstance(error_check, dict):
                 messages.append("%s is not a dict!" % error_check_str)
                 continue
-            self.exactly_one('level', 'exception', error_check, messages)
             if 'level' in error_check:
                 if not isinstance(error_check['level'], int):
                     messages.append(
@@ -465,7 +464,12 @@ class ErrorList(list):
                     )
                 elif error_check['level'] < 0:
                     ignore = True
-            elif 'exception' in error_check and (not \
+            elif 'exception' not in error_check:
+                messages.append(
+                    "%s level must be set if exception is not set!" %
+                    error_check_str
+                )
+            if 'exception' in error_check and (not \
                     isinstance(error_check['exception'], type) or not \
                     issubclass(error_check['exception'], Exception)):
                 messages.append(
@@ -650,8 +654,10 @@ class OutputParser(object):
         for line in messages.split('\n'):
             if self.context_buffer:
                 self.context_buffer.add_line(
-                    level, line, error_check.get('pre_context_lines', 0),
-                    error_check.get('post_context_lines', 0),
+                    level, line,
+                    pre_context_lines=error_check.get('pre_context_lines', 0),
+                    post_context_lines=error_check.get('post_context_lines',
+                                                       0),
                     *args
                 )
             else:
@@ -683,13 +689,16 @@ class OutputParser(object):
                 messages = [' {}'.format(line % args)]
                 if error_check.get('explanation'):
                     messages.append(' %s' % error_check['explanation'])
+                # exception default level is logging.ERROR
+                level = error_check.get('level', logging.ERROR)
+                if level >= 0:  # ignore negative levels
+                    self.add_buffer(level, '\n'.join(messages),
+                                    error_check=error_check)
                 if error_check.get('exception'):
                     if self.context_buffer:
                         self.context_buffer.dump_buffer()
                     raise error_check['exception'](messages)
-                level = error_check['level']
-                if level >= 0:  # ignore negative levels
-                    self.add_buffer(level, '\n'.join(messages), error_check)
                 break
         else:
-            self.add_buffer(logging.INFO, ' %s' % line, *args)
+            self.add_buffer(logging.INFO, ' %s' % line, error_check=None,
+                            *args)
