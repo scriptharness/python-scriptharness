@@ -677,12 +677,13 @@ class TestOutputParser(unittest.TestCase):
     """Test OutputParser.
     """
     @staticmethod
-    def get_output_parser(error_list):
+    def get_output_parser(error_list, **kwargs):
         """helper to create OutputParser
         """
         logger = LoggerReplacement()
         return log.OutputParser(
-            error_list, logger=logger
+            error_list, logger=logger,
+            **kwargs
         )
 
     def test_simple_add_line(self):
@@ -710,12 +711,15 @@ class TestOutputParser(unittest.TestCase):
                 output_parser.logger.all_messages[2],
                 (logging.ERROR, ' because', ())
             )
+            self.assertEqual(output_parser.history['num_errors'], 1)
+            self.assertEqual(output_parser.history['num_warnings'], 0)
 
     def test_ignore(self):
         """test_log | OutputParser ignore
         """
         error_list = log.ErrorList([{'substr': 'asdf', 'level': -1}])
-        output_parser = self.get_output_parser(error_list)
+        # The foo="bar" does nothing except more code coverage
+        output_parser = self.get_output_parser(error_list, foo="bar")
         output_parser.add_line("barasdfbaz")
         self.assertEqual(0, len(output_parser.logger.all_messages))
         output_parser.add_line("foo")
@@ -724,6 +728,19 @@ class TestOutputParser(unittest.TestCase):
             [(logging.INFO, ' foo', ())]
         )
 
-    # num_errors
+    def test_warning(self):
+        """test_log | OutputParser warning
+        """
+        error_list = log.ErrorList(
+            [{'substr': 'asdf', 'level': logging.WARNING}]
+        )
+        output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("barasdfbaz")
+        self.assertEqual(
+            output_parser.logger.all_messages,
+            [(logging.WARNING, ' barasdfbaz', ())]
+        )
+        self.assertEqual(output_parser.history['num_errors'], 0)
+        self.assertEqual(output_parser.history['num_warnings'], 1)
+
     # exception with context_buffer
-    # warning / num_warnings

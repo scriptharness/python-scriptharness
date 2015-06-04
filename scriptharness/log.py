@@ -624,8 +624,7 @@ class OutputParser(object):
             pass
         self.logger = logger or logging.getLogger(LOGGER_NAME)
         self.error_list = error_list
-        if not hasattr(self, 'history'):
-            self.history = {}
+        self.history = {}
         self.history['num_errors'] = 0
         self.history['num_warnings'] = 0
         self.history['worst_level'] = 0
@@ -636,7 +635,7 @@ class OutputParser(object):
                 error_list.post_context_lines
             )
 
-    def add_buffer(self, level, line, error_check=None, *args):
+    def add_buffer(self, level, messages, error_check=None, *args):
         """Add the line to self.context_buffer if it exists, otherwise log it.
 
         Args:
@@ -648,14 +647,15 @@ class OutputParser(object):
             first matched line, if applicable.  Defaults to None.
         """
         error_check = error_check or {}
-        if self.context_buffer:
-            self.context_buffer.add_line(
-                level, line, error_check.get('pre_context_lines', 0),
-                error_check.get('post_context_lines', 0),
-                *args
-            )
-        else:
-            self.logger.log(level, line, *args)
+        for line in messages.split('\n'):
+            if self.context_buffer:
+                self.context_buffer.add_line(
+                    level, line, error_check.get('pre_context_lines', 0),
+                    error_check.get('post_context_lines', 0),
+                    *args
+                )
+            else:
+                self.logger.log(level, line, *args)
         if level > logging.WARNING:
             self.history['num_errors'] += 1
         elif level > logging.INFO:
@@ -688,10 +688,8 @@ class OutputParser(object):
                         self.context_buffer.dump_buffer()
                     raise error_check['exception'](messages)
                 level = error_check['level']
-                if level < 0:  # IGNORE
-                    break
-                for message in messages:
-                    self.add_buffer(level, message, error_check)
+                if level >= 0:  # ignore negative levels
+                    self.add_buffer(level, '\n'.join(messages), error_check)
                 break
         else:
             self.add_buffer(logging.INFO, ' %s' % line, *args)
