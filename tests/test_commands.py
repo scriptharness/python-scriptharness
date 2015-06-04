@@ -4,12 +4,14 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import logging
 import mock
 import os
 import pprint
 import scriptharness.commands as commands
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
+import scriptharness.log as log
 import scriptharness.status as status
 import shutil
 import six
@@ -23,6 +25,7 @@ TEST_JSON = os.path.join(os.path.dirname(__file__), 'http', 'test_config.json')
 TEST_DIR = "this_dir_should_not_exist"
 
 
+# Helper functions {{{1
 def cleanup():
     """Cleanliness"""
     if os.path.exists(TEST_DIR):
@@ -38,6 +41,17 @@ def get_command(command=None, **kwargs):
         ]
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.Command(command, **kwargs)
+
+def get_parsed_command(error_list, command=None, **kwargs):
+    """Create a ParsedCommand for testing
+    """
+    if command is None:
+        command = [
+            sys.executable, "-c",
+            'from __future__ import print_function; print("hello");'
+        ]
+    kwargs.setdefault('logger', LoggerReplacement())
+    return commands.ParsedCommand(command, error_list, **kwargs)
 
 def get_timeout_cmdlns():
     """Create a list of commandline commands to run to test timeouts.
@@ -56,6 +70,8 @@ def get_timeout_cmdlns():
     ]
     return cmdlns
 
+
+# TestFunctions {{{1
 class TestFunctions(unittest.TestCase):
     """Test the command functions
     """
@@ -268,3 +284,26 @@ class TestRun(unittest.TestCase):
         mock_multiprocessing.Process = raise_error
         value = commands.run("echo", halt_on_failure=False)
         self.assertEqual(value, status.TIMEOUT)
+
+
+# TestParsedCommand {{{1
+class TestParsedCommand(unittest.TestCase):
+    """ParsedCommand()
+    """
+    @staticmethod
+    def test_basic():
+        """Change this test once ParsedCommand is fleshed out
+        """
+        error_list = log.ErrorList([
+            {'substr': 'asdf', 'level': logging.ERROR}
+        ])
+        get_parsed_command(error_list)
+
+    def test_bad_errorlist(self):
+        """test_commands | ParsedCommand bad error_list
+        """
+        error_list = {'substr': 'asdf', 'level': logging.ERROR}
+        self.assertRaises(
+            ScriptHarnessException, get_parsed_command,
+            error_list
+        )
