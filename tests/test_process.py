@@ -5,7 +5,9 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import mock
+import os
 import psutil
+from scriptharness.exceptions import ScriptHarnessFatal
 import scriptharness.process as shprocess
 from scriptharness.unicode import to_unicode
 from six.moves.queue import Queue
@@ -73,3 +75,26 @@ class TestProcess(unittest.TestCase):
         )
         line = queue.get(block=True, timeout=.1)
         self.assertEqual(to_unicode("foo"), to_unicode(line).rstrip())
+
+    @mock.patch('scriptharness.process.psutil')
+    def test_keyboard_interrupt(self, mock_psutil):
+        """test_process | KeyboardInterrupt
+        """
+        class FakeQueue(object):
+            """Raises KeyboardInterrupt"""
+            def get(self, **_):
+                """Raise KeyboardInterrupt"""
+                self.raise_ki()
+            @staticmethod
+            def raise_ki():
+                """Silence pylint"""
+                raise KeyboardInterrupt()
+        queue = FakeQueue()
+        logger = mock.MagicMock()
+        runner = mock.MagicMock()
+        add_line_cb = mock.MagicMock()
+        self.assertRaises(
+            ScriptHarnessFatal, shprocess.watch_runner,
+            logger, queue, runner, add_line_cb
+        )
+        mock_psutil.Process.assert_called_once_with(os.getpid())
