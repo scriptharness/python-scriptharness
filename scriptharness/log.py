@@ -636,7 +636,7 @@ class OutputParser(object):
                 error_list.post_context_lines
             )
 
-    def add_buffer(self, level, line, error_check=None):
+    def add_buffer(self, level, line, error_check=None, *args):
         """Add the line to self.context_buffer if it exists, otherwise log it.
 
         Args:
@@ -652,9 +652,10 @@ class OutputParser(object):
             self.context_buffer.add_line(
                 level, line, error_check.get('pre_context_lines', 0),
                 error_check.get('post_context_lines', 0),
+                *args
             )
         else:
-            self.logger.log(level, line)
+            self.logger.log(level, line, *args)
         if level > logging.WARNING:
             self.history['num_errors'] += 1
         elif level > logging.INFO:
@@ -671,7 +672,7 @@ class OutputParser(object):
           *args: Optional args to format the line with.
         """
         line = to_unicode(line.rstrip())
-        for error_check in self.error_list:
+        for error_check in self.error_list.error_list:
             match = False
             if 'substr' in error_check:
                 if error_check['substr'] in line:
@@ -693,4 +694,4 @@ class OutputParser(object):
                     self.add_buffer(level, message, error_check)
                 break
         else:
-            self.add_buffer(logging.INFO, ' %s' % line)
+            self.add_buffer(logging.INFO, ' %s' % line, *args)

@@ -670,3 +670,40 @@ class TestOutputBuffer(unittest.TestCase):
         self.assertEqual(logger.all_messages[3], (15, "x", ()))
         self.assertEqual(logger.all_messages[4], (10, "y", ()))
         self.assertEqual(logger.all_messages[5], (0, "z", ()))
+
+
+# TestOutputParser {{{1
+class TestOutputParser(unittest.TestCase):
+    """Test OutputParser.
+    """
+    @staticmethod
+    def get_output_parser(error_list):
+        """helper to create OutputParser
+        """
+        logger = LoggerReplacement()
+        return log.OutputParser(
+            error_list, logger=logger
+        )
+
+    def test_substr_add_line(self):
+        """test_log | OutputParser substr add_line()
+        """
+        error_list = log.ErrorList(
+            [{'substr': 'asdf', 'level': logging.ERROR}]
+        )
+        output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("foo")
+        self.assertEqual(
+            output_parser.logger.all_messages[0],
+            (logging.INFO, ' foo', ())
+        )
+        output_parser.add_line("barasdfbaz")
+        self.assertEqual(
+            output_parser.logger.all_messages[1],
+            (logging.ERROR, ' barasdfbaz', ())
+        )
+
+    # regex
+    # exception with context_buffer
+    # ignore
+    # warning
