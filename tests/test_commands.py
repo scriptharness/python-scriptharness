@@ -282,8 +282,8 @@ class TestRun(unittest.TestCase):
                 pass
             raise ScriptHarnessTimeout("foo")
         mock_multiprocessing.Process = raise_error
-        value = commands.run("echo", halt_on_failure=False)
-        self.assertEqual(value, status.TIMEOUT)
+        cmd = commands.run("echo", halt_on_failure=False)
+        self.assertEqual(cmd.history['status'], status.TIMEOUT)
 
 
 # TestParsedCommand {{{1

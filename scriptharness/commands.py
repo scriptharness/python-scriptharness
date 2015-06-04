@@ -46,7 +46,7 @@ STRINGS = {
 }
 
 
-# Functions {{{1
+# Helper functions {{{1
 def check_output(command, logger_name="scriptharness.commands.check_output",
                  level=logging.INFO, log_output=True, **kwargs):
     """Wrap subprocess.check_output with logging
@@ -72,7 +72,6 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
     return output
 
 
-# Command and helpers {{{1
 def detect_errors(command):
     """ Very basic detect_errors_cb for Command.
 
@@ -89,6 +88,8 @@ def detect_errors(command):
         status = scriptharness.status.ERROR
     return status
 
+
+# Command {{{1
 class Command(object):
     """Basic command: run and log output.
 
@@ -232,38 +233,6 @@ class Command(object):
         self.finish_process()
 
 
-def run(command, halt_on_failure=False, **kwargs):
-    """Shortcut for running a Command.
-
-    Not entirely sure if this should also catch ScriptHarnessFatal, as those
-    are explicitly trying to kill the script.
-
-    Args:
-      command (list or str): Command line to run.
-      **kwargs: kwargs for subprocess.Popen.
-
-    Returns:
-      command exit code (int)
-
-    Raises:
-      scriptharness.exceptions.ScriptHarnessFatal: on fatal error
-    """
-    message = ""
-    try:
-        cmd = Command(command, **kwargs)
-        return cmd.run()
-    except ScriptHarnessError as exc_info:
-        message = "error: %s" % exc_info
-        status = scriptharness.status.ERROR
-    except ScriptHarnessTimeout as exc_info:
-        message = "timeout: %s" % exc_info
-        status = scriptharness.status.TIMEOUT
-    if halt_on_failure and message:
-        raise ScriptHarnessFatal("Fatal %s" % message)
-    else:
-        return status
-
-
 # ParsedCommand {{{1
 class ParsedCommand(OutputParser, Command):
     """Parse each line of output for errors.
@@ -293,26 +262,6 @@ class Output(Command):
 ##                            return_type='output', save_tmpfiles=False,
 ##                            throw_exception=False, fatal_exit_code=2,
 ##                            ignore_errors=False, success_codes=None):
-##    """Similar to run_command, but where run_command is an
-##    os.system(command) analog, get_output_from_command is a `command`
-##    analog.
-##
-##    Less error checking by design, though if we figure out how to
-##    do it without borking the output, great.
-##
-##
-##    ignore_errors=True is for the case where a command might produce standard
-##    error output, but you don't particularly care; setting to True will
-##    cause standard error to be logged at DEBUG rather than ERROR
-##    """
-##    if cwd:
-##        if not os.path.isdir(cwd):
-##            level = logging.ERROR
-##            if halt_on_failure:
-##                level = logging.FATAL
-##            context.logger.log("Can't run command %s in non-existent directory %s!" %
-##                     (command, cwd), level=level)
-##            return None
 ##        context.logger.info("Getting output from command: %s in %s" % (command, cwd))
 ##    else:
 ##        context.logger.info("Getting output from command: %s" % command)
@@ -400,3 +349,38 @@ class Output(Command):
 ##        return (tmp_stdout_filename, tmp_stderr_filename)
 ##    else:
 ##        return output
+
+
+# run {{{1
+def run(command, halt_on_failure=False, **kwargs):
+    """Shortcut for running a Command.
+
+    Not entirely sure if this should also catch ScriptHarnessFatal, as those
+    are explicitly trying to kill the script.
+
+    Args:
+      command (list or str): Command line to run.
+      **kwargs: kwargs for subprocess.Popen.
+
+    Returns:
+      command exit code (int)
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessFatal: on fatal error
+    """
+    message = ""
+    try:
+        cmd = Command(command, **kwargs)
+        cmd.run()
+        return cmd
+    except ScriptHarnessError as exc_info:
+        message = "error: %s" % exc_info
+        status = scriptharness.status.ERROR
+    except ScriptHarnessTimeout as exc_info:
+        message = "timeout: %s" % exc_info
+        status = scriptharness.status.TIMEOUT
+    if halt_on_failure and message:
+        raise ScriptHarnessFatal("Fatal %s" % message)
+    else:
+        cmd.history.setdefault('status', status)
+        return cmd
