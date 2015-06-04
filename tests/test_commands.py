@@ -9,7 +9,7 @@ import os
 import pprint
 import scriptharness.commands as commands
 from scriptharness.exceptions import ScriptHarnessError, \
-    ScriptHarnessException, ScriptHarnessTimeout
+    ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
 import scriptharness.status as status
 import shutil
 import six
@@ -220,3 +220,51 @@ class TestCommand(unittest.TestCase):
             expected_env = {b'foo': b'bar', b'x': b'y',
                             b'SystemRoot': b'FakeSystemRoot'}
         self.assertEqual(command.fix_env(env), expected_env)
+
+
+# TestRun {{{1
+class TestRun(unittest.TestCase):
+    """test commands.run()
+    """
+    @mock.patch('scriptharness.process')
+    def test_error(self, mock_process):
+        """test_commands | run() error
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessError"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessError("foo")
+        mock_process.watch_process = raise_error
+        self.assertRaises(
+            ScriptHarnessFatal, commands.run,
+            "echo", halt_on_failure=True
+        )
+
+    @mock.patch('scriptharness.process')
+    def test_timeout(self, mock_process):
+        """test_commands | run() timeout
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessTimeout"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessTimeout("foo")
+        mock_process.watch_process = raise_error
+        self.assertRaises(
+            ScriptHarnessFatal, commands.run,
+            "echo", halt_on_failure=True
+        )
+
+    @mock.patch('scriptharness.process')
+    def test_no_halt(self, mock_process):
+        """test_commands | run() halt_on_error=False
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessTimeout"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessTimeout("foo")
+        mock_process.watch_process = raise_error
+        value = commands.run("echo", halt_on_failure=False)
+        self.assertEqual(value, 10)
