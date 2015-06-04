@@ -193,7 +193,10 @@ class Command(object):
     def finish_process(self):
         """Here for subclassing.
         """
-        pass
+        if self.history['status'] != scriptharness.status.SUCCESS:
+            raise ScriptHarnessError(
+                self.strings["error"] % {'command': self.command,}
+            )
 
     def run(self):
         """Run the command.
@@ -226,10 +229,7 @@ class Command(object):
             output_timeout=output_timeout, max_timeout=max_timeout
         )
         self.history['status'] = self.detect_error_cb(self)
-        if self.history['status'] != scriptharness.status.SUCCESS:
-            raise ScriptHarnessError(
-                self.strings["error"] % {'command': self.command,}
-            )
+        self.finish_process()
 
 
 def run(command, halt_on_failure=False, **kwargs):

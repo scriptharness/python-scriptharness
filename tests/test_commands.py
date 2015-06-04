@@ -36,6 +36,7 @@ def get_command(command=None, **kwargs):
             sys.executable, "-c",
             'from __future__ import print_function; print("hello");'
         ]
+    kwargs.setdefault('logger', LoggerReplacement())
     return commands.Command(command, **kwargs)
 
 def get_timeout_cmdlns():
@@ -121,23 +122,27 @@ class TestDetectErrors(unittest.TestCase):
 class TestCommand(unittest.TestCase):
     """Test Command()
     """
-    @mock.patch('scriptharness.commands.logging')
-    def test_simple_command(self, mock_logging):
+    def setUp(self):
+        """Cleanliness"""
+        assert self  # silence pylint
+        cleanup()
+
+    def tearDown(self):
+        """Cleanliness"""
+        assert self  # silence pylint
+        cleanup()
+
+    def test_simple_command(self):
         """test_commands | simple Command.run()
         """
-        logger = LoggerReplacement()
-        mock_logging.getLogger.return_value = logger
         command = get_command()
         command.run()
-        pprint.pprint(logger.all_messages)
-        self.assertEqual(logger.all_messages[-1][2][0], "hello")
+        pprint.pprint(command.logger.all_messages)
+        self.assertEqual(command.logger.all_messages[-1][2][0], "hello")
 
-    @mock.patch('scriptharness.commands.logging')
-    def test_log_env(self, mock_logging):
+    def test_log_env(self):
         """test_commands | Command.log_env()
         """
-        logger = LoggerReplacement()
-        mock_logging.getLogger.return_value = logger
         env = {"foo": "bar"}
         command = get_command(
             env=env,
@@ -148,7 +153,7 @@ class TestCommand(unittest.TestCase):
         if os.name != 'nt' and six.PY2:
             env_line = "u'foo': u'bar'"
         count = 0
-        for line in logger.all_messages:
+        for line in command.logger.all_messages:
             if line[1] == commands.STRINGS['command']['env']:
                 print(line)
                 self.assertTrue(env_line in line[2][0]["env"])
@@ -160,6 +165,17 @@ class TestCommand(unittest.TestCase):
         """
         command = get_command(cwd=TEST_DIR)
         self.assertRaises(ScriptHarnessException, command.run)
+
+    def test_good_cwd(self):
+        """test_commands | Command good cwd
+        """
+        os.makedirs(TEST_DIR)
+        command = get_command(cwd=TEST_DIR)
+        command.log_start()
+        self.assertEqual(
+            command.logger.all_messages[0][1],
+            command.strings["start_with_cwd"],
+        )
 
     def test_output_timeout(self):
         """test_commands | Command output_timeout
