@@ -188,3 +188,19 @@ class TestCommand(unittest.TestCase):
             command=[sys.executable, "-c", 'import sys; sys.exit(1)']
         )
         self.assertRaises(ScriptHarnessError, command.run)
+
+    @mock.patch('scriptharness.commands.os')
+    def test_fix_env(self, mock_os):
+        """test_commands | Command.fix_env()
+        """
+        mock_os.name = 'nt'
+        mock_os.environ = {u'SystemRoot': u'FakeSystemRoot'}
+        command = get_command()
+        env = {u'foo': u'bar', b'x': b'y'}
+        if six.PY3:
+            expected_env = {u'foo': u'bar', b'x': b'y',
+                            u'SystemRoot': u'FakeSystemRoot'}
+        else:
+            expected_env = {b'foo': b'bar', b'x': b'y',
+                            b'SystemRoot': b'FakeSystemRoot'}
+        self.assertEqual(command.fix_env(env), expected_env)
