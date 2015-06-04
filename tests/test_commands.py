@@ -226,8 +226,8 @@ class TestCommand(unittest.TestCase):
 class TestRun(unittest.TestCase):
     """test commands.run()
     """
-    @mock.patch('scriptharness.process')
-    def test_error(self, mock_process):
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_error(self, mock_multiprocessing):
         """test_commands | run() error
         """
         def raise_error(*args, **kwargs):
@@ -235,14 +235,14 @@ class TestRun(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessError("foo")
-        mock_process.watch_process = raise_error
+        mock_multiprocessing.Process = raise_error
         self.assertRaises(
             ScriptHarnessFatal, commands.run,
             "echo", halt_on_failure=True
         )
 
-    @mock.patch('scriptharness.process')
-    def test_timeout(self, mock_process):
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_timeout(self, mock_multiprocessing):
         """test_commands | run() timeout
         """
         def raise_error(*args, **kwargs):
@@ -250,14 +250,14 @@ class TestRun(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessTimeout("foo")
-        mock_process.watch_process = raise_error
+        mock_multiprocessing.Process = raise_error
         self.assertRaises(
             ScriptHarnessFatal, commands.run,
             "echo", halt_on_failure=True
         )
 
-    @mock.patch('scriptharness.process')
-    def test_no_halt(self, mock_process):
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_no_halt(self, mock_multiprocessing):
         """test_commands | run() halt_on_error=False
         """
         def raise_error(*args, **kwargs):
@@ -265,6 +265,6 @@ class TestRun(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessTimeout("foo")
-        mock_process.watch_process = raise_error
+        mock_multiprocessing.Process = raise_error
         value = commands.run("echo", halt_on_failure=False)
-        self.assertEqual(value, 10)
+        self.assertEqual(value, status.TIMEOUT)
