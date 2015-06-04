@@ -292,7 +292,7 @@ class LogMethod(object):
 
 
 # ErrorList {{{1
-class ErrorList(object):
+class ErrorList(list):
     """Error lists, to describe how to parse output.  In object form for
     better validation.
 
@@ -334,7 +334,7 @@ class ErrorList(object):
         self.strict = strict
         (self.pre_context_lines, self.post_context_lines) = \
             self.validate_error_list(error_list)
-        self.error_list = error_list
+        super(ErrorList, self).__init__(error_list)
 
     @staticmethod
     def check_context_lines(context_lines, orig_context_lines, name, messages):
@@ -672,7 +672,7 @@ class OutputParser(object):
           *args: Optional args to format the line with.
         """
         line = to_unicode(line.rstrip())
-        for error_check in self.error_list.error_list:
+        for error_check in self.error_list:
             match = False
             if 'substr' in error_check:
                 if error_check['substr'] in line:
