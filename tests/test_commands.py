@@ -42,7 +42,7 @@ def get_command(command=None, **kwargs):
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.Command(command, **kwargs)
 
-def get_parsed_command(error_list, command=None, **kwargs):
+def get_parsed_command(command=None, **kwargs):
     """Create a ParsedCommand for testing
     """
     if command is None:
@@ -51,7 +51,7 @@ def get_parsed_command(error_list, command=None, **kwargs):
             'from __future__ import print_function; print("hello");'
         ]
     kwargs.setdefault('logger', LoggerReplacement())
-    return commands.ParsedCommand(command, error_list, **kwargs)
+    return commands.ParsedCommand(command, **kwargs)
 
 def get_timeout_cmdlns():
     """Create a list of commandline commands to run to test timeouts.
@@ -133,6 +133,31 @@ class TestDetectErrors(unittest.TestCase):
         for value in (1, None):
             command.history['return_value'] = value
             self.assertEqual(commands.detect_errors(command), status.ERROR)
+
+
+# TestDetectParsedErrors {{{1
+class TestDetectParsedErrors(unittest.TestCase):
+    """Test detect_parsed_errors()
+    """
+    def test_success(self):
+        """test_commands | detect_parsed_errors() success
+        """
+        error_list = log.ErrorList([])
+        command = get_parsed_command(error_list=error_list)
+        command.parser.history['num_errors'] = 0
+        self.assertEqual(commands.detect_parsed_errors(command),
+                         status.SUCCESS)
+
+    def test_failure(self):
+        """test_commands | detect_parsed_errors() failure
+        """
+        error_list = log.ErrorList([])
+        command = get_parsed_command(error_list=error_list)
+        for value in (1, 20):
+            command.parser.history['num_errors'] = value
+            self.assertEqual(commands.detect_parsed_errors(command),
+                             status.ERROR)
+
 
 # TestCommand {{{1
 class TestCommand(unittest.TestCase):
@@ -290,20 +315,28 @@ class TestRun(unittest.TestCase):
 class TestParsedCommand(unittest.TestCase):
     """ParsedCommand()
     """
-    @staticmethod
-    def test_basic():
-        """Change this test once ParsedCommand is fleshed out
+    def test_parser_kwarg(self):
+        """test_commands | ParsedCommand() parser kwarg
         """
         error_list = log.ErrorList([
-            {'substr': 'asdf', 'level': logging.ERROR}
+            {'substr': 'ell', 'level': logging.WARNING}
         ])
-        get_parsed_command(error_list)
+        logger = LoggerReplacement()
+        parser = log.OutputParser(error_list, logger=logger)
+        cmd = get_parsed_command(parser=parser)
+        cmd.run()
+        self.assertEqual(parser.history['num_warnings'], 1)
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(
+            logger.all_messages,
+            [(logging.WARNING, ' hello', ())]
+        )
 
     def test_bad_errorlist(self):
         """test_commands | ParsedCommand bad error_list
         """
-        error_list = {'substr': 'asdf', 'level': logging.ERROR}
-        self.assertRaises(
-            ScriptHarnessException, get_parsed_command,
-            error_list
-        )
+        for error_list in (None, {'substr': 'asdf', 'level': logging.ERROR}):
+            self.assertRaises(
+                ScriptHarnessException, get_parsed_command,
+                error_list
+            )

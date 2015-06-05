@@ -156,8 +156,7 @@ class Command(object):
         self.command = command
         self.logger = logger or logging.getLogger(LOGGER_NAME)
         self.detect_error_cb = detect_error_cb or detect_errors
-        if not hasattr(self, 'history'):
-            self.history = {}
+        self.history = {}
         self.kwargs = kwargs or {}
         self.strings = deepcopy(STRINGS['command'])
         self.process = None
