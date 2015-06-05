@@ -340,3 +340,23 @@ class TestParsedCommand(unittest.TestCase):
                 ScriptHarnessException, get_parsed_command,
                 error_list
             )
+
+    def test_parse(self):
+        """test_commands | parse()
+        """
+        error_list = log.ErrorList([
+            {'substr': 'ell', 'level': logging.WARNING}
+        ])
+        logger = LoggerReplacement()
+        parser = log.OutputParser(error_list, logger=logger)
+        cmd = commands.parse(
+            [sys.executable, "-c",
+             'from __future__ import print_function; print("hello");'],
+            parser=parser
+        )
+        self.assertEqual(parser.history['num_warnings'], 1)
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(
+            logger.all_messages,
+            [(logging.WARNING, ' hello', ())]
+        )
