@@ -284,7 +284,7 @@ class Output(Command):
     """
     def __init__(self, *args, **kwargs):
         super(Output, self).__init__(*args, **kwargs)
-        self.strings = deepcopy(STRINGS['command'])
+        self.strings = deepcopy(STRINGS['output'])
         self.stdout = tempfile.NamedTemporaryFile(delete=False)
         self.stderr = tempfile.NamedTemporaryFile(delete=False)
         self.logger.debug(
@@ -304,12 +304,12 @@ class Output(Command):
     def cleanup(self, level=logging.INFO):
         """Clean up stdout and stderr temp files.
         """
-        if os.path.exists(self.stdout):
-            self.logger.log(level, "Cleaning up stdout %s", self.stdout)
-            os.remove(self.stdout)
-        if os.path.exists(self.stderr):
-            self.logger.log(level, "Cleaning up stderr %s", self.stderr)
-            os.remove(self.stderr)
+        if os.path.exists(self.stdout.name):
+            self.logger.log(level, "Cleaning up stdout %s", self.stdout.name)
+            os.remove(self.stdout.name)
+        if os.path.exists(self.stderr.name):
+            self.logger.log(level, "Cleaning up stderr %s", self.stderr.name)
+            os.remove(self.stderr.name)
 
 
 # run {{{1
@@ -364,7 +364,7 @@ def get_text_output(command, level=logging.INFO, **kwargs):
     cmd = Output(command, **kwargs)
     # TODO catch exceptions
     cmd.run()
-    with open(cmd.stdout) as filehandle:
+    with open(cmd.stdout.name) as filehandle:
         output = filehandle.read()
     cmd.logger.log(level, "Got output:")
     for line in output:
