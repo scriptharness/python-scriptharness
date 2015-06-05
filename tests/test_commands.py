@@ -4,6 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from contextlib import contextmanager
 import logging
 import mock
 import os
@@ -13,6 +14,7 @@ from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
 import scriptharness.log as log
 import scriptharness.status as status
+from scriptharness.unicode import to_unicode
 import shutil
 import six
 import subprocess
@@ -23,6 +25,10 @@ from . import LoggerReplacement
 
 TEST_JSON = os.path.join(os.path.dirname(__file__), 'http', 'test_config.json')
 TEST_DIR = "this_dir_should_not_exist"
+TEST_COMMAND = [
+    sys.executable, "-c",
+    'from __future__ import print_function; print("hello");'
+]
 
 
 # Helper functions {{{1
@@ -35,10 +41,7 @@ def get_command(command=None, **kwargs):
     """Create a Command for testing
     """
     if command is None:
-        command = [
-            sys.executable, "-c",
-            'from __future__ import print_function; print("hello");'
-        ]
+        command = TEST_COMMAND
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.Command(command, **kwargs)
 
@@ -46,12 +49,23 @@ def get_parsed_command(command=None, **kwargs):
     """Create a ParsedCommand for testing
     """
     if command is None:
-        command = [
-            sys.executable, "-c",
-            'from __future__ import print_function; print("hello");'
-        ]
+        command = TEST_COMMAND
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.ParsedCommand(command, **kwargs)
+
+@contextmanager
+def get_output(command=None, **kwargs):
+    """Create an Output for testing
+    """
+    if command is None:
+        command = TEST_COMMAND
+    kwargs.setdefault('logger', LoggerReplacement())
+    cmd = commands.Output(command, **kwargs)
+    try:
+        yield cmd
+    finally:
+        cmd.cleanup()
+
 
 def get_timeout_cmdlns():
     """Create a list of commandline commands to run to test timeouts.
@@ -349,11 +363,7 @@ class TestParsedCommand(unittest.TestCase):
         ])
         logger = LoggerReplacement()
         parser = log.OutputParser(error_list, logger=logger)
-        cmd = commands.parse(
-            [sys.executable, "-c",
-             'from __future__ import print_function; print("hello");'],
-            parser=parser
-        )
+        cmd = commands.parse(TEST_COMMAND, parser=parser)
         self.assertTrue(isinstance(cmd, commands.ParsedCommand))
         self.assertEqual(parser.history['num_warnings'], 1)
         pprint.pprint(logger.all_messages)
@@ -361,3 +371,20 @@ class TestParsedCommand(unittest.TestCase):
             logger.all_messages,
             [(logging.WARNING, ' hello', ())]
         )
+
+
+# Output {{{1
+class TestOutput(unittest.TestCase):
+    """Test Output()
+    """
+    def test_simple_output(self):
+        """test_commands | Output run
+        """
+        with get_output() as command:
+            command.run()
+            with open(command.stdout.name) as filehandle:
+                output = filehandle.read()
+            self.assertEqual(to_unicode(output).rstrip(), "hello")
+            self.assertEqual(os.path.getsize(command.stderr.name), 0)
+
+    # timeouts
