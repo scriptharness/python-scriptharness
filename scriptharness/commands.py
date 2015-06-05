@@ -367,6 +367,7 @@ def run(command, halt_on_failure=False, **kwargs):
         return cmd
 
 
+# get_text_output {{{1
 def get_text_output(command, level=logging.INFO, **kwargs):
     """Run command and return the raw stdout from that command.
     Because we log the output, we're assuming the output is text.
@@ -395,6 +396,7 @@ def get_text_output(command, level=logging.INFO, **kwargs):
     return output
 
 
+# get_output {{{1
 @contextmanager
 def get_output(command, **kwargs):
     """Run command and return the Output cmd object.
