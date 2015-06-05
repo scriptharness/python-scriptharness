@@ -245,12 +245,12 @@ class Command(object):
             self.kwargs.setdefault('shell', True)
         queue = multiprocessing.Queue()
         runner = multiprocessing.Process(
-            target=scriptharness.process.run_subprocess,
+            target=scriptharness.process.command_subprocess,
             args=(queue, self.command),
             kwargs=self.kwargs,
         )
         runner.start()
-        self.history['return_value'] = scriptharness.process.watch_runner(
+        self.history['return_value'] = scriptharness.process.watch_command(
             self.logger, queue, runner, self.add_line,
             output_timeout=output_timeout, max_timeout=max_timeout
         )
@@ -295,11 +295,31 @@ class Output(Command):
         )
 
     def run(self):
-        pass
-        # TODO: since p.wait() can take a long time, optionally log something
-        # every N seconds?
-        # TODO run_subprocess and watch_runner are both text-oriented.  Let's
-        # write binary equivalents.
+        if 'env' in self.kwargs:
+            self.kwargs['env'] = self.fix_env(self.kwargs['env'])
+        self.log_start()
+        output_timeout = self.kwargs.get('output_timeout', None)
+        if 'output_timeout' in self.kwargs:
+            del self.kwargs['output_timeout']
+        max_timeout = self.kwargs.get('timeout', None)
+        if 'timeout' in self.kwargs:
+            del self.kwargs['timeout']
+        if isinstance(self.command, (list, tuple)):
+            self.kwargs.setdefault('shell', False)
+        else:
+            self.kwargs.setdefault('shell', True)
+        runner = multiprocessing.Process(
+            target=scriptharness.process.output_subprocess,
+            args=(self.stdout, self.stderr, self.command),
+            kwargs=self.kwargs,
+        )
+        runner.start()
+        self.history['return_value'] = scriptharness.process.watch_output(
+            self.logger, runner, self.stdout, self.stderr,
+            output_timeout=output_timeout, max_timeout=max_timeout
+        )
+        self.history['status'] = self.detect_error_cb(self)
+        self.finish_process()
 
     def cleanup(self, level=logging.INFO):
         """Clean up stdout and stderr temp files.
@@ -367,7 +387,7 @@ def get_text_output(command, level=logging.INFO, **kwargs):
     with open(cmd.stdout.name) as filehandle:
         output = filehandle.read()
     cmd.logger.log(level, "Got output:")
-    for line in output:
+    for line in output.splitlines():
         cmd.logger.log(level, " {}".format(to_unicode(line).rstrip()))
     cmd.cleanup(level=level)
     # TODO to_unicode output?

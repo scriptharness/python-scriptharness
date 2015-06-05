@@ -51,10 +51,10 @@ def kill_runner(runner):
         pass
 
 
-def run_subprocess(queue, *args, **kwargs):
+def command_subprocess(queue, *args, **kwargs):
     """Run a subprocess as a multiprocess.Process.
     This will open STDOUT and STDERR to the same pipe, and read lines from
-    it.  Use this with watch_runner() for timeout support.
+    it.  Use this with watch_command() for timeout support.
 
     .. Note:: This is intended for non-binary output only.
 
@@ -79,17 +79,18 @@ def run_subprocess(queue, *args, **kwargs):
     sys.exit(handle.returncode)
 
 
-def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
-                 add_line_cb, max_timeout=None, output_timeout=None):
-    """This function watches the queue of the run_subprocess process.
+def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
+                  add_line_cb, max_timeout=None, output_timeout=None):
+    """This function watches the queue of the command_subprocess process.
 
     Usage::
 
       queue = multiprocessing.Queue()
-      runner = multiprocessing.Process(target=run_subprocess, args=(queue,))
+      runner = multiprocessing.Process(target=command_subprocess,
+                                       args=(queue,))
       runner.start()
-      watch_runner(logger, queue, runner, add_line_cb,
-                   output_timeout=output_timeout, max_timeout=max_timeout)
+      watch_command(logger, queue, runner, add_line_cb,
+                    output_timeout=output_timeout, max_timeout=max_timeout)
 
     Args:
       logger (logging.Logger): the logger to use.
@@ -145,3 +146,86 @@ def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
                 logger.error(message + "  Killing process...")
                 kill_runner(runner)
                 raise ScriptHarnessTimeout(message)
+
+
+def output_subprocess(stdout, stderr, *args, **kwargs):
+    """Run a subprocess as a multiprocess.Process.
+    This will open STDOUT and STDERR to files.
+    Use this with watch_output() for timeout support.
+
+    Args:
+      stdout (filehandle): stdout file to write to
+      stderr (filehandle): stderr file to write to
+      *args: sent to subprocess.Popen
+      **kwargs: sent to subprocess.Popen
+    """
+    kwargs['stdout'] = stdout.file
+    kwargs['stderr'] = stderr.file
+    kwargs['bufsize'] = 0
+    handle = subprocess.Popen(*args, **kwargs)
+    handle.wait()
+    sys.exit(handle.returncode)
+
+
+def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
+                 stderr, max_timeout=None, output_timeout=None):
+    """This function watches the queue of the output_subprocess process.
+
+    Usage::
+
+      runner = multiprocessing.Process(target=output_subprocess, args=(queue,))
+      runner.start()
+      watch_output(logger, runner, output_timeout=output_timeout,
+                   max_timeout=max_timeout)
+
+    Args:
+      logger (logging.Logger): the logger to use.
+
+      runner (multiprocessing.Process): the runner Process to watch.
+
+      max_timeout (int, optional): when specified, the process will be killed
+        if it takes longer than this number of seconds.  Default: None
+
+      output_timeout (int, optional): when specified, the process will be
+        killed if it doesn't produce any output for this number of seconds.
+        Default: None
+
+    Returns:
+      runner.exitcode (int): on non-timeout.
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessFatal: on KeyboardInterrupt
+
+      scriptharness.exceptions.ScriptHarnessTimeout: on output_timeout or
+        max_timeout.
+    """
+    start_time = time.time()
+    need_newline = False
+    while True:
+        if not runner.is_alive():
+            if need_newline:
+                print()
+            return runner.exitcode
+        now = time.time()
+        if not now % 5:
+            print(".", end="")
+            need_newline = True
+        if output_timeout:
+            last_output = max(
+                os.path.getmtime(stdout.name), os.path.getmtime(stderr.name)
+            )
+            if last_output + output_timeout < now:
+                if need_newline:
+                    print()
+                message = "%d seconds without output!" % output_timeout
+                logger.error(message + "  Killing process...")
+                kill_runner(runner)
+                raise ScriptHarnessTimeout(message)
+        if max_timeout and (start_time + max_timeout < now):
+            if need_newline:
+                print()
+            message = "Hit max timeout of %d seconds!" % max_timeout
+            logger.error(message + "  Killing process...")
+            kill_runner(runner)
+            raise ScriptHarnessTimeout(message)
+        time.sleep(.1)

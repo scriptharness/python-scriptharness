@@ -63,12 +63,12 @@ class TestProcess(unittest.TestCase):
         # This should not raise
         shprocess.kill_runner(process)
 
-    def test_run_subprocess(self):
-        """test_process | run_subprocess
+    def test_command_subprocess(self):
+        """test_process | command_subprocess
         """
         queue = Queue()
         self.assertRaises(
-            SystemExit, shprocess.run_subprocess,
+            SystemExit, shprocess.command_subprocess,
             queue,
             [sys.executable, "-c",
              "from __future__ import print_function;print('foo')"],
@@ -94,7 +94,7 @@ class TestProcess(unittest.TestCase):
         runner = mock.MagicMock()
         add_line_cb = mock.MagicMock()
         self.assertRaises(
-            ScriptHarnessFatal, shprocess.watch_runner,
+            ScriptHarnessFatal, shprocess.watch_command,
             logger, queue, runner, add_line_cb
         )
         mock_psutil.Process.assert_called_once_with(os.getpid())
