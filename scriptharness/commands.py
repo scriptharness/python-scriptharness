@@ -8,6 +8,7 @@ Attributes:
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+from contextlib import contextmanager
 from copy import deepcopy
 import logging
 import multiprocessing
@@ -21,7 +22,10 @@ import scriptharness.process
 import scriptharness.status
 from scriptharness.unicode import to_unicode
 import subprocess
+import tempfile
 
+
+# Constants {{{1
 LOGGER_NAME = "scriptharness.commands"
 STRINGS = {
     "check_output": {
@@ -42,6 +46,24 @@ STRINGS = {
         "error": "Command %(command)s failed.",
         "env": "Using env: %(env)s",
         "kill_hung_process": "Killing process that's still here",
+    },
+    "output": {
+        "cwd_doesn't_exist":
+            "Can't get output from command %(command)s in non-existent "
+            "directory %(cwd)s!",
+        "start_with_cwd": "Getting output from command: %(command)s in "
+                          "%(cwd)s",
+        "start_without_cwd": "Getting output from command: %(command)s",
+        "copy_paste": "Copy/paste: %(command)s",
+        "output_timeout":
+            "Command %(command)s timed out after %(output_timeout)d "
+            "seconds without output.",
+        "timeout":
+            "Command %(command)s timed out after %(run_time)d seconds.",
+        "error": "Command %(command)s failed.",
+        "env": "Using env: %(env)s",
+        "kill_hung_process": "Killing process that's still here",
+        "temp_files": "Temporary files: stdout %(stdout)s; stderr %(stderr)s",
     },
 }
 
@@ -91,7 +113,10 @@ def detect_errors(command):
 
 # Command {{{1
 class Command(object):
-    """Basic command: run and log output.
+    """Basic command: run and log output.  Stdout and stderr are interleaved
+    depending on the timing of the message.  Because we're logging output,
+    we're expecting text/non-binary output only.  For binary output, use the
+    scriptharness.commands.Output object.
 
     Attributes:
       command (list or string): The command to send to subprocess.Popen
@@ -248,107 +273,43 @@ class ParsedCommand(OutputParser, Command):
 
 # Output {{{1
 class Output(Command):
-    """
-    TODO: binary mode? silent is kinda like that.
-    TODO: since p.wait() can take a long time, optionally log something
-    every N seconds?
-    TODO: optionally only return the tmp_stdout_filename?
-    """
+    """Run the command and capture stdout and stderr to separate files.
+    The output can be binary or text.
 
-##def get_output_from_command(context, command, cwd=None,
-##                            halt_on_failure=False, env=None,
-##                            silent=False, log_level=INFO,
-##                            tmpfile_base_path='tmpfile',
-##                            return_type='output', save_tmpfiles=False,
-##                            throw_exception=False, fatal_exit_code=2,
-##                            ignore_errors=False, success_codes=None):
-##        context.logger.info("Getting output from command: %s in %s" % (command, cwd))
-##    else:
-##        context.logger.info("Getting output from command: %s" % command)
-##    if isinstance(command, list):
-##        context.logger.info("Copy/paste: %s" % subprocess.list2cmdline(command))
-##    # This could potentially return something?
-##    tmp_stdout = None
-##    tmp_stderr = None
-##    tmp_stdout_filename = '%s_stdout' % tmpfile_base_path
-##    tmp_stderr_filename = '%s_stderr' % tmpfile_base_path
-##    if success_codes is None:
-##        success_codes = [0]
-##
-##    try:
-##        tmp_stdout = open(tmp_stdout_filename, 'w')
-##    except IOError:
-##        level = logging.ERROR
-##        if halt_on_failure:
-##            level = logging.FATAL
-##        context.logger.log("Can't open %s for writing!" % tmp_stdout_filename +
-##                 self.exception(), level=level)
-##        return None
-##    try:
-##        tmp_stderr = open(tmp_stderr_filename, 'w')
-##    except IOError:
-##        level = logging.ERROR
-##        if halt_on_failure:
-##            level = logging.FATAL
-##        context.logger.log("Can't open %s for writing!" % tmp_stderr_filename +
-##                 self.exception(), level=level)
-##        return None
-##    shell = True
-##    if isinstance(command, list):
-##        shell = False
-##    p = subprocess.Popen(command, shell=shell, stdout=tmp_stdout,
-##                         cwd=cwd, stderr=tmp_stderr, env=env)
-##    context.logger.log(
-##        "Temporary files: %s and %s" % (
-##            tmp_stdout_filename, tmp_stderr_filename), level=logging.DEBUG)
-##    p.wait()
-##    tmp_stdout.close()
-##    tmp_stderr.close()
-##    return_level = logging.DEBUG
-##    output = None
-##    if os.path.exists(tmp_stdout_filename) and os.path.getsize(tmp_stdout_filename):
-##        output = read_from_file(tmp_stdout_filename,
-##                                     verbose=False)
-##        if not silent:
-##            context.logger.log("Output received:", level=log_level)
-##            output_lines = output.rstrip().splitlines()
-##            for line in output_lines:
-##                if not line or line.isspace():
-##                    continue
-##                line = line.decode("utf-8")
-##                context.logger.log(' %s' % line, level=log_level)
-##            output = '\n'.join(output_lines)
-##    if os.path.exists(tmp_stderr_filename) and os.path.getsize(tmp_stderr_filename):
-##        if not ignore_errors:
-##            return_level = logging.ERROR
-##        context.logger.log("Errors received:", level=return_level)
-##        errors = read_from_file(tmp_stderr_filename,
-##                                     verbose=False)
-##        for line in errors.rstrip().splitlines():
-##            if not line or line.isspace():
-##                continue
-##            line = line.decode("utf-8")
-##            context.logger.log(' %s' % line, level=return_level)
-##    elif p.returncode not in success_codes and not ignore_errors:
-##        return_level = logging.ERROR
-##    # Clean up.
-##    if not save_tmpfiles:
-##        self.rmtree(tmp_stderr_filename, log_level=logging.DEBUG)
-##        self.rmtree(tmp_stdout_filename, log_level=logging.DEBUG)
-##    if p.returncode and throw_exception:
-##        raise subprocess.CalledProcessError(p.returncode, command)
-##    context.logger.log("Return code: %d" % p.returncode, level=return_level)
-##    if halt_on_failure and return_level == logging.ERROR:
-##        return_code = fatal_exit_code
-##        raise ScriptHarnessFatal(
-##            "Halting on failure while running %s" % command
-##        )
-##    # Hm, options on how to return this? I bet often we'll want
-##    # output_lines[0] with no newline.
-##    if return_type != 'output':
-##        return (tmp_stdout_filename, tmp_stderr_filename)
-##    else:
-##        return output
+    Attributes:
+      strings (dict): Strings to log.
+      stdout (NamedTemporaryFile): file to log stdout to
+      stderr (NamedTemporaryFile): file to log stderr to
+      + all of the attributes in scriptharness.commands.Command
+    """
+    def __init__(self, *args, **kwargs):
+        super(Output, self).__init__(*args, **kwargs)
+        self.strings = deepcopy(STRINGS['command'])
+        self.stdout = tempfile.NamedTemporaryFile(delete=False)
+        self.stderr = tempfile.NamedTemporaryFile(delete=False)
+        self.logger.debug(
+            self.strings['temp_files'], {
+                'stdout': self.stdout,
+                'stderr': self.stderr,
+            },
+        )
+
+    def run(self):
+        pass
+        # TODO: since p.wait() can take a long time, optionally log something
+        # every N seconds?
+        # TODO run_subprocess and watch_runner are both text-oriented.  Let's
+        # write binary equivalents.
+
+    def cleanup(self, level=logging.INFO):
+        """Clean up stdout and stderr temp files.
+        """
+        if os.path.exists(self.stdout):
+            self.logger.log(level, "Cleaning up stdout %s", self.stdout)
+            os.remove(self.stdout)
+        if os.path.exists(self.stderr):
+            self.logger.log(level, "Cleaning up stderr %s", self.stderr)
+            os.remove(self.stderr)
 
 
 # run {{{1
@@ -384,3 +345,60 @@ def run(command, halt_on_failure=False, **kwargs):
     else:
         cmd.history.setdefault('status', status)
         return cmd
+
+
+def get_text_output(command, level=logging.INFO, **kwargs):
+    """Run command and return the raw stdout from that command.
+    Because we log the output, we're assuming the output is text.
+
+    Args:
+      command (list or str): command for subprocess.Popen
+      level (int): logging level
+      **kwargs: kwargs to send to scriptharness.commands.Output
+
+    Returns:
+      output (text): the raw stdout from the command.  Most likely the
+        consumer will want to pass this through
+        scriptharness.unicode.to_unicode().
+    """
+    cmd = Output(command, **kwargs)
+    # TODO catch exceptions
+    cmd.run()
+    with open(cmd.stdout) as filehandle:
+        output = filehandle.read()
+    cmd.logger.log(level, "Got output:")
+    for line in output:
+        cmd.logger.log(level, " {}".format(to_unicode(line).rstrip()))
+    cmd.cleanup(level=level)
+    # TODO to_unicode output?
+    # TODO yield line-by-line with contextmanager?
+    return output
+
+
+@contextmanager
+def get_output(command, **kwargs):
+    """Run command and return the Output cmd object.
+    The stdout and stderr file paths can be retrieved through cmd.stdout and
+    cmd.stderr, respectively.
+
+    The output is not logged, and is written as byte data, so this can work
+    for both binary or text.  If text, get_text_output is preferred for full
+    logging, unless the output is either sensitive in nature or so verbose
+    that logging it would be more harmful than useful.  Also, if text,
+    most likely the consumer will want to pass the output through
+    scriptharness.unicode.to_unicode().
+
+    Args:
+      command (list or str): the command to use in subprocess.Popen
+      **kwargs: kwargs to send to scriptharness.commands.Output
+
+    Yields:
+      cmd (scriptharness.commands.Output)
+    """
+    cmd = Output(command, **kwargs)
+    # TODO catch exceptions
+    cmd.run()
+    try:
+        yield cmd
+    finally:
+        cmd.cleanup()

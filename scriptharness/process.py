@@ -53,7 +53,10 @@ def kill_runner(runner):
 
 def run_subprocess(queue, *args, **kwargs):
     """Run a subprocess as a multiprocess.Process.
-    Use this with watch_runner().
+    This will open STDOUT and STDERR to the same pipe, and read lines from
+    it.  Use this with watch_runner() for timeout support.
+
+    .. Note:: This is intended for non-binary output only.
 
     Args:
       queue (multiprocessing.Queue): the queue to write to
@@ -78,7 +81,7 @@ def run_subprocess(queue, *args, **kwargs):
 
 def watch_runner(logger, queue, runner, # pylint: disable=too-many-arguments
                  add_line_cb, max_timeout=None, output_timeout=None):
-    """This function watches the queue of the runner process.
+    """This function watches the queue of the run_subprocess process.
 
     Usage::
 
