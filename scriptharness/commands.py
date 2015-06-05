@@ -95,7 +95,7 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
 
 
 def detect_errors(command):
-    """ Very basic detect_errors_cb for Command.
+    """Very basic detect_errors_cb for Command.
 
     This looks in the command.history for return_value.  If this is set
     to 0 or other null value other than None, the command is successful.
@@ -107,6 +107,21 @@ def detect_errors(command):
     status = scriptharness.status.SUCCESS
     return_value = command.history.get('return_value')
     if return_value is None or return_value:
+        status = scriptharness.status.ERROR
+    return status
+
+
+def detect_parsed_errors(command):
+    """Very basic detect_errors_cb for ParsedCommand.
+
+    This looks in the command.history for num_errors.  If this is set
+    to 0, the command is successful.  Otherwise it's unsuccessful.
+
+    Args:
+      command (Command obj):
+    """
+    status = scriptharness.status.SUCCESS
+    if command.parser.history.get('num_errors'):
         status = scriptharness.status.ERROR
     return status
 
@@ -256,20 +271,33 @@ class Command(object):
         )
         self.history['status'] = self.detect_error_cb(self)
         self.finish_process()
+        return self.history['status']
 
 
 # ParsedCommand {{{1
-class ParsedCommand(OutputParser, Command):
+class ParsedCommand(Command):
     """Parse each line of output for errors.
     """
-    def __init__(self, command, error_list, **kwargs):
-        if not isinstance(error_list, ErrorList):
-            raise ScriptHarnessException(
-                "error_list must be an ErrorList!",
-                error_list
-            )
-        OutputParser.__init__(self, error_list)
+    def __init__(self, command, error_list=None, parser=None, **kwargs):
+        if not parser:
+            if not isinstance(error_list, ErrorList):
+                raise ScriptHarnessException(
+                    "error_list must be an ErrorList!",
+                    error_list
+                )
+            parser = OutputParser(error_list)
+        self.parser = parser
+        kwargs.setdefault("detect_error_cb", detect_parsed_errors)
         Command.__init__(self, command, **kwargs)
+
+    def add_line(self, line):
+        """Send the line to the parser.
+
+        Args:
+          line (str): a line of output
+        """
+        self.parser.add_line(line)
+
 
 # Output {{{1
 class Output(Command):
@@ -333,7 +361,7 @@ class Output(Command):
 
 
 # run {{{1
-def run(command, halt_on_failure=False, **kwargs):
+def run(command, cmd_class=Command, halt_on_failure=False, *args, **kwargs):
     """Shortcut for running a Command.
 
     Not entirely sure if this should also catch ScriptHarnessFatal, as those
@@ -351,7 +379,7 @@ def run(command, halt_on_failure=False, **kwargs):
     """
     message = ""
     try:
-        cmd = Command(command, **kwargs)
+        cmd = cmd_class(command, *args, **kwargs)
         cmd.run()
         return cmd
     except ScriptHarnessError as exc_info:
@@ -365,6 +393,26 @@ def run(command, halt_on_failure=False, **kwargs):
     else:
         cmd.history.setdefault('status', status)
         return cmd
+
+
+# parse {{{1
+def parse(command, **kwargs):
+    """Shortcut for running a ParsedCommand.
+
+    Not entirely sure if this should also catch ScriptHarnessFatal, as those
+    are explicitly trying to kill the script.
+
+    Args:
+      command (list or str): Command line to run.
+      **kwargs: kwargs for run/ParsedCommand.
+
+    Returns:
+      command exit code (int)
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessFatal: on fatal error
+    """
+    return run(command, cmd_class=ParsedCommand, **kwargs)
 
 
 # get_text_output {{{1

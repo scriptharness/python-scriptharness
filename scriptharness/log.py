@@ -686,7 +686,9 @@ class OutputParser(object):
             elif error_check['regex'].search(line):
                 match = True
             if match:
-                messages = [' {}'.format(line % args)]
+                if args:
+                    line = line % args
+                messages = [' %s' % line]
                 if error_check.get('explanation'):
                     messages.append(' %s' % error_check['explanation'])
                 # exception default level is logging.ERROR
