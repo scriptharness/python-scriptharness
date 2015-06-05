@@ -258,8 +258,8 @@ class Command(object):
             self.kwargs.setdefault('shell', False)
         else:
             self.kwargs.setdefault('shell', True)
-        queue = multiprocessing.Queue()
-        runner = multiprocessing.Process(
+        queue = multiprocessing.Queue()  # pylint: disable=no-member
+        runner = multiprocessing.Process(  # pylint: disable=not-callable
             target=scriptharness.process.command_subprocess,
             args=(queue, self.command),
             kwargs=self.kwargs,
@@ -336,7 +336,7 @@ class Output(Command):
             self.kwargs.setdefault('shell', False)
         else:
             self.kwargs.setdefault('shell', True)
-        runner = multiprocessing.Process(
+        runner = multiprocessing.Process(  # pylint: disable=not-callable
             target=scriptharness.process.output_subprocess,
             args=(self.stdout, self.stderr, self.command),
             kwargs=self.kwargs,
