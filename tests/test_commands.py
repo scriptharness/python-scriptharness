@@ -354,6 +354,7 @@ class TestParsedCommand(unittest.TestCase):
              'from __future__ import print_function; print("hello");'],
             parser=parser
         )
+        self.assertTrue(isinstance(cmd, commands.ParsedCommand))
         self.assertEqual(parser.history['num_warnings'], 1)
         pprint.pprint(logger.all_messages)
         self.assertEqual(
