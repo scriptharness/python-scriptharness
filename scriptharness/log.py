@@ -639,7 +639,7 @@ class OutputParser(object):
                 error_list.post_context_lines
             )
 
-    def add_buffer(self, level, messages, error_check=None, *args):
+    def add_buffer(self, level, messages, error_check=None):
         """Add the line to self.context_buffer if it exists, otherwise log it.
 
         Args:
@@ -658,10 +658,9 @@ class OutputParser(object):
                     pre_context_lines=error_check.get('pre_context_lines', 0),
                     post_context_lines=error_check.get('post_context_lines',
                                                        0),
-                    *args
                 )
             else:
-                self.logger.log(level, line, *args)
+                self.logger.log(level, line)
         if level > logging.WARNING:
             self.history['num_errors'] += 1
         elif level > logging.INFO:
@@ -669,13 +668,12 @@ class OutputParser(object):
         self.history['worst_level'] = max(self.history['worst_level'],
                                           level)
 
-    def add_line(self, line, *args):
+    def add_line(self, line):
         """parse a line and check if it matches one in `error_list`,
         if so then log it.
 
         Args:
           line (str): a line of output to parse.
-          *args: Optional args to format the line with.
         """
         line = to_unicode(line.rstrip())
         for error_check in self.error_list:
@@ -686,8 +684,6 @@ class OutputParser(object):
             elif error_check['regex'].search(line):
                 match = True
             if match:
-                if args:
-                    line = line % args
                 messages = [' %s' % line]
                 if error_check.get('explanation'):
                     messages.append(' %s' % error_check['explanation'])
@@ -702,5 +698,4 @@ class OutputParser(object):
                     raise error_check['exception'](messages)
                 break
         else:
-            self.add_buffer(logging.INFO, ' %s' % line, error_check=None,
-                            *args)
+            self.add_buffer(logging.INFO, ' %s' % line, error_check=None)
