@@ -377,16 +377,39 @@ class TestParsedCommand(unittest.TestCase):
 class TestOutput(unittest.TestCase):
     """Test Output()
     """
-    def test_simple_output(self):
-        """test_commands | Output run
+    def test_env_output(self):
+        """test_commands | Output run env
         """
-        with get_output() as command:
+        cmd = [
+            sys.executable, "-c",
+            'from __future__ import print_function;import os;'
+            'print(os.environ["foo"]);'
+        ]
+        with get_output(command=cmd, env={'foo': 'bar'}) as command:
             command.run()
             with open(command.stdout.name) as filehandle:
                 output = filehandle.read()
-            self.assertEqual(to_unicode(output).rstrip(), "hello")
+            self.assertEqual(to_unicode(output).rstrip(), "bar")
             self.assertEqual(os.path.getsize(command.stderr.name), 0)
             command.cleanup()  # This will result in cleanup() being called
                                # twice; idempotence test
 
-    # timeouts
+    def test_output_timeout(self):
+        """test_commands | Output output_timeout
+        """
+        for cmdln in get_timeout_cmdlns():
+            now = time.time()
+            with get_output(command=cmdln, output_timeout=.5) as command:
+                print(cmdln)
+                self.assertRaises(ScriptHarnessTimeout, command.run)
+                self.assertTrue(now + 1 > time.time())
+
+    def test_timeout(self):
+        """test_commands | Output timeout
+        """
+        for cmdln in get_timeout_cmdlns():
+            now = time.time()
+            with get_output(command=cmdln, timeout=.5) as command:
+                print(cmdln)
+                self.assertRaises(ScriptHarnessTimeout, command.run)
+                self.assertTrue(now + 1 > time.time())
