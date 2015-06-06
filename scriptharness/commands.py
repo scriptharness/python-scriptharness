@@ -392,7 +392,8 @@ class Output(Command):
             try:
                 handle.close()
                 os.remove(handle.name)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
+                # Broad exception especially for windows nosetests
                 pass
 
 
