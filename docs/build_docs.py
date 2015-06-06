@@ -5,6 +5,7 @@ automate all CI/Release tasks for scriptharness; this is a good start.
 from __future__ import print_function, division, absolute_import, \
                        unicode_literals
 from jinja2 import Template
+import glob
 import os
 import re
 import shutil
@@ -25,6 +26,7 @@ def cleanup(*args):
             os.remove(path)
 
 def build_readme_rst():
+    print("Building README...")
     with open("README.rst.j2") as filehandle:
         contents = filehandle.read()
     template = Template(contents)
@@ -32,6 +34,23 @@ def build_readme_rst():
         filehandle.write(template.render(readthedocs_link=READTHEDOCS_LINK))
     with open("README.rst", "w") as filehandle:
         filehandle.write(template.render())
+
+def build_releasenotes_rst():
+    print("Building releasenotes...")
+    all_releasenotes = glob.glob("releasenotes/*.rst")
+    latest_releasenotes = all_releasenotes.pop()
+    all_releasenotes.reverse()
+    previous_releasenotes = ""
+    for rel in all_releasenotes:
+        previous_releasenotes += '   %s\n' % rel.replace('.rst', '')
+    with open("releasenotes.rst.j2") as filehandle:
+        contents = filehandle.read()
+    template = Template(contents)
+    with open("releasenotes.rst", "w") as filehandle:
+        filehandle.write(template.render(
+            latest_releasenotes=latest_releasenotes,
+            previous_releasenotes=previous_releasenotes,
+        ))
 
 def indent_output(command, time_string='00:00:00', required_string="INFO",
                   **kwargs):
@@ -97,6 +116,7 @@ def main():
     subprocess.check_call("sphinx-apidoc -e -f -o . ../scriptharness".split())
     cleanup("modules.rst")
     build_readme_rst()
+    build_releasenotes_rst()
     build_quickstart()
     subprocess.check_call(["make", "html"])
     subprocess.check_call(["make", "text"])
