@@ -375,7 +375,7 @@ class Output(Command):
             contents = to_unicode(contents).rstrip()
         return contents
 
-    def cleanup(self, level=logging.INFO):
+    def cleanup(self):
         """Clean up stdout and stderr temp files.
         """
         self.stdout.close()
