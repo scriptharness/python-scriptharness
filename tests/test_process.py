@@ -12,7 +12,6 @@ import scriptharness.process as shprocess
 from scriptharness.unicode import to_unicode
 from six.moves.queue import Queue
 import sys
-import tempfile
 import unittest
 
 
@@ -76,29 +75,6 @@ class TestProcess(unittest.TestCase):
         )
         line = queue.get(block=True, timeout=.1)
         self.assertEqual(to_unicode("foo"), to_unicode(line).rstrip())
-
-    def test_output_subprocess(self):
-        """test_process | output_subprocess
-        """
-        stdout = tempfile.NamedTemporaryFile(delete=False)
-        stderr = tempfile.NamedTemporaryFile(delete=False)
-        self.assertRaises(
-            SystemExit, shprocess.output_subprocess,
-            stdout, stderr,
-            [sys.executable, "-c",
-             "from __future__ import print_function; import sys;print('foo');"
-             "print('bar', file=sys.stderr)"],
-        )
-        stdout.close()
-        with open(stdout.name) as filehandle:
-            contents = filehandle.read().rstrip()
-            self.assertEqual(contents, "foo")
-        stderr.close()
-        with open(stderr.name) as filehandle:
-            contents = filehandle.read().rstrip()
-            self.assertEqual(contents, "bar")
-        os.remove(stdout.name)
-        os.remove(stderr.name)
 
     @mock.patch('scriptharness.process.psutil')
     def test_keyboard_interrupt(self, mock_psutil):

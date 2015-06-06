@@ -70,13 +70,8 @@ def get_output(command=None, **kwargs):
 def get_timeout_cmdlns():
     """Create a list of commandline commands to run to test timeouts.
     """
-    cmdlns = []
-    if os.name != "nt":
-        cmdlns += [["sleep", "300"], "echo -n 'foo' && sleep 300"]
-    cmdlns += [
-        [sys.executable, "-c",
-         "from __future__ import print_function; import time;"
-         "time.sleep(300);"],
+    cmdlns = [
+        [sys.executable, "-c", "import time;time.sleep(300);"],
         [sys.executable, "-c",
          "from __future__ import print_function; import time;"
          "print('foo', end=' ');"
@@ -440,8 +435,8 @@ class TestGetOutput(unittest.TestCase):
     The ScriptHarnessFatal tests are testing get_text_output() because
     it's trickier to test the contextmanager method directly.
     """
-    @mock.patch('scriptharness.commands.multiprocessing')
-    def test_error(self, mock_multiprocessing):
+    @mock.patch('scriptharness.commands.subprocess')
+    def test_error(self, mock_subprocess):
         """test_commands | get_text_output() error
         """
         def raise_error(*args, **kwargs):
@@ -449,14 +444,14 @@ class TestGetOutput(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessError("foo")
-        mock_multiprocessing.Process = raise_error
+        mock_subprocess.Popen = raise_error
         self.assertRaises(
             ScriptHarnessFatal, commands.get_text_output,
             "echo", halt_on_failure=True
         )
 
-    @mock.patch('scriptharness.commands.multiprocessing')
-    def test_timeout(self, mock_multiprocessing):
+    @mock.patch('scriptharness.commands.subprocess')
+    def test_timeout(self, mock_subprocess):
         """test_commands | get_text_output() timeout
         """
         def raise_error(*args, **kwargs):
@@ -464,14 +459,14 @@ class TestGetOutput(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessTimeout("foo")
-        mock_multiprocessing.Process = raise_error
+        mock_subprocess.Popen = raise_error
         self.assertRaises(
             ScriptHarnessFatal, commands.get_text_output,
             "echo", halt_on_failure=True
         )
 
-    @mock.patch('scriptharness.commands.multiprocessing')
-    def test_no_halt(self, mock_multiprocessing):
+    @mock.patch('scriptharness.commands.subprocess')
+    def test_no_halt(self, mock_subprocess):
         """test_commands | get_output() halt_on_error=False
         """
         def raise_error(*args, **kwargs):
@@ -479,7 +474,7 @@ class TestGetOutput(unittest.TestCase):
             if args or kwargs:  # silence pylint
                 pass
             raise ScriptHarnessTimeout("foo")
-        mock_multiprocessing.Process = raise_error
+        mock_subprocess.Popen = raise_error
         with commands.get_output("echo", halt_on_failure=False) as cmd:
             self.assertEqual(cmd.history['status'], status.TIMEOUT)
 

@@ -342,18 +342,16 @@ class Output(Command):
             self.kwargs.setdefault('shell', False)
         else:
             self.kwargs.setdefault('shell', True)
-        runner = multiprocessing.Process(  # pylint: disable=not-callable
-            target=scriptharness.process.output_subprocess,
-            args=(self.stdout, self.stderr, self.command),
-            kwargs=self.kwargs,
-        )
-        runner.start()
+        self.kwargs['stdout'] = self.stdout.file
+        self.kwargs['stderr'] = self.stderr.file
+        process = subprocess.Popen(self.command, **self.kwargs)
         self.history['return_value'] = scriptharness.process.watch_output(
-            self.logger, runner, self.stdout, self.stderr,
+            self.logger, process, self.stdout, self.stderr,
             output_timeout=output_timeout, max_timeout=max_timeout
         )
         self.history['status'] = self.detect_error_cb(self)
         self.finish_process()
+        return self.history['status']
 
     def get_output(self, handle_name="stdout", text=True):
         """Get output from file.  This reads the output into memory, so

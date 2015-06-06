@@ -148,25 +148,6 @@ def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
                 raise ScriptHarnessTimeout(message)
 
 
-def output_subprocess(stdout, stderr, *args, **kwargs):
-    """Run a subprocess as a multiprocess.Process.
-    This will open STDOUT and STDERR to files.
-    Use this with watch_output() for timeout support.
-
-    Args:
-      stdout (filehandle): stdout file to write to
-      stderr (filehandle): stderr file to write to
-      *args: sent to subprocess.Popen
-      **kwargs: sent to subprocess.Popen
-    """
-    kwargs['stdout'] = stdout.file
-    kwargs['stderr'] = stderr.file
-    kwargs['bufsize'] = 0
-    handle = subprocess.Popen(*args, **kwargs)
-    handle.wait()
-    sys.exit(handle.returncode)
-
-
 def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
                  stderr, max_timeout=None, output_timeout=None):
     """This function watches the queue of the output_subprocess process.
@@ -181,7 +162,7 @@ def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
     Args:
       logger (logging.Logger): the logger to use.
 
-      runner (multiprocessing.Process): the runner Process to watch.
+      runner (subprocess.Popen): the runner process to watch.
 
       max_timeout (int, optional): when specified, the process will be killed
         if it takes longer than this number of seconds.  Default: None
@@ -201,8 +182,8 @@ def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
     """
     start_time = time.time()
     while True:
-        if not runner.is_alive():
-            return runner.exitcode
+        if runner.poll() is not None:
+            return runner.returncode
         now = time.time()
         if output_timeout:
             last_output = max(
