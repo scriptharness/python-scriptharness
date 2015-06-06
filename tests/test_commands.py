@@ -386,5 +386,7 @@ class TestOutput(unittest.TestCase):
                 output = filehandle.read()
             self.assertEqual(to_unicode(output).rstrip(), "hello")
             self.assertEqual(os.path.getsize(command.stderr.name), 0)
+            command.cleanup()  # This will result in cleanup() being called
+                               # twice; idempotence test
 
     # timeouts

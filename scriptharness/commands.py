@@ -276,6 +276,11 @@ class Command(object):
 # ParsedCommand {{{1
 class ParsedCommand(Command):
     """Parse each line of output for errors.
+
+    This class could have easily subclassed both OutputParser and Command;
+    that may have been slightly cleaner.  However, people have subclassed
+    OutputParser in mozharness for various purposes; keeping the two objects
+    separate may encourage that behavior.
     """
     def __init__(self, command, error_list=None, parser=None, **kwargs):
         if not parser:
