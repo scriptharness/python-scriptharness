@@ -353,6 +353,26 @@ class Output(Command):
         self.history['status'] = self.detect_error_cb(self)
         self.finish_process()
 
+    def get_output(self, handle_name="stdout", text=True):
+        """Get output from file.  This reads the output into memory, so
+        this is not appropriate for large amounts of output.
+
+        Args:
+          handle_name ("stdout" or "stderr", optional): the handle to read
+            from.  Defaults to "stdout"
+          text (bool, optional): whether the output is text.  If so, run
+            output through to_unicode() and rstrip().  Defaults to True.
+        """
+        if handle_name not in ("stdout", "stderr"):
+            raise ScriptHarnessException("Bad handle for get_output: %s" %
+                                         handle_name)
+        handle = getattr(self, handle_name)
+        with open(handle.name) as filehandle:
+            contents = filehandle.read()
+        if text:
+            contents = to_unicode(contents).rstrip()
+        return contents
+
     def cleanup(self, level=logging.INFO):
         """Clean up stdout and stderr temp files.
         """
@@ -373,6 +393,13 @@ def run(command, cmd_class=Command, halt_on_failure=False, *args, **kwargs):
 
     Args:
       command (list or str): Command line to run.
+
+      cmd_class (Command subclass, optional): the class to instantiate.
+        Defaults to scriptharness.commands.Command.
+
+      halt_on_failure (bool, optional): raise ScriptHarnessFatal on error
+        if True.  Default: False
+
       **kwargs: kwargs for subprocess.Popen.
 
     Returns:
@@ -419,39 +446,10 @@ def parse(command, **kwargs):
     return run(command, cmd_class=ParsedCommand, **kwargs)
 
 
-# get_text_output {{{1
-def get_text_output(command, level=logging.INFO, **kwargs):
-    """Run command and return the raw stdout from that command.
-    Because we log the output, we're assuming the output is text.
-
-    Args:
-      command (list or str): command for subprocess.Popen
-      level (int): logging level
-      **kwargs: kwargs to send to scriptharness.commands.Output
-
-    Returns:
-      output (text): the raw stdout from the command.  Most likely the
-        consumer will want to pass this through
-        scriptharness.unicode.to_unicode().
-    """
-    cmd = Output(command, **kwargs)
-    # TODO catch exceptions
-    cmd.run()
-    with open(cmd.stdout.name) as filehandle:
-        output = filehandle.read()
-    cmd.logger.log(level, "Got output:")
-    for line in output.splitlines():
-        cmd.logger.log(level, " {}".format(to_unicode(line).rstrip()))
-    cmd.cleanup(level=level)
-    # TODO to_unicode output?
-    # TODO yield line-by-line with contextmanager?
-    return output
-
-
 # get_output {{{1
 @contextmanager
-def get_output(command, **kwargs):
-    """Run command and return the Output cmd object.
+def get_output(command, halt_on_failure=False, **kwargs):
+    """Run command and yield the Output cmd object.
     The stdout and stderr file paths can be retrieved through cmd.stdout and
     cmd.stderr, respectively.
 
@@ -464,15 +462,57 @@ def get_output(command, **kwargs):
 
     Args:
       command (list or str): the command to use in subprocess.Popen
+
+      halt_on_failure (bool, optional): raise ScriptHarnessFatal on error
+        if True.  Default: False
+
       **kwargs: kwargs to send to scriptharness.commands.Output
 
     Yields:
       cmd (scriptharness.commands.Output)
+
+    Raises:
+      scriptharness.exceptions.ScriptHarnessFatal: when halt_on_failure is
+        True and we hit an error or timeout.
     """
     cmd = Output(command, **kwargs)
-    # TODO catch exceptions
-    cmd.run()
+    status = scriptharness.status.SUCCESS
+    try:
+        cmd.run()
+    except ScriptHarnessError as exc_info:
+        message = "error: %s" % exc_info
+        status = scriptharness.status.ERROR
+    except ScriptHarnessTimeout as exc_info:
+        message = "timeout: %s" % exc_info
+        status = scriptharness.status.TIMEOUT
+    if halt_on_failure and message:
+        raise ScriptHarnessFatal("Fatal %s" % message)
+    else:
+        cmd.history.setdefault("status", status)
     try:
         yield cmd
     finally:
         cmd.cleanup()
+
+# get_text_output {{{1
+def get_text_output(command, level=logging.INFO, **kwargs):
+    """Run command and return the raw stdout from that command.
+    Because we log the output, we're assuming the output is text.
+
+    Args:
+      command (list or str): command for subprocess.Popen
+
+      level (int): logging level
+
+      **kwargs: kwargs to send to scriptharness.commands.Output
+
+    Returns:
+      output (text): the stdout from the command.
+    """
+    cmd = Output(command, **kwargs)
+    with get_output(command, **kwargs) as cmd:
+        output = cmd.get_output()
+        cmd.logger.log(level, "Got output:")
+        for line in output.splitlines():
+            cmd.logger.log(level, " {}".format(line.rstrip()))
+    return output
