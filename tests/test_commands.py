@@ -414,10 +414,31 @@ class TestOutput(unittest.TestCase):
                 self.assertRaises(ScriptHarnessTimeout, command.run)
                 self.assertTrue(now + 1 > time.time())
 
+    def test_get_output_exception(self):
+        """test_commands | Output.get_output() exception
+        """
+        with get_output() as command:
+            self.assertRaises(
+                ScriptHarnessException, command.get_output,
+                handle_name="foo"
+            )
+
+    def test_get_output_binary(self):
+        """test_commands | Output.get_output()
+        """
+        with get_output() as command:
+            command.run()
+            self.assertEqual(command.get_output(), u"hello")
+            self.assertEqual(command.get_output(text=False),
+                             "hello%s" % os.linesep)
+
 
 # TestGetOutput {{{1
 class TestGetOutput(unittest.TestCase):
     """test commands.get_output() and get_text_output()
+
+    The ScriptHarnessFatal tests are testing get_text_output() because
+    it's trickier to test the contextmanager method directly.
     """
     @mock.patch('scriptharness.commands.multiprocessing')
     def test_error(self, mock_multiprocessing):
@@ -461,3 +482,9 @@ class TestGetOutput(unittest.TestCase):
         mock_multiprocessing.Process = raise_error
         with commands.get_output("echo", halt_on_failure=False) as cmd:
             self.assertEqual(cmd.history['status'], status.TIMEOUT)
+
+    def test_get_text_output(self):
+        """test_commands | get_text_output()
+        """
+        output = commands.get_text_output(TEST_COMMAND)
+        self.assertEqual(output, "hello")
