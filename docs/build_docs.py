@@ -38,7 +38,7 @@ def build_readme_rst():
 def build_releasenotes_rst():
     print("Building releasenotes...")
     all_releasenotes = glob.glob("releasenotes/*.rst")
-    latest_releasenotes = all_releasenotes.pop()
+    latest_releasenotes = all_releasenotes[-1]
     all_releasenotes.reverse()
     previous_releasenotes = ""
     for rel in all_releasenotes:
