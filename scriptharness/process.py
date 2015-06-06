@@ -200,30 +200,20 @@ def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
         max_timeout.
     """
     start_time = time.time()
-    need_newline = False
     while True:
         if not runner.is_alive():
-            if need_newline:
-                print()
             return runner.exitcode
         now = time.time()
-        if not now % 5:
-            print(".", end="")
-            need_newline = True
         if output_timeout:
             last_output = max(
                 os.path.getmtime(stdout.name), os.path.getmtime(stderr.name)
             )
             if last_output + output_timeout < now:
-                if need_newline:
-                    print()
                 message = "%d seconds without output!" % output_timeout
                 logger.error(message + "  Killing process...")
                 kill_runner(runner)
                 raise ScriptHarnessTimeout(message)
         if max_timeout and (start_time + max_timeout < now):
-            if need_newline:
-                print()
             message = "Hit max timeout of %d seconds!" % max_timeout
             logger.error(message + "  Killing process...")
             kill_runner(runner)
