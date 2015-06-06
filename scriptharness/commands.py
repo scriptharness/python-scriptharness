@@ -317,8 +317,8 @@ class Output(Command):
     def __init__(self, *args, **kwargs):
         super(Output, self).__init__(*args, **kwargs)
         self.strings = deepcopy(STRINGS['output'])
-        self.stdout = tempfile.NamedTemporaryFile(delete=False)
-        self.stderr = tempfile.NamedTemporaryFile(delete=False)
+        self.stdout = tempfile.NamedTemporaryFile()
+        self.stderr = tempfile.NamedTemporaryFile()
         self.logger.debug(
             self.strings['temp_files'], {
                 'stdout': self.stdout,
@@ -378,12 +378,8 @@ class Output(Command):
     def cleanup(self, level=logging.INFO):
         """Clean up stdout and stderr temp files.
         """
-        if os.path.exists(self.stdout.name):
-            self.logger.log(level, "Cleaning up stdout %s", self.stdout.name)
-            os.remove(self.stdout.name)
-        if os.path.exists(self.stderr.name):
-            self.logger.log(level, "Cleaning up stderr %s", self.stderr.name)
-            os.remove(self.stderr.name)
+        self.stdout.close()
+        self.stderr.close()
 
 
 # run {{{1
