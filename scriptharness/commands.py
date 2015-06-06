@@ -386,7 +386,7 @@ class Output(Command):
         return contents
 
     def cleanup(self):
-        """Clean up stdout and stderr temp files.
+        """Best effort cleanup of stdout and stderr temp files.
         """
         for handle in self.stdout, self.stderr:
             try:
