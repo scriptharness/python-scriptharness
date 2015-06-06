@@ -7,7 +7,6 @@ from __future__ import absolute_import, division, print_function, \
 import json
 import os
 import scriptharness.version
-import six
 import subprocess
 import sys
 import unittest
@@ -89,11 +88,6 @@ class TestVersionString(unittest.TestCase):
             contents2 = json.load(filehandle)
         self.assertEqual(contents, contents2)
 
-    @unittest.skipIf(
-        os.name == 'nt' and six.PY3,
-        "OSError: [WinError 6] The handle is invalid "
-        "http://bugs.python.org/issue3905 ?"
-    )
     def test_run_version_py(self):
         """test_version | run version.py
         """

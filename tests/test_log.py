@@ -15,6 +15,8 @@ from contextlib import contextmanager
 import logging
 import mock
 import os
+import pprint
+import re
 import scriptharness.log as log
 import six
 import unittest
@@ -180,7 +182,6 @@ class TestLogMethodInit(unittest.TestCase):
         def test_func(*args, **kwargs):
             """test method"""
             return args, kwargs
-        import pprint
         pprint.pprint(log.LogMethod.default_config)
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
@@ -543,3 +544,262 @@ class TestUnicode(unittest.TestCase):
                 logger.info(string)
             with codecs.open(TEST_CONSOLE, 'r', 'utf-8') as console_fh:
                 self.assertEqual(string, console_fh.read().rstrip())
+
+
+# TestErrorList {{{1
+class TestErrorList(unittest.TestCase):
+    """Test ErrorList.
+    """
+    def test_check_ignore(self):
+        """test_log | ErrorList check_ignore()
+        """
+        elists = [
+            [{'level': -1, 'substr': 'foo', 'pre_context_lines': 5}],
+            [{'level': -1, 'substr': 'foo', 'post_context_lines': 5}],
+        ]
+        for error_list in elists:
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList,
+                error_list, strict=True
+            )
+            # shouldn't raise when strict is False
+            log.ErrorList(error_list, strict=False)
+
+    def test_context_lines(self):
+        """test_log | ErrorList context lines
+        """
+        for var in None, -1:
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList,
+                [{'level': 0, 'substr': 'foo', 'pre_context_lines': var}]
+            )
+        error_list = log.ErrorList([
+            {'level': 0, 'substr': 'foo', 'pre_context_lines': 2,
+             'post_context_lines': 9},
+            {'level': 0, 'substr': 'bar', 'pre_context_lines': 5,
+             'post_context_lines': 3},
+            {'level': 0, 'substr': 'baz', 'pre_context_lines': 9,
+             'post_context_lines': 1},
+        ])
+        self.assertEqual(error_list.pre_context_lines, 9)
+        self.assertEqual(error_list.post_context_lines, 9)
+
+    def test_exactly_one(self):
+        """test_log | ErrorList.exactly_one()
+        """
+        elists = [
+            [{'substr': 'foo'}],
+            [{'level': 0}],
+            [{'level': 0, 'substr': 'foo', 'regex': re.compile("foo")}],
+            [['level', 0, 'substr', 'foo', 'regex', re.compile("foo")]],
+        ]
+        for error_list in elists:
+            print(error_list)
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList, error_list
+            )
+
+    def test_illegal_values(self):
+        """test_log | ErrorList illegal values
+        """
+        elists = [
+            [{'level': None}],
+            [{'exception': "foo"}],
+            [{'level': 1, 'substr': b'lksjdf'}],
+            [{'level': 1, 'regex': 'lksjdf'}],
+        ]
+        for error_list in elists:
+            print(error_list)
+            self.assertRaises(
+                ScriptHarnessException, log.ErrorList, error_list
+            )
+
+
+# TestOutputBuffer {{{1
+class TestOutputBuffer(unittest.TestCase):
+    """Test OutputBuffer.
+    """
+    def test_single_pop(self):
+        """test_log | OutputBuffer single pop_buffer
+        """
+        logger = mock.MagicMock()
+        buf = log.OutputBuffer(logger, 3, 0)
+        buf.add_line(0, "foo%s", "a")
+        buf.add_line(0, "bar%s", "b")
+        buf.add_line(0, "baz")
+        self.assertFalse(logger.log.called)
+        buf.add_line(0, "x")
+        logger.log.assert_called_once_with(0, "foo%s", "a")
+
+    @mock.patch('scriptharness.log.logging')
+    def test_pre_context_lines(self, mock_logging):
+        """test_log | OutputBuffer pre_context_lines
+        """
+        logger = LoggerReplacement()
+        mock_logging.getLogger.return_value = logger
+        buf = log.OutputBuffer(logger, 4, 0)
+        buf.add_line(0, "foo", "a")
+        buf.add_line(0, "bar")
+        buf.add_line(0, "baz", "c")
+        buf.add_line(10, "x", pre_context_lines=2)
+        buf.dump_buffer()
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(logger.all_messages[0], (0, "foo", ("a", )))
+        self.assertEqual(logger.all_messages[1], (10, "bar", ()))
+        self.assertEqual(logger.all_messages[2], (10, "baz", ("c", )))
+        self.assertEqual(logger.all_messages[3], (10, "x", ()))
+
+    @mock.patch('scriptharness.log.logging')
+    def test_post_context_lines(self, mock_logging):
+        """test_log | OutputBuffer post_context_lines
+        """
+        logger = LoggerReplacement()
+        mock_logging.getLogger.return_value = logger
+        buf = log.OutputBuffer(logger, 0, 3)
+        buf.add_line(0, "foo")
+        buf.add_line(10, "bar", post_context_lines=3)
+        buf.add_line(15, "baz", "c", post_context_lines=1)
+        buf.add_line(0, "x")
+        buf.add_line(0, "y")
+        buf.add_line(0, "z")
+        pprint.pprint(logger.all_messages)
+        self.assertEqual(logger.all_messages[0], (0, "foo", ()))
+        self.assertEqual(logger.all_messages[1], (10, "bar", ()))
+        self.assertEqual(logger.all_messages[2], (15, "baz", ("c", )))
+        self.assertEqual(logger.all_messages[3], (15, "x", ()))
+        self.assertEqual(logger.all_messages[4], (10, "y", ()))
+        self.assertEqual(logger.all_messages[5], (0, "z", ()))
+
+
+# TestOutputParser {{{1
+class TestOutputParser(unittest.TestCase):
+    """Test OutputParser.
+    """
+    @staticmethod
+    def get_output_parser(error_list, **kwargs):
+        """helper to create OutputParser
+        """
+        logger = LoggerReplacement()
+        return log.OutputParser(
+            error_list, logger=logger,
+            **kwargs
+        )
+
+    def test_simple_add_line(self):
+        """test_log | OutputParser simple add_line()
+        """
+        for error_list in (
+                [{'substr': 'asdf', 'level': logging.ERROR,
+                  'explanation': "because"}],
+                [{'regex': re.compile('asdf'), 'level': logging.ERROR,
+                  'explanation': "because"}]):
+            print(error_list)
+            error_list = log.ErrorList(error_list)
+            output_parser = self.get_output_parser(error_list)
+            output_parser.add_line("foo")
+            self.assertEqual(
+                output_parser.logger.all_messages[0],
+                (logging.INFO, ' foo', ())
+            )
+            output_parser.add_line("barasdfbaz")
+            self.assertEqual(
+                output_parser.logger.all_messages[1],
+                (logging.ERROR, ' barasdfbaz', ())
+            )
+            self.assertEqual(
+                output_parser.logger.all_messages[2],
+                (logging.ERROR, ' because', ())
+            )
+            self.assertEqual(output_parser.history['num_errors'], 1)
+            self.assertEqual(output_parser.history['num_warnings'], 0)
+
+    def test_ignore(self):
+        """test_log | OutputParser ignore
+        """
+        error_list = log.ErrorList([{'substr': 'asdf', 'level': -1}])
+        # The foo="bar" does nothing except more code coverage
+        output_parser = self.get_output_parser(error_list, foo="bar")
+        output_parser.add_line("barasdfbaz")
+        self.assertEqual(0, len(output_parser.logger.all_messages))
+        output_parser.add_line("foo")
+        self.assertEqual(
+            output_parser.logger.all_messages,
+            [(logging.INFO, ' foo', ())]
+        )
+
+    def test_warning(self):
+        """test_log | OutputParser warning
+        """
+        error_list = log.ErrorList(
+            [{'substr': 'asdf', 'level': logging.WARNING}]
+        )
+        output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("barasdfbaz")
+        self.assertEqual(
+            output_parser.logger.all_messages,
+            [(logging.WARNING, ' barasdfbaz', ())]
+        )
+        self.assertEqual(output_parser.history['num_errors'], 0)
+        self.assertEqual(output_parser.history['num_warnings'], 1)
+
+    def test_exception_context_lines(self):
+        """test_log | OutputParser exception context_lines
+        """
+        error_list = log.ErrorList(
+            [{'substr': 'asdf', 'exception': ScriptHarnessError,
+              'pre_context_lines': 2,
+              'explanation': "because"}]
+        )
+        output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("This line will be INFO")
+        output_parser.add_line("Start of the ERROR")
+        self.assertEqual(0, len(output_parser.logger.all_messages))
+        output_parser.add_line("Middle of the ERROR")
+        self.assertEqual(
+            output_parser.logger.all_messages,
+            [(logging.INFO, " This line will be INFO", ())]
+        )
+        self.assertRaises(
+            ScriptHarnessError,
+            output_parser.add_line, "ERROR asdf"
+        )
+        self.assertEqual(
+            output_parser.logger.all_messages[1],
+            (logging.ERROR, " Start of the ERROR", ())
+        )
+        self.assertEqual(
+            output_parser.logger.all_messages[2],
+            (logging.ERROR, " Middle of the ERROR", ())
+        )
+        self.assertEqual(
+            output_parser.logger.all_messages[3],
+            (logging.ERROR, " ERROR asdf", ())
+        )
+        self.assertEqual(
+            output_parser.logger.all_messages[4],
+            (logging.ERROR, " because", ())
+        )
+        self.assertEqual(len(output_parser.logger.all_messages), 5)
+
+    def test_exception(self):
+        """test_log | OutputParser exception
+        """
+        error_list = log.ErrorList(
+            [{'substr': 'asdf', 'exception': ScriptHarnessError,
+              'level': logging.WARNING}]
+        )
+        output_parser = self.get_output_parser(error_list)
+        output_parser.add_line("This line will be INFO")
+        self.assertEqual(
+            output_parser.logger.all_messages,
+            [(logging.INFO, " This line will be INFO", ())]
+        )
+        self.assertRaises(
+            ScriptHarnessError,
+            output_parser.add_line, "WARNING asdf"
+        )
+        self.assertEqual(
+            output_parser.logger.all_messages[1],
+            (logging.WARNING, " WARNING asdf", ())
+        )
+        self.assertEqual(len(output_parser.logger.all_messages), 2)

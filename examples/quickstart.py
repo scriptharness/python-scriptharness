@@ -9,6 +9,7 @@ https://github.com/scriptharness/python-scriptharness
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import scriptharness
+import scriptharness.commands
 
 """First, define functions for all actions.  Each action MUST have a function
 defined.  The function should be named the same as the action.  (If the
@@ -41,6 +42,10 @@ def build(context):
 def package(context):
     """Package source"""
     context.logger.info("log message from package")
+    scriptharness.commands.run(
+        ['python', '-c',
+         "from __future__ import print_function; print('hello world!')"]
+    )
 
 def upload(context):
     """Upload packages"""

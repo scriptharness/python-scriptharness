@@ -8,9 +8,6 @@ Attributes:
   LOGGER_NAME (str): logging.Logger name to use
   STRINGS (dict): strings for actions.  In the future these may be in a
     function to allow for localization.
-  SUCCESS (int): Constant for Action.history['status']
-  ERROR (int): Constant for Action.history['status']
-  FATAL (int): Constant for Action.history['status']
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -18,6 +15,7 @@ from copy import deepcopy
 import logging
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal
+from scriptharness.status import SUCCESS, ERROR, FATAL
 import sys
 import time
 
@@ -35,9 +33,6 @@ STRINGS = {
         "action_msg_prefix": "### ",
     }
 }
-SUCCESS = 0
-ERROR = 1
-FATAL = -1
 
 def get_function_by_name(function_name):
     """If function isn't passed to Action, find the function with the same name
@@ -71,12 +66,18 @@ class Action(object):
 
     Attributes:
       name (str): This is the action name, for logging.
+
       enabled (bool): Enabled actions will run.  Disabled actions will log
         the skip_message and not run.
+
       strings (dict): Strings for action-specific log messages.
+
       logger_name (str): The logger name for logging calls inside this object.
+
       function (function): This is the function to call in run_function().
-      history (dict): History of the action (return_value, status, timestamps).
+
+      history (dict): History of the action (return_value, status, start_time,
+        end_time).
     """
 
     def __init__(self, name, function=None, enabled=True):
@@ -99,7 +100,7 @@ class Action(object):
         self.enabled = enabled
         self.strings = deepcopy(STRINGS['action'])
         self.logger_name = "scriptharness.actions.%s" % self.name
-        self.history = {'timestamps': {}}
+        self.history = {}
         if function is None:
             self.function = get_function_by_name(self.name.replace('-', '_'))
         else:
@@ -135,7 +136,7 @@ class Action(object):
           scriptharness.exceptions.ScriptHarnessFatal: when the function
             raises ScriptHarnessFatal, run() re-raises.
         """
-        self.history['timestamps']['start_time'] = time.time()
+        self.history['start_time'] = time.time()
         logger = logging.getLogger(self.logger_name)
         repl_dict = {
             "name": self.name,
@@ -154,5 +155,5 @@ class Action(object):
         else:
             self.history['status'] = SUCCESS
             logger.info(self.strings['success_message'], repl_dict)
-        self.history['timestamps']['end_time'] = time.time()
+        self.history['end_time'] = time.time()
         return self.history['status']
