@@ -327,6 +327,8 @@ class Output(Command):
         )
 
     def run(self):
+        """Output.run()
+        """
         if 'env' in self.kwargs:
             self.kwargs['env'] = self.fix_env(self.kwargs['env'])
         self.log_start()
@@ -477,6 +479,7 @@ def get_output(command, halt_on_failure=False, **kwargs):
     """
     cmd = Output(command, **kwargs)
     status = scriptharness.status.SUCCESS
+    message = None
     try:
         cmd.run()
     except ScriptHarnessError as exc_info:

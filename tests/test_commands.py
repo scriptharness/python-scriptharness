@@ -413,3 +413,51 @@ class TestOutput(unittest.TestCase):
                 print(cmdln)
                 self.assertRaises(ScriptHarnessTimeout, command.run)
                 self.assertTrue(now + 1 > time.time())
+
+
+# TestGetOutput {{{1
+class TestGetOutput(unittest.TestCase):
+    """test commands.get_output() and get_text_output()
+    """
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_error(self, mock_multiprocessing):
+        """test_commands | get_text_output() error
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessError"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessError("foo")
+        mock_multiprocessing.Process = raise_error
+        self.assertRaises(
+            ScriptHarnessFatal, commands.get_text_output,
+            "echo", halt_on_failure=True
+        )
+
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_timeout(self, mock_multiprocessing):
+        """test_commands | get_text_output() timeout
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessTimeout"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessTimeout("foo")
+        mock_multiprocessing.Process = raise_error
+        self.assertRaises(
+            ScriptHarnessFatal, commands.get_text_output,
+            "echo", halt_on_failure=True
+        )
+
+    @mock.patch('scriptharness.commands.multiprocessing')
+    def test_no_halt(self, mock_multiprocessing):
+        """test_commands | get_output() halt_on_error=False
+        """
+        def raise_error(*args, **kwargs):
+            """raise ScriptHarnessTimeout"""
+            if args or kwargs:  # silence pylint
+                pass
+            raise ScriptHarnessTimeout("foo")
+        mock_multiprocessing.Process = raise_error
+        with commands.get_output("echo", halt_on_failure=False) as cmd:
+            self.assertEqual(cmd.history['status'], status.TIMEOUT)
