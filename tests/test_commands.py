@@ -423,9 +423,11 @@ class TestOutput(unittest.TestCase):
         """
         with get_output() as command:
             command.run()
-            self.assertEqual(command.get_output(), u"hello")
-            self.assertEqual(command.get_output(text=False),
-                             "hello%s" % os.linesep)
+            self.assertEqual(command.get_output(), "hello")
+            self.assertEqual(
+                to_unicode(command.get_output(text=False)).rstrip(),
+                "hello"
+            )
 
 
 # TestGetOutput {{{1
