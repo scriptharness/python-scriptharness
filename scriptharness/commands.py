@@ -317,14 +317,21 @@ class Output(Command):
     def __init__(self, *args, **kwargs):
         super(Output, self).__init__(*args, **kwargs)
         self.strings = deepcopy(STRINGS['output'])
-        self.stdout = tempfile.NamedTemporaryFile()
-        self.stderr = tempfile.NamedTemporaryFile()
+        self.stdout = tempfile.NamedTemporaryFile(buffering=0, delete=False)
+        self.stderr = tempfile.NamedTemporaryFile(buffering=0, delete=False)
         self.logger.debug(
             self.strings['temp_files'], {
                 'stdout': self.stdout,
                 'stderr': self.stderr,
             },
         )
+
+    def finish_process(self):
+        """Close the filehandles.
+        """
+        self.stderr.close()
+        self.stdout.close()
+        super(Output, self).finish_process()
 
     def run(self):
         """Output.run()
@@ -376,8 +383,9 @@ class Output(Command):
     def cleanup(self):
         """Clean up stdout and stderr temp files.
         """
-        self.stdout.close()
-        self.stderr.close()
+        for path in self.stdout.name, self.stderr.name:
+            if os.path.exists(path):
+                os.remove(path)
 
 
 # run {{{1
