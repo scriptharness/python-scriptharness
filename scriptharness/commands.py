@@ -388,9 +388,12 @@ class Output(Command):
     def cleanup(self):
         """Clean up stdout and stderr temp files.
         """
-        for path in self.stdout.name, self.stderr.name:
-            if os.path.exists(path):
-                os.remove(path)
+        for handle in self.stdout, self.stderr:
+            try:
+                handle.close()
+                os.remove(handle.name)
+            except Exception:
+                pass
 
 
 # run {{{1
