@@ -317,8 +317,13 @@ class Output(Command):
     def __init__(self, *args, **kwargs):
         super(Output, self).__init__(*args, **kwargs)
         self.strings = deepcopy(STRINGS['output'])
-        self.stdout = tempfile.NamedTemporaryFile(buffering=0, delete=False)
-        self.stderr = tempfile.NamedTemporaryFile(buffering=0, delete=False)
+        keywargs = {'delete': False}
+        if six.PY2:
+            keywargs['bufsize'] = 0
+        else:
+            keywargs['buffering'] = 0
+        self.stdout = tempfile.NamedTemporaryFile(**keywargs)
+        self.stderr = tempfile.NamedTemporaryFile(**keywargs)
         self.logger.debug(
             self.strings['temp_files'], {
                 'stdout': self.stdout,

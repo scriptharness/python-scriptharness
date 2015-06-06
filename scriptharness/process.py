@@ -192,11 +192,11 @@ def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
             if last_output + output_timeout < now:
                 message = "%d seconds without output!" % output_timeout
                 logger.error(message + "  Killing process...")
-                kill_runner(runner)
+                runner.kill()
                 raise ScriptHarnessTimeout(message)
         if max_timeout and (start_time + max_timeout < now):
             message = "Hit max timeout of %d seconds!" % max_timeout
             logger.error(message + "  Killing process...")
-            kill_runner(runner)
+            runner.kill()
             raise ScriptHarnessTimeout(message)
         time.sleep(.1)
