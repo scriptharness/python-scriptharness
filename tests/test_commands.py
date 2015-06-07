@@ -10,6 +10,7 @@ import mock
 import os
 import pprint
 import scriptharness.commands as commands
+from scriptharness.errorlists import ErrorList
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
 import scriptharness.log as log
@@ -151,7 +152,7 @@ class TestDetectParsedErrors(unittest.TestCase):
     def test_success(self):
         """test_commands | detect_parsed_errors() success
         """
-        error_list = log.ErrorList([])
+        error_list = ErrorList([])
         command = get_parsed_command(error_list=error_list)
         command.parser.history['num_errors'] = 0
         self.assertEqual(commands.detect_parsed_errors(command),
@@ -160,7 +161,7 @@ class TestDetectParsedErrors(unittest.TestCase):
     def test_failure(self):
         """test_commands | detect_parsed_errors() failure
         """
-        error_list = log.ErrorList([])
+        error_list = ErrorList([])
         command = get_parsed_command(error_list=error_list)
         for value in (1, 20):
             command.parser.history['num_errors'] = value
@@ -327,7 +328,7 @@ class TestParsedCommand(unittest.TestCase):
     def test_parser_kwarg(self):
         """test_commands | ParsedCommand() parser kwarg
         """
-        error_list = log.ErrorList([
+        error_list = ErrorList([
             {'substr': 'ell', 'level': logging.WARNING}
         ])
         logger = LoggerReplacement()
@@ -353,7 +354,7 @@ class TestParsedCommand(unittest.TestCase):
     def test_parse(self):
         """test_commands | parse()
         """
-        error_list = log.ErrorList([
+        error_list = ErrorList([
             {'substr': 'ell', 'level': logging.WARNING}
         ])
         logger = LoggerReplacement()

@@ -9,6 +9,7 @@ Submodules
    scriptharness.actions
    scriptharness.commands
    scriptharness.config
+   scriptharness.errorlists
    scriptharness.exceptions
    scriptharness.log
    scriptharness.os

@@ -15,9 +15,10 @@ import multiprocessing
 import os
 import six
 import pprint
+from scriptharness.errorlists import ErrorList
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
-from scriptharness.log import OutputParser, ErrorList
+from scriptharness.log import OutputParser
 import scriptharness.process
 import scriptharness.status
 from scriptharness.unicode import to_unicode
