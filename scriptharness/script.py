@@ -88,6 +88,37 @@ def build_context(script, phase, action=None):
         action=action, phase=phase
     )
 
+def enable_actions(parsed_args, actions):
+    """If parsed_args has action-related options, enable/disable actions
+    as appropriate.
+
+    Args:
+      parsed_args (argparse Namespace)
+      actions (list of Actions)
+    """
+    args = parsed_args.__dict__
+    if args.get('scriptharness_volatile_action_group') is not None:
+        action_group = args['scriptharness_volatile_action_group']
+        for action in actions:
+            if action_group == 'all' or action_group in \
+                    action.action_groups:
+                action.enabled = True
+            else:
+                action.enabled = False
+    if args.get('scriptharness_volatile_actions') is not None:
+        for action in actions:
+            if action.name in args['scriptharness_volatile_actions']:
+                action.enabled = True
+            else:
+                action.enabled = False
+    for action in actions:
+        if action.name in (  # pylint disable=superfluous-parens
+                args.get('scriptharness_volatile_add_actions') or []):
+            action.enabled = True
+        if action.name in (  # pylint disable=superfluous-parens
+                args.get('scriptharness_volatile_skip_actions') or []):
+            action.enabled = False
+
 # Script {{{1
 class Script(object):
     """This maintains the context of the config + actions.
@@ -149,7 +180,7 @@ class Script(object):
         parsed_args = shconfig.parse_args(parser, cmdln_args)
         config = shconfig.build_config(parser, parsed_args, initial_config)
         self.dict_to_config(config)
-        self.enable_actions(parsed_args)
+        enable_actions(parsed_args, self.actions)
         if parsed_args.__dict__.get("scriptharness_volatile_dump_config"):
             logger = self.get_logger()
             logger.info("Dumping config:")
@@ -203,35 +234,6 @@ class Script(object):
             action_dict[action.name] = action
         action_tuple = collections.namedtuple('Actions', action_dict.keys())
         self.actions = action_tuple(**action_dict)
-
-    def enable_actions(self, parsed_args):
-        """If parsed_args has 'actions' set, use those as the enabled actions.
-
-        Args:
-          parsed_args (argparse Namespace)
-        """
-        args = parsed_args.__dict__
-        if args.get('scriptharness_volatile_action_group') is not None:
-            action_group = args['scriptharness_volatile_action_group']
-            for action in self.actions:
-                if action_group == 'all' or action_group in \
-                        action.action_groups:
-                    action.enabled = True
-                else:
-                    action.enabled = False
-        if args.get('scriptharness_volatile_actions') is not None:
-            for action in self.actions:
-                if action.name in args['scriptharness_volatile_actions']:
-                    action.enabled = True
-                else:
-                    action.enabled = False
-        for action in self.actions:
-            if action.name in (  # pylint disable=superfluous-parens
-                    args.get('scriptharness_volatile_add_actions') or []):
-                action.enabled = True
-            if action.name in (  # pylint disable=superfluous-parens
-                    args.get('scriptharness_volatile_skip_actions') or []):
-                action.enabled = False
 
     def log_enabled_actions(self):
         """Log enabled actions.
