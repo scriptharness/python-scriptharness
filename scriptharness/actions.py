@@ -79,16 +79,17 @@ class Action(object):
       history (dict): History of the action (return_value, status, start_time,
         end_time).
     """
-
-    def __init__(self, name, function=None, enabled=True):
+    def __init__(self, name, action_groups=None, function=None, enabled=True):
         """Create the Action object.
 
         Args:
           name (str): Action name, for logging.
+
           function (function, optional).  This is the function or method
             to run in run_function().  If not specified, use
             get_function_by_name() to find the function that matches the
             action name.  If not found, raise.
+
           enabled (bool, optional): Whether the action is enabled by default.
             This may be toggled by commandline options or configuration later.
 
@@ -100,6 +101,7 @@ class Action(object):
         self.enabled = enabled
         self.strings = deepcopy(STRINGS['action'])
         self.logger_name = "scriptharness.actions.%s" % self.name
+        self.action_groups = action_groups or []
         self.history = {}
         if function is None:
             self.function = get_function_by_name(self.name.replace('-', '_'))

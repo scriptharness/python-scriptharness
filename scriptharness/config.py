@@ -158,7 +158,7 @@ def download_url(url, path=None, timeout=None):
 
 
 # get_parser() {{{1
-def get_list_actions_string(action_name, enabled):
+def get_list_actions_string(action_name, enabled, groups=None):
     """Build a string for --list-actions output.
 
     Args:
@@ -171,7 +171,9 @@ def get_list_actions_string(action_name, enabled):
     string = "  "
     if enabled:
         string = "* "
-    string += action_name
+    groups = set(groups or [])
+    groups.update(set(['all']))
+    string += '%s %s' % (action_name, list(groups))
     return string
 
 def get_action_parser(all_actions):
@@ -191,19 +193,22 @@ def get_action_parser(all_actions):
     """
     parser = argparse.ArgumentParser(add_help=False)
     message = []
-    choices = []
+    action_names = []
+    action_groups = set(['all', 'none'])
     for action in all_actions:
         if isinstance(action, Action):
-            choices.append(action.name)
+            action_names.append(action.name)
+            action_groups.update(set(action.action_groups))
             message.append(
-                get_list_actions_string(action.name, action.enabled)
+                get_list_actions_string(action.name, action.enabled,
+                                        action.action_groups)
             )
         else:
             message = []
-            choices = []
+            action_names = []
             for name, enabled in iterate_pairs(all_actions):
                 message.append(get_list_actions_string(name, enabled))
-                choices.append(name)
+                action_names.append(name)
             break
     def list_actions():
         """Helper function to list all actions (enabled shown with a '*')"""
@@ -215,9 +220,24 @@ def get_action_parser(all_actions):
         help="List all actions (default prepended with '*') and exit."
     )
     parser.add_argument(
-        "--actions", nargs='+', choices=choices, metavar="ACTION",
+        "--actions", nargs='+', choices=action_names, metavar="ACTION",
         dest="scriptharness_volatile_actions",
         help="Specify the actions to run."
+    )
+    parser.add_argument(
+        "--skip-actions", nargs='+', choices=action_names, metavar="ACTION",
+        dest="scriptharness_volatile_skip_actions",
+        help="Specify the actions to skip."
+    )
+    parser.add_argument(
+        "--add-actions", nargs='+', choices=action_names, metavar="ACTION",
+        dest="scriptharness_volatile_add_actions",
+        help="Specify the actions to add to the default set."
+    )
+    parser.add_argument(
+        "--action-group", choices=action_groups,
+        dest="scriptharness_volatile_action_groups",
+        help="Specify the action group to use."
     )
     return parser
 

@@ -229,11 +229,19 @@ class TestParserFunctions(unittest.TestCase):
             shconfig.parse_args(parser, cmdln_args=["--list-actions"])
         except SystemExit:
             pass
+        if six.PY2:
+            groups_str = "[u'all']"
+        else:
+            groups_str = "['all']"
         mock_print.assert_called_once_with(
-            os.linesep.join(
-                ["  clobber", "* pull", "* build", "* package", "  upload",
-                 "  notify"]
-            )
+            os.linesep.join([
+                "  clobber %s" % groups_str,
+                "* pull %s" % groups_str,
+                "* build %s" % groups_str,
+                "* package %s" % groups_str,
+                "  upload %s" % groups_str,
+                "  notify %s" % groups_str,
+            ])
         )
 
     def test_action_parser(self):
