@@ -67,6 +67,40 @@ class TestEnableActions(unittest.TestCase):
             enabled_actions = [x.name for x in action_list if x.enabled]
             self.assertEqual(enabled_actions, value)
 
+    def test_dashdash_actions(self):
+        """test_script | scriptharness_volatile_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_actions',
+                ['two', 'three'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['two', 'three'])
+
+    def test_add_actions(self):
+        """test_script | add_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_action_group', 'none')
+        setattr(parsed_args, 'scriptharness_volatile_add_actions',
+                ['two', 'four'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['two', 'four'])
+
+    def test_skip_actions(self):
+        """test_script | skip_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_skip_actions',
+                ['two', 'four'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['one', 'three'])
+
 
 # TestScript {{{1
 class TestScript(unittest.TestCase):
