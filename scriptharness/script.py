@@ -128,6 +128,7 @@ class Script(object):
         self.build_config(parser, **kwargs)
         self.logger = self.get_logger()
         self.start_message()
+        self.log_enabled_actions()
         self.save_config()
 
     def build_config(self, parser, cmdln_args=None, initial_config=None):
@@ -209,13 +210,39 @@ class Script(object):
         Args:
           parsed_args (argparse Namespace)
         """
-        if hasattr(parsed_args, 'scriptharness_volatile_actions') and \
-                parsed_args.scriptharness_volatile_actions is not None:
+        args = parsed_args.__dict__
+        if args.get('scriptharness_volatile_action_group') is not None:
+            action_group = args['scriptharness_volatile_action_group']
             for action in self.actions:
-                if action.name in parsed_args.scriptharness_volatile_actions:
+                if action_group == 'all' or action_group in \
+                        action.action_groups:
                     action.enabled = True
                 else:
                     action.enabled = False
+        if args.get('scriptharness_volatile_actions') is not None:
+            for action in self.actions:
+                if action.name in args['scriptharness_volatile_actions']:
+                    action.enabled = True
+                else:
+                    action.enabled = False
+        for action in self.actions:
+            if action.name in (  # pylint disable=superfluous-parens
+                    args.get('scriptharness_volatile_add_actions') or []):
+                action.enabled = True
+            if action.name in (  # pylint disable=superfluous-parens
+                    args.get('scriptharness_volatile_skip_actions') or []):
+                action.enabled = False
+
+    def log_enabled_actions(self):
+        """Log enabled actions.
+        """
+        enabled_actions = []
+        for action in self.actions:
+            if action.enabled:
+                enabled_actions.append(action.name)
+        logger = self.get_logger()
+        logger.info("Enabled actions:")
+        logger.info(' ' + (', '.join(enabled_actions) or "None"))
 
     def add_listener(self, listener, phase, action_names=None):
         """Add a callback for a specific script phase.

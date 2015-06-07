@@ -236,7 +236,7 @@ def get_action_parser(all_actions):
     )
     parser.add_argument(
         "--action-group", choices=action_groups,
-        dest="scriptharness_volatile_action_groups",
+        dest="scriptharness_volatile_action_group",
         help="Specify the action group to use."
     )
     return parser
