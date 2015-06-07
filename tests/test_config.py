@@ -15,6 +15,7 @@ from scriptharness.actions import Action
 import scriptharness.config as shconfig
 from scriptharness.exceptions import ScriptHarnessException, \
     ScriptHarnessTimeout
+from scriptharness.unicode import to_unicode
 import six
 import subprocess
 import sys
@@ -43,15 +44,16 @@ def cleanup():
 def start_webserver():
     """Start a webserver for local requests testing
     """
-    port = 8001
     max_wait = 5
     wait = 0
     interval = .02
-    host = "http://localhost:%s" % str(port)
     dir_path = os.path.join(os.path.dirname(__file__), 'http')
     file_path = os.path.join(dir_path, 'cgi_server.py')
-    proc = subprocess.Popen([sys.executable, file_path],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.Popen([sys.executable, "-u", file_path],
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            bufsize=0)
+    host = to_unicode(proc.stdout.readline()).rstrip()
+    print(host)
     while wait < max_wait:
         try:
             response = requests.get(host)
