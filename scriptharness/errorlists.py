@@ -139,6 +139,12 @@ class ErrorList(list):
     The second regex sets the level to logging.ERROR for this line, and 5
     lines above and 5 lines below this message.
 
+    Currently undecided whether we should support modification of ErrorLists
+    (which would require validating any new items and recalculating pre
+    and post context_lines) or having ErrorList inherit tuple and dealing
+    with all the renaming.  Most likely the former, but until then, the
+    supported way of modifying an ErrorList is to create a new one.
+
     Attributes:
       strict (bool): If True, be more strict about well-formed error_lists.
       pre_context_lines (int): The max number of lines the error_list defines
