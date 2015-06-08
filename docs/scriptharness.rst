@@ -1,22 +1,19 @@
 scriptharness package
 =====================
 
-Subpackages
------------
-
-.. toctree::
-
-    scriptharness.commands
-
 Submodules
 ----------
 
 .. toctree::
 
    scriptharness.actions
+   scriptharness.commands
    scriptharness.config
+   scriptharness.errorlists
    scriptharness.exceptions
    scriptharness.log
+   scriptharness.os
+   scriptharness.process
    scriptharness.script
    scriptharness.status
    scriptharness.structures

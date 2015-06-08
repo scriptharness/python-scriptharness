@@ -20,6 +20,7 @@ Here's an example script.  The file is also viewable here_.
     from __future__ import absolute_import, division, print_function, \
                            unicode_literals
     import scriptharness
+    import scriptharness.commands
     
     """First, define functions for all actions.  Each action MUST have a function
     defined.  The function should be named the same as the action.  (If the
@@ -52,6 +53,10 @@ Here's an example script.  The file is also viewable here_.
     def package(context):
         """Package source"""
         context.logger.info("log message from package")
+        scriptharness.commands.run(
+            ['python', '-c',
+             "from __future__ import print_function; print('hello world!')"]
+        )
     
     def upload(context):
         """Upload packages"""
@@ -138,6 +143,9 @@ If you run this without any arguments, you might get output like this::
     00:00:00     INFO - ### Action build: finished successfully
     00:00:00     INFO - ### Running action package
     00:00:00     INFO - log message from package
+    00:00:00     INFO - Running command: ['python', '-c', "from __future__ import print_function; print('hello world!')"]
+    00:00:00     INFO - Copy/paste: python -c "from __future__ import print_function; print('hello world!')"
+    00:00:00     INFO -  hello world!
     00:00:00     INFO - ### Action package: finished successfully
     00:00:00     INFO - ### Skipping action upload
     00:00:00     INFO - ### Skipping action notify
@@ -170,6 +178,9 @@ You can change which actions are run via the ``--actions`` option::
     00:00:05     INFO - ### Skipping action build
     00:00:05     INFO - ### Running action package
     00:00:05     INFO - log message from package
+    00:00:05     INFO - Running command: ['python', '-c', "from __future__ import print_function; print('hello world!')"]
+    00:00:05     INFO - Copy/paste: python -c "from __future__ import print_function; print('hello world!')"
+    00:00:05     INFO -  hello world!
     00:00:05     INFO - ### Action package: finished successfully
     00:00:05     INFO - ### Running action upload
     00:00:05     INFO - log message from upload

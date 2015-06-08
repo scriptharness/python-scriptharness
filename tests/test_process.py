@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, \
 import mock
 import os
 import psutil
-from scriptharness.exceptions import ScriptHarnessFatal
+from scriptharness.exceptions import ScriptHarnessError, ScriptHarnessFatal
 import scriptharness.process as shprocess
 from scriptharness.unicode import to_unicode
 from six.moves.queue import Queue
@@ -75,6 +75,15 @@ class TestProcess(unittest.TestCase):
         )
         line = queue.get(block=True, timeout=.1)
         self.assertEqual(to_unicode("foo"), to_unicode(line).rstrip())
+
+    def test_nonexistent_command(self):
+        """test_process | command_subprocess nonexistent command
+        """
+        queue = Queue()
+        self.assertRaises(
+            ScriptHarnessError, shprocess.command_subprocess,
+            queue, ["this_command_should_not_exist"],
+        )
 
     @mock.patch('scriptharness.process.psutil')
     def test_keyboard_interrupt(self, mock_psutil):

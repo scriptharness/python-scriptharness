@@ -17,11 +17,12 @@ import mock
 import os
 import pprint
 import re
+from scriptharness.errorlists import ErrorList
+from scriptharness.exceptions import ScriptHarnessException, \
+    ScriptHarnessError
 import scriptharness.log as log
 import six
 import unittest
-from scriptharness.exceptions import ScriptHarnessException, \
-    ScriptHarnessError
 from . import UNICODE_STRINGS, LOGGER_NAME, LoggerReplacement, \
               stdstar_redirected
 
@@ -546,75 +547,6 @@ class TestUnicode(unittest.TestCase):
                 self.assertEqual(string, console_fh.read().rstrip())
 
 
-# TestErrorList {{{1
-class TestErrorList(unittest.TestCase):
-    """Test ErrorList.
-    """
-    def test_check_ignore(self):
-        """test_log | ErrorList check_ignore()
-        """
-        elists = [
-            [{'level': -1, 'substr': 'foo', 'pre_context_lines': 5}],
-            [{'level': -1, 'substr': 'foo', 'post_context_lines': 5}],
-        ]
-        for error_list in elists:
-            self.assertRaises(
-                ScriptHarnessException, log.ErrorList,
-                error_list, strict=True
-            )
-            # shouldn't raise when strict is False
-            log.ErrorList(error_list, strict=False)
-
-    def test_context_lines(self):
-        """test_log | ErrorList context lines
-        """
-        for var in None, -1:
-            self.assertRaises(
-                ScriptHarnessException, log.ErrorList,
-                [{'level': 0, 'substr': 'foo', 'pre_context_lines': var}]
-            )
-        error_list = log.ErrorList([
-            {'level': 0, 'substr': 'foo', 'pre_context_lines': 2,
-             'post_context_lines': 9},
-            {'level': 0, 'substr': 'bar', 'pre_context_lines': 5,
-             'post_context_lines': 3},
-            {'level': 0, 'substr': 'baz', 'pre_context_lines': 9,
-             'post_context_lines': 1},
-        ])
-        self.assertEqual(error_list.pre_context_lines, 9)
-        self.assertEqual(error_list.post_context_lines, 9)
-
-    def test_exactly_one(self):
-        """test_log | ErrorList.exactly_one()
-        """
-        elists = [
-            [{'substr': 'foo'}],
-            [{'level': 0}],
-            [{'level': 0, 'substr': 'foo', 'regex': re.compile("foo")}],
-            [['level', 0, 'substr', 'foo', 'regex', re.compile("foo")]],
-        ]
-        for error_list in elists:
-            print(error_list)
-            self.assertRaises(
-                ScriptHarnessException, log.ErrorList, error_list
-            )
-
-    def test_illegal_values(self):
-        """test_log | ErrorList illegal values
-        """
-        elists = [
-            [{'level': None}],
-            [{'exception': "foo"}],
-            [{'level': 1, 'substr': b'lksjdf'}],
-            [{'level': 1, 'regex': 'lksjdf'}],
-        ]
-        for error_list in elists:
-            print(error_list)
-            self.assertRaises(
-                ScriptHarnessException, log.ErrorList, error_list
-            )
-
-
 # TestOutputBuffer {{{1
 class TestOutputBuffer(unittest.TestCase):
     """Test OutputBuffer.
@@ -694,7 +626,7 @@ class TestOutputParser(unittest.TestCase):
                 [{'regex': re.compile('asdf'), 'level': logging.ERROR,
                   'explanation': "because"}]):
             print(error_list)
-            error_list = log.ErrorList(error_list)
+            error_list = ErrorList(error_list)
             output_parser = self.get_output_parser(error_list)
             output_parser.add_line("foo")
             self.assertEqual(
@@ -716,7 +648,7 @@ class TestOutputParser(unittest.TestCase):
     def test_ignore(self):
         """test_log | OutputParser ignore
         """
-        error_list = log.ErrorList([{'substr': 'asdf', 'level': -1}])
+        error_list = ErrorList([{'substr': 'asdf', 'level': -1}])
         # The foo="bar" does nothing except more code coverage
         output_parser = self.get_output_parser(error_list, foo="bar")
         output_parser.add_line("barasdfbaz")
@@ -730,7 +662,7 @@ class TestOutputParser(unittest.TestCase):
     def test_warning(self):
         """test_log | OutputParser warning
         """
-        error_list = log.ErrorList(
+        error_list = ErrorList(
             [{'substr': 'asdf', 'level': logging.WARNING}]
         )
         output_parser = self.get_output_parser(error_list)
@@ -745,7 +677,7 @@ class TestOutputParser(unittest.TestCase):
     def test_exception_context_lines(self):
         """test_log | OutputParser exception context_lines
         """
-        error_list = log.ErrorList(
+        error_list = ErrorList(
             [{'substr': 'asdf', 'exception': ScriptHarnessError,
               'pre_context_lines': 2,
               'explanation': "because"}]
@@ -784,7 +716,7 @@ class TestOutputParser(unittest.TestCase):
     def test_exception(self):
         """test_log | OutputParser exception
         """
-        error_list = log.ErrorList(
+        error_list = ErrorList(
             [{'substr': 'asdf', 'exception': ScriptHarnessError,
               'level': logging.WARNING}]
         )

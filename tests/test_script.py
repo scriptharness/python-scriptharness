@@ -4,6 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
+import argparse
 from copy import deepcopy
 import json
 import os
@@ -20,6 +21,85 @@ if six.PY3:
     BUILTIN = 'builtins'
 else:
     BUILTIN = '__builtin__'
+
+
+def noop(*args):
+    """Noop function for testing Actions"""
+    if args:
+        pass
+
+def get_action(name, function, **kwargs):
+    """Helper function to generate Actions"""
+    return actions.Action(name, function=function, **kwargs)
+
+def get_grouped_actions():
+    """Helper function for testing action_groups
+    """
+    return [
+        get_action("one", noop, action_groups=['a', 'c', ]),
+        get_action("two", noop, action_groups=['b', 'c', ]),
+        get_action("three", noop, action_groups=['a', 'd', ]),
+        get_action("four", noop, action_groups=['b', 'd', ]),
+    ]
+
+
+# Test enable_actions {{{1
+class TestEnableActions(unittest.TestCase):
+    """Test enable_actions
+    """
+    def test_action_groups(self):
+        """test_script | action_group
+        """
+        inputs = {
+            'a': ["one", "three"],
+            'b': ["two", "four"],
+            'c': ["one", "two"],
+            'd': ["three", "four"],
+            'none': [],
+            'all': ["one", "two", "three", "four"],
+        }
+        for key, value in inputs.items():
+            print("action_group %s" % key)
+            action_list = get_grouped_actions()
+            parsed_args = argparse.Namespace()
+            setattr(parsed_args, 'scriptharness_volatile_action_group', key)
+            script.enable_actions(parsed_args, action_list)
+            enabled_actions = [x.name for x in action_list if x.enabled]
+            self.assertEqual(enabled_actions, value)
+
+    def test_dashdash_actions(self):
+        """test_script | scriptharness_volatile_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_actions',
+                ['two', 'three'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['two', 'three'])
+
+    def test_add_actions(self):
+        """test_script | add_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_action_group', 'none')
+        setattr(parsed_args, 'scriptharness_volatile_add_actions',
+                ['two', 'four'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['two', 'four'])
+
+    def test_skip_actions(self):
+        """test_script | skip_actions
+        """
+        parsed_args = argparse.Namespace()
+        setattr(parsed_args, 'scriptharness_volatile_skip_actions',
+                ['two', 'four'])
+        action_list = get_grouped_actions()
+        script.enable_actions(parsed_args, action_list)
+        enabled_actions = [x.name for x in action_list if x.enabled]
+        self.assertEqual(enabled_actions, ['one', 'three'])
 
 
 # TestScript {{{1
@@ -250,17 +330,13 @@ class TestStrictScript(unittest.TestCase):
             shutil.rmtree("artifacts")
 
     @staticmethod
-    def get_action(name, function, enabled=True):
-        """Helper function to generate Actions for StrictScript"""
-        return actions.Action(name, function=function, enabled=enabled)
-
-    def get_script(self, parser=None, cmdln_args=None, initial_config=None):
+    def get_script(parser=None, cmdln_args=None, initial_config=None):
         """Create a StrictScript for testing
         """
         action_list = [
-            self.get_action("one", change_config1),
-            self.get_action("two", change_config2),
-            self.get_action("three", change_attribute, enabled=False),
+            get_action("one", change_config1),
+            get_action("two", change_config2),
+            get_action("three", change_attribute, enabled=False),
         ]
         parser = parser or get_parser(action_list)
         cmdln_args = cmdln_args or []

@@ -1,8 +1,5 @@
-scriptharness.commands package
-==============================
-
-Module contents
----------------
+scriptharness.commands module
+=============================
 
 .. automodule:: scriptharness.commands
     :members:

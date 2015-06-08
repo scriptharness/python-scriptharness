@@ -15,9 +15,10 @@ import multiprocessing
 import os
 import six
 import pprint
+from scriptharness.errorlists import ErrorList
 from scriptharness.exceptions import ScriptHarnessError, \
     ScriptHarnessException, ScriptHarnessFatal, ScriptHarnessTimeout
-from scriptharness.log import OutputParser, ErrorList
+from scriptharness.log import OutputParser
 import scriptharness.process
 import scriptharness.status
 from scriptharness.unicode import to_unicode
@@ -356,7 +357,12 @@ class Output(Command):
             self.kwargs.setdefault('shell', True)
         self.kwargs['stdout'] = self.stdout.file
         self.kwargs['stderr'] = self.stderr.file
-        process = subprocess.Popen(self.command, **self.kwargs)
+        try:
+            process = subprocess.Popen(self.command, **self.kwargs)
+        except OSError as exc_info:
+            raise ScriptHarnessError(
+                "Can't run command!", self.command, exc_info
+            )
         self.history['return_value'] = scriptharness.process.watch_output(
             self.logger, process, self.stdout, self.stderr,
             output_timeout=output_timeout, max_timeout=max_timeout
