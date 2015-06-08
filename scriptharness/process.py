@@ -7,7 +7,8 @@ from __future__ import absolute_import, division, print_function, \
 import os
 import psutil
 from psutil import NoSuchProcess
-from scriptharness.exceptions import ScriptHarnessFatal, ScriptHarnessTimeout
+from scriptharness.exceptions import ScriptHarnessError, ScriptHarnessFatal, \
+    ScriptHarnessTimeout
 from six.moves.queue import Empty
 import subprocess
 import sys
@@ -66,7 +67,10 @@ def command_subprocess(queue, *args, **kwargs):
     kwargs['stdout'] = subprocess.PIPE
     kwargs['stderr'] = subprocess.STDOUT
     kwargs['bufsize'] = 0
-    handle = subprocess.Popen(*args, **kwargs)
+    try:
+        handle = subprocess.Popen(*args, **kwargs)
+    except OSError as exc_info:
+        raise ScriptHarnessError("Can't run command!", args, exc_info)
     loop = True
     while loop:
         if handle.poll() is not None:

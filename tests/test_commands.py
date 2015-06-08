@@ -430,6 +430,12 @@ class TestOutput(unittest.TestCase):
                 "hello"
             )
 
+    def test_nonexistent_command(self):
+        """test_commands | Output nonexistent command
+        """
+        with get_output(command=["this_command_should_not_exist"]) as command:
+            self.assertRaises(ScriptHarnessError, command.run)
+
 
 # TestGetOutput {{{1
 class TestGetOutput(unittest.TestCase):
