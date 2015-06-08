@@ -164,6 +164,7 @@ def get_list_actions_string(action_name, enabled, groups=None):
     Args:
       action_name (str):  name of the action
       enabled (bool): whether the action is enabled by default
+      groups (list): a list of action_group names that the action belongs to.
 
     Returns:
       string (str): a line of --list-actions output.

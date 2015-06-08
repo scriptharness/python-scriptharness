@@ -80,10 +80,16 @@ class Action(object):
         end_time).
     """
     def __init__(self, name, action_groups=None, function=None, enabled=True):
-        """Create the Action object.
+        r"""Create the Action object.
 
         Args:
           name (str): Action name, for logging.
+
+          action_groups (list): a list of action group names that this
+            Action belongs to.  If scriptharness_volatile_action_group is
+            specified in config (usually via \--action-group), all actions
+            belonging to that action group will be enabled by default, and all
+            others disabled by default.
 
           function (function, optional).  This is the function or method
             to run in run_function().  If not specified, use
