@@ -68,11 +68,13 @@ def check_ignore(strict, ignore, message, messages):
     for ignored lines.  When self.strict is True, append an error to
     messages.
 
+    This function doesn't do a whole lot anymore, other than remove the
+    number of branches in validate_error_list.
+
     Args:
+      strict (bool): Whether the error-checking is strict or not.
       ignore (bool): True when 'level' is in error_check and negative.
-      name (str): The name of the key (pre_context_lines,
-        post_context_lines)
-      error_check (dict): A single item of error_list
+      message (str): The message to append if ignore and strict.
       messages (list): The error messages so far.
     """
     if ignore and strict:
@@ -151,13 +153,12 @@ class ErrorList(list):
         in pre_context_lines.
       post_context_lines (int): The max number of lines the error_list defines
         in post_context_lines.
-      error_list (list of dicts): The error list.
     """
     def __init__(self, error_list, strict=True):
-        super(ErrorList, self).__init__(error_list)
         self.strict = strict
         (self.pre_context_lines, self.post_context_lines) = \
             self.validate_error_list(error_list)
+        super(ErrorList, self).__init__(error_list)
 
     def validate_error_list(self, error_list):
         """Validate an error_list.
@@ -237,13 +238,8 @@ class ErrorList(list):
 
 
 # ErrorLists {{{1
-# These are largely taken from mozharness.
-BASE_ERROR_LIST = ErrorList([{
-    'substr': 'command not found', 'level': logging.ERROR
-}])
-
-# For ssh, scp, rsync over ssh
-SSH_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
+# These are largely taken from mozharness, and are posix system oriented.
+SSH_ERROR_LIST = ErrorList([
     {'substr': 'Name or service not known', 'level': logging.ERROR},
     {'substr': 'Could not resolve hostname', 'level': logging.ERROR},
     {'substr': 'POSSIBLE BREAK-IN ATTEMPT', 'level': logging.WARNING},
@@ -262,8 +258,10 @@ SSH_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
     {'substr': 'command-line line 0: Missing argument',
      'level': logging.ERROR},
 ])
+"""For ssh, scp, rsync over ssh.
+"""
 
-HG_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [{
+HG_ERROR_LIST = ErrorList([{
     'regex': re.compile(r'^abort:'),
     'level': logging.ERROR,
     'explanation': 'Automation Error: hg not responding'
@@ -277,7 +275,7 @@ HG_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [{
     'explanation': 'Automation Error: hg extension missing'
 }])
 
-GIT_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
+GIT_ERROR_LIST = ErrorList([
     {'substr': 'Permission denied (publickey).', 'level': logging.ERROR},
     {'substr': 'fatal: The remote end hung up unexpectedly',
      'level': logging.ERROR},
@@ -296,7 +294,7 @@ GIT_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
      'level': logging.ERROR},
 ])
 
-PYTHON_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
+PYTHON_ERROR_LIST = ErrorList([
     {'regex': re.compile(r'Warning:.*Error: '), 'level': logging.WARNING},
     {'substr': 'Traceback (most recent call last)', 'level': logging.ERROR},
     {'substr': 'SyntaxError: ', 'level': logging.ERROR},
@@ -319,7 +317,7 @@ VIRTUALENV_ERROR_LIST = ErrorList([
     },
 ] + PYTHON_ERROR_LIST[:])
 
-MAKE_ERROR_LIST = ErrorList(PYTHON_ERROR_LIST[:] + [
+MAKE_ERROR_LIST = ErrorList([
     {'substr': 'No rule to make target ', 'level': logging.ERROR},
     {'regex': re.compile(r'akefile.*was not found\.'), 'level': logging.ERROR},
     {'regex': re.compile(r'Stop\.$'), 'level': logging.ERROR},
@@ -331,8 +329,10 @@ MAKE_ERROR_LIST = ErrorList(PYTHON_ERROR_LIST[:] + [
      'level': logging.ERROR},
     {'substr': 'Warning: ', 'level': logging.WARNING},
 ])
+"""Make errors.  These are prime candidates to add pre_context_lines to.
+"""
 
-TAR_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
+TAR_ERROR_LIST = ErrorList([
     {'substr': '(stdin) is not a bzip2 file.', 'level': logging.ERROR},
     {'regex': re.compile(r'Child returned status [1-9]'),
      'level': logging.ERROR},
@@ -346,7 +346,7 @@ TAR_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
      'level': logging.ERROR},
 ])
 
-ADB_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [
+ADB_ERROR_LIST = ErrorList([
     {'substr': 'INSTALL_FAILED_', 'level': logging.ERROR},
     {'substr': 'Android Debug Bridge version', 'level': logging.ERROR},
     {'substr': 'error: protocol fault', 'level': logging.ERROR},
@@ -380,7 +380,7 @@ JARSIGNER_ERROR_LIST = ErrorList([{
     'explanation': 'The apk is missing!',
 }])
 
-ZIP_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [{
+ZIP_ERROR_LIST = ErrorList([{
     'substr': 'zip warning:',
     'level': logging.WARNING,
 }, {
@@ -391,7 +391,7 @@ ZIP_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [{
     'level': logging.ERROR,
 }])
 
-ZIPALIGN_ERROR_LIST = ErrorList(BASE_ERROR_LIST[:] + [{
+ZIPALIGN_ERROR_LIST = ErrorList([{
     'regex': re.compile(r'Unable to open .* as a zip archive'),
     'level': logging.ERROR,
 }, {
