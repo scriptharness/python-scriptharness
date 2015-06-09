@@ -9,7 +9,12 @@ Changelog for the unreleased 0.2.0 version.
 
 What's New
 ----------
+* More ways to enable and disable actions.  Now, in addition to ``--actions``, there's ``--add-actions``, ``--skip-actions``, and ``--action-group`` to change the set of default actions to run.
+
 * Script.actions is now a namedtuple
+
+* Split a number of modules out.
+.. note:: If you've cloned python-scriptharness, you may need to remove the ``scriptharness/commands`` directory, as it will conflict with the new ``scriptharness/commands.py`` module.
 
 Known Issues
 ------------
