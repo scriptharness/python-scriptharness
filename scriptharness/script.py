@@ -88,30 +88,30 @@ def build_context(script, phase, action=None):
         action=action, phase=phase
     )
 
-def enable_actions(parsed_args, actions):
+def enable_actions(parsed_args, action_list):
     """If parsed_args has action-related options, enable/disable actions
     as appropriate.
 
     Args:
       parsed_args (argparse Namespace)
-      actions (list of Actions)
+      action_list (list of Actions)
     """
     args = parsed_args.__dict__
     if args.get('scriptharness_volatile_action_group') is not None:
         action_group = args['scriptharness_volatile_action_group']
-        for action in actions:
+        for action in action_list:
             if action_group == 'all' or action_group in \
                     action.action_groups:
                 action.enabled = True
             else:
                 action.enabled = False
     if args.get('scriptharness_volatile_actions') is not None:
-        for action in actions:
+        for action in action_list:
             if action.name in args['scriptharness_volatile_actions']:
                 action.enabled = True
             else:
                 action.enabled = False
-    for action in actions:
+    for action in action_list:
         if action.name in (  # pylint disable=superfluous-parens
                 args.get('scriptharness_volatile_add_actions') or []):
             action.enabled = True
