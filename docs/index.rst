@@ -10,6 +10,7 @@
    :maxdepth: 3
 
    quickstart
+   enabling_actions
    scriptharness
    releasenotes
    README

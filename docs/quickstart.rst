@@ -161,9 +161,11 @@ Finally, it announces 'Done.'.
 
 The same output is written to the file ``artifacts/log.txt``.
 
-#########
---actions
-#########
+.. _quickstart-actions:
+
+#############
+``--actions``
+#############
 
 You can change which actions are run via the ``--actions`` option::
 
@@ -195,9 +197,11 @@ You can change which actions are run via the ``--actions`` option::
     00:00:05     INFO - Done.
 
 
-##############
---list-actions
-##############
+For more, see :ref:`Enabling-and-Disabling-Actions`.
+
+##################
+``--list-actions``
+##################
 
 If you want to list which actions are available, and which are enabled by
 default, use the ``--list-actions`` option::
@@ -211,9 +215,9 @@ default, use the ``--list-actions`` option::
       notify ['all']
 
 
-#############
---dump-config
-#############
+#################
+``--dump-config``
+#################
 
 You can change the ``new_argument`` value in the config via the
 ``--new-argument`` option that the script added.  Also, if you just want to
@@ -230,9 +234,9 @@ see what the config is without running anything, you can use the
     00:00:14     INFO - Already exists.
 
 
-######
---help
-######
+##########
+``--help``
+##########
 
 You can always use the ``--help`` option::
 
