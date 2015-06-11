@@ -9,7 +9,7 @@ Changelog for the unreleased 0.2.0 version.
 
 What's New
 ----------
-* More ways to enable and disable actions.  Now, in addition to ``--actions``, there's ``--add-actions``, ``--skip-actions``, and ``--action-group`` to change the set of default actions to run.
+* More ways to enable and disable actions.  Now, in addition to ``--actions``, there's ``--add-actions``, ``--skip-actions``, and ``--action-group`` to change the set of default actions to run.  (See :ref:`Enabling-and-Disabling-Actions`.)
 
 * Added ``Command`` object with cross-platform output_timeout and max_timeout support, with a ``run()`` wrapper function for easier use.  This is for running external tools with timeouts.
 
