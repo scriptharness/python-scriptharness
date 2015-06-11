@@ -386,3 +386,121 @@ def build_config(parser, parsed_args, initial_config=None):
         config.update(cmdln_config)
     update_dirs(config)
     return config
+
+
+# ConfigVariable {{{1
+# TODO parent- and subparser- options
+class ConfigVariable(object):
+    """This object defines what a single config variable looks like.
+
+    The variable is overridable from the commandline when when
+    self.definition['options'] is defined.  Otherwise the variable is only
+    script-level and config-file-level settable.
+
+    The definition will look like this::
+
+      {
+        # argparse-specific, for argparse.ArgumentParser.add_argument
+        # if 'options' is not set, these will be ignored.
+        'options': ['--foo', '-f'],
+        'action': 'store',  # (None, 'store', 'store_const', 'store_true',
+                            #  'store_false', 'append', 'append_const',
+                            #  'count', 'help', 'version', 'parsers')
+                            # defaults to 'store'
+
+        # argparse-related
+        # if 'options' is set, these will be used with
+        # argparse.ArgumentParser.add_argument; otherwise they're here for
+        # the non-commandline-config.
+        'help': 'help string',  # not sure whether this should be required
+                                # or highly recommended.
+        'required': True,
+        'default': 'bar',
+
+        # Not related to argparse
+        'validate_cb': None,  # optional, function to validate the
+                              # config.
+        'type': 'str'  # ('dict', 'list', 'str', 'int', 'float',)
+                       # defaults to 'str'?  Not sure what other types
+                       # need to be supported yet.
+        'incompatible_vars': [],  # names of incompatible vars if this var
+                                  # is set
+        'required_vars': [],  # names of other vars that are required to be
+                              # set if this var is set
+        'optional_vars': [],  # names of other vars that are optionally
+                              # used in relation to this var
+      }
+
+
+    Attributes:
+      name (str): the name of the variable.  This corresponds to the
+        argparse `dest`, or the config dict key.
+
+      definition (dict): the config definition for this variable.  See
+        above for the format.
+    """
+    def __init__(self, name, definition):
+        self.name = name
+        # TODO validate
+        self.definition = definition
+
+    def add_argument(self, parser):
+        """If self.definition['options'] is set, add the appropriate argument
+        to the parser.
+
+        Args:
+          parser (argparse.ArgumentParser): the parser to add the argument to.
+        """
+        if not self.definition.get('options'):
+            return
+#        self.action = definition.get('action', 'store')
+#        self.help = definition.get('help', None)
+#        self.required = definition.get('required', False)
+#        self.default = definition.get('default', None)
+
+    def validate_args(self, parsed_args):
+        """Once parser.parse_args() has been run, we validate the arguments
+        by sending the parsed args to each of these methods.
+
+        Args:
+          parsed_args (argparse.Namespace): the parsed arguments from
+            argparse.ArgumentParser.parse_args()
+        """
+        pass
+
+
+# ConfigTemplate {{{1
+class ConfigTemplate(object):
+    """Short for Config Template Definition, or CTD.
+    Because scriptharness scripts can take any arbitrary configuration
+    variables or commandline options from various locations, it's difficult
+    to tell what requires what, what's optional, and what's extraneous.
+
+    By allowing the developer to create a config template definition, we
+    can check for config well-formedness.
+    """
+    def __init__(self, config_dict):
+        self._config_variables = {}
+        for key, value in config_dict.items():
+            self.add_variable(key, value)
+
+    def add_variable(self, name, definition):
+        """Add a variable to the config template definition.
+
+        See scriptharness.config.ConfigVariable for the definition format.
+
+        Args:
+          name (str): the variable name.  This maps to argparse's `dest`
+          option_dict (dict): the definition of the config variable.
+        """
+
+    def update(self, config_dict, strict=True):
+        """Update self with a new config_dict
+
+        Args:
+          config_dict (dict): A dict of ConfigVariables or dicts.
+          strict (Optional[bool]): When True, throw an exception when there's
+            a conflicting variable.
+        """
+
+
