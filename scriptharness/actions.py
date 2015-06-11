@@ -91,12 +91,12 @@ class Action(object):
             belonging to that action group will be enabled by default, and all
             others disabled by default.
 
-          function (function, optional).  This is the function or method
+          function (Optional[function]).  This is the function or method
             to run in run_function().  If not specified, use
             get_function_by_name() to find the function that matches the
             action name.  If not found, raise.
 
-          enabled (bool, optional): Whether the action is enabled by default.
+          enabled (Optional[bool]): Whether the action is enabled by default.
             This may be toggled by commandline options or configuration later.
 
         Raises:

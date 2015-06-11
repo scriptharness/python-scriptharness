@@ -70,7 +70,7 @@ def build_context(script, phase, action=None):
     Args:
       script (Script): The calling Script
       phase (str): The current script phase (one of ALL_PHASES)
-      action (Action, optional): The active Action, if applicable.
+      action (Optional[Action]): The active Action, if applicable.
 
     Raises:
       scriptharness.exceptions.ScriptHarnessException: if there is an invalid
@@ -143,7 +143,7 @@ class Script(object):
         Args:
           actions (tuple): Action objects to run.
           parser (ArgumentParser): parser to use
-          name (str, optional): The name of the Script in
+          name (Optional[str]): The name of the Script in
             scriptharness.ScriptManager
           **kwargs: These are passed to self.build_config()
 
@@ -171,8 +171,8 @@ class Script(object):
         Args:
           parser (ArgumentParser): parser to use to parse the commandline
             args.
-          cmdln_args (tuple, optional): override the commandline args
-          initial_config (dict, optional): initial config dict to apply.
+          cmdln_args (Optional[tuple]): override the commandline args
+          initial_config (Optional[dict]): initial config dict to apply.
 
         Returns:
           parsed_args from parse_args()

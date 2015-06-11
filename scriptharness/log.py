@@ -48,8 +48,8 @@ def get_formatter(fmt=DEFAULT_FMT, datefmt=DEFAULT_DATEFMT):
     """Create a unicode-friendly formatter to add to logging handlers.
 
     Args:
-      fmt (str, optional): logging message format.
-      datefmt (str, optional): date format for the log message.
+      fmt (Optional[str]): logging message format.
+      datefmt (Optional[str]): date format for the log message.
 
     Returns:
       UnicodeFormatter to add to a handler - handler.setFormatter(formatter)
@@ -71,12 +71,12 @@ def prepare_simple_logging(path, mode='w', logger_name='', level=DEFAULT_LEVEL,
     file handlers writing to the same file.
 
     Args:
-      path (str, optional): path to the file log.  If this isn't set,
+      path (Optional[str]): path to the file log.  If this isn't set,
         don't create a file handler.  Default ''
-      mode (char, optional): the mode to open the file log.  Default 'w'
-      logger_name (str, optional): the name of the logger to use. Default ''
-      level (int, optional): the level to log.  Default DEFAULT_LEVEL
-      formatter (Formatter, optional): a logging Formatter to use; to handle
+      mode (Optional[char]): the mode to open the file log.  Default 'w'
+      logger_name (Optional[str]): the name of the logger to use. Default ''
+      level (Optional[int]): the level to log.  Default DEFAULT_LEVEL
+      formatter (Optional[Formatter]): a logging Formatter to use; to handle
         unicode, subclass UnicodeFormatter.
 
     Returns:
@@ -97,10 +97,10 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
 
     Args:
       path (str): the path to the logfile.
-      level (int, optional): logging level for the file.
-      formatter (logging.Formatter, optional): formatter to use for logs.
-      logger (logging logger, optional): logger to add the file handler to.
-      mode (str, optional): mode to open the file
+      level (Optional[int]): logging level for the file.
+      formatter (Optional[logging.Formatter]): formatter to use for logs.
+      logger (Optional[logging logger]): logger to add the file handler to.
+      mode (Optional[str]): mode to open the file
 
     Returns:
       handler (logging.FileHandler):  This can be added to a logger
@@ -121,9 +121,9 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
     """Create a stream handler to add to a logger.
 
     Args:
-      formatter (logging.Formatter, optional): formatter to use for logs.
-      logger (logging logger, optional): logger to add the file handler to.
-      level (int, optional): logging level for the file.
+      formatter (Optional[logging.Formatter]): formatter to use for logs.
+      logger (Optional[logging logger]): logger to add the file handler to.
+      level (Optional[int]): logging level for the file.
 
     Returns:
       logging.StreamHandler handler.  This can be added to a logger
@@ -188,7 +188,7 @@ class LogMethod(object):
         has the empty (), the function will be sent to LogMethod.__call__()
 
         Args:
-          func (function, optional): This is the decorated function.
+          func (Optional[function]): This is the decorated function.
           **kwargs: Contains any config options to override default_config
         """
         self.func = func
@@ -360,10 +360,10 @@ class OutputBuffer(object):
 
           line (str): the line to log
 
-          pre_context_lines (int, optional): the number of lines before this
+          pre_context_lines (Optional[int]): the number of lines before this
             one to set to log level `level`.  This defaults to 0.
 
-          post_context_lines (int, optional): the number of lines after this
+          post_context_lines (Optional[int]): the number of lines after this
             one to set to log level `level`.  This defaults to 0.
         """
         current_level = level
@@ -406,7 +406,7 @@ class OutputParser(object):
         Args:
           error_list (list of dicts): list of errors to look for.
 
-          logger (logging.Logger, optional): logger to use.
+          logger (Optional[logging.Logger]): logger to use.
 
           **kwargs: These are ignored, and are here so we can subclass
             ParsedCommand.
@@ -434,7 +434,7 @@ class OutputParser(object):
 
           line (str): line to log
 
-          error_check (dict, optional): the error_check in error_list that
+          error_check (Optional[dict]): the error_check in error_list that
             first matched line, if applicable.  Defaults to None.
         """
         error_check = error_check or {}

@@ -179,8 +179,8 @@ class LoggingClass(object):
         key.  For everything else, the name is the index.
 
         Args:
-          name (str, optional): set self.name, for later logging purposes.
-          parent (Logging*, optional): set self.parent, for logging purposes.
+          name (Optional[str]): set self.name, for later logging purposes.
+          parent (Optional[Logging*]): set self.parent, for logging purposes.
         """
         if name is not None:
             self.name = name
@@ -232,8 +232,8 @@ class LoggingClass(object):
         build the name from that.
 
         Args:
-          ancestor (LoggingClass, optional): specify the ancestor
-          child_list (list, optional): a list of descendents' names, in order
+          ancestor (Optional[LoggingClass]): specify the ancestor
+          child_list (Optional[list]): a list of descendents' names, in order
 
         Returns:
           name (string): the full name of self.
@@ -616,7 +616,7 @@ def get_strings(instance_type, muted=False):
 
     Args:
       instance (obj): LoggingClass instance or 'list' or 'dict'
-      muted (bool, optional): return the MUTED_LOGGING_STRINGS strings if True
+      muted (Optional[bool]): return the MUTED_LOGGING_STRINGS strings if True
     """
     strings = MUTED_LOGGING_STRINGS if muted else LOGGING_STRINGS
     if isinstance(instance_type, LoggingList) or instance_type == 'list':
