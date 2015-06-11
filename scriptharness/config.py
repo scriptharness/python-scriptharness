@@ -416,13 +416,15 @@ class ConfigVariable(object):
                                 # or highly recommended.
         'required': True,
         'default': 'bar',
+        'type': str  # (dict, list, str, int, float,)
+                     # defaults to str?  Not sure what other types
+                     # need to be supported yet.  These types could be a
+                     # superset of argparse's supported types, as long as
+                     # `options` is not set.
 
         # Not related to argparse
         'validate_cb': None,  # optional, function to validate the
                               # config.
-        'type': 'str'  # ('dict', 'list', 'str', 'int', 'float',)
-                       # defaults to 'str'?  Not sure what other types
-                       # need to be supported yet.
         'incompatible_vars': [],  # names of incompatible vars if this var
                                   # is set
         'required_vars': [],  # names of other vars that are required to be
@@ -441,7 +443,7 @@ class ConfigVariable(object):
     """
     def __init__(self, name, definition):
         self.name = name
-        # TODO validate
+        # TODO validate_config_definition(definition)
         self.definition = definition
 
     def add_argument(self, parser):
@@ -450,13 +452,33 @@ class ConfigVariable(object):
 
         Args:
           parser (argparse.ArgumentParser): the parser to add the argument to.
+
+        Returns:
+          argparse.Action: on success.
+
+        Raises:
+          ScriptHarnessException: on argparse.ArgumentParser.add_argument
+            error.
         """
         if not self.definition.get('options'):
             return
-#        self.action = definition.get('action', 'store')
-#        self.help = definition.get('help', None)
-#        self.required = definition.get('required', False)
-#        self.default = definition.get('default', None)
+
+        args = self.definition['options']
+        kwargs = {
+            'dest': self.name,
+            'action': self.definition.get('action', None),
+            'type': self.definition['type'],
+        }
+        for key in ('help', 'required', 'default'):
+            if self.definition.get(key):
+                kwargs[key] = self.definition[key]
+        try:
+            return parser.add_argument(*args, **kwargs)
+        except ValueError as exc_info:
+            raise ScriptHarnessException(
+                "Error adding %s argument to parser!" % self.name,
+                exc_info
+            )
 
     def validate_args(self, parsed_args):
         """Once parser.parse_args() has been run, we validate the arguments
