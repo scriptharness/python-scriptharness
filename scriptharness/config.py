@@ -530,11 +530,29 @@ class ConfigTemplate(object):
 
     By allowing the developer to create a config template definition, we
     can check for config well-formedness.
+
+    One unwritten-to-date idea is to add a
+    ``remove_option(self, name, option)`` which would allow us to, say,
+    remove the ``-f`` option from one variable so we can set it in another.
+    This could be very useful, or potentially confusing to end users that
+    expect a family of scripts to have the same ``-f`` functionality.
+
+    Attributes:
     """
     def __init__(self, config_dict):
         self._config_variables = {}
+        self._parsers = {
+            'root': None,
+            'parents': {},
+            'subparsers': {},
+        }
         for key, value in config_dict.items():
             self.add_variable(key, value)
+
+    def _add_variable(self, name, config_variable):
+        """
+        """
+        pass
 
     def add_variable(self, name, definition):
         """Add a variable to the config template definition.
@@ -545,8 +563,13 @@ class ConfigTemplate(object):
           name (str): the variable name.  This maps to argparse's `dest`
           option_dict (dict): the definition of the config variable.
         """
+        if not isinstance(definition, ConfigVariable):
+            pass
+            # TODO validate
+            # TODO create ConfigVariable
+        # TODO send to _add_variable
 
-    def update(self, config_dict, strict=True):
+    def update(self, config_dict):
         """Update self with a new config_dict
 
         Args:
@@ -554,5 +577,5 @@ class ConfigTemplate(object):
           strict (Optional[bool]): When True, throw an exception when there's
             a conflicting variable.
         """
-
-
+        for key, value in config_dict.items():
+            self.add_variable(key, value)
