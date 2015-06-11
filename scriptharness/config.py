@@ -424,13 +424,16 @@ class ConfigVariable(object):
 
         # Not related to argparse
         'validate_cb': None,  # optional, function to validate the
-                              # config.
+                              # config.  This function should take the args
+                              # (name, parsed_args) and return a list of
+                              # error message strings.
         'incompatible_vars': [],  # names of incompatible vars if this var
                                   # is set
         'required_vars': [],  # names of other vars that are required to be
                               # set if this var is set
         'optional_vars': [],  # names of other vars that are optionally
-                              # used in relation to this var
+                              # used in relation to this var.  This is purely
+                              # informational.
       }
 
 
@@ -487,8 +490,34 @@ class ConfigVariable(object):
         Args:
           parsed_args (argparse.Namespace): the parsed arguments from
             argparse.ArgumentParser.parse_args()
+
+        Returns:
+          messages (list of strings): any error messages, if applicable.
         """
-        pass
+        # Only validate if this option is set
+        if parsed_args.__dict__.get(self.name) is None:
+            return
+        messages = []
+        # incompatible_vars cannot be set if this var is set
+        for var in self.definition.get('incompatible_vars', []):
+            if parsed_args.__dict__.get(var) is not None:
+                messages.append(
+                    "Incompatible vars %s and %s are set!" %
+                    (self.name, var)
+                )
+        # required_vars must be set if this var is set
+        for var in self.definition.get('required_vars', []):
+            if parsed_args.__dict__.get(var) is None:
+                messages.append(
+                    "%s is set without required var %s!" %
+                    (self.name, var)
+                )
+        # run the validate_cb function if defined
+        if self.definition.get('validate_cb'):
+            value = self.definition['validate_cb'](self.name, parsed_args)
+            if isinstance(value, list):
+                messages.extend(value)
+        return messages
 
 
 # ConfigTemplate {{{1
