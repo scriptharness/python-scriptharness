@@ -112,7 +112,7 @@ def get_script(*args, **kwargs):
         this is required.  When retrieving an existing script, this is
         ignored/optional.
 
-      name (str, optional):  The name of the script to retrieve/create.
+      name (Optional[str]):  The name of the script to retrieve/create.
         Defaults to "root".  This is a keyword argument, so use name=NAME
 
       **kwargs: kwargs to pass to MANAGER.get_script(); these will be passed
@@ -128,7 +128,7 @@ def get_config(name="root"):
     """This will return the config from an existing script.
 
     Args:
-      name (str, optional):  The name of the script to get the config from.
+      name (Optional[str]):  The name of the script to get the config from.
         Defaults to "root".
 
     Raises:
@@ -150,7 +150,7 @@ def get_logger(name="root"):
     more important.
 
     Args:
-      name (str, optional):  The name of the script to get the logger from.
+      name (Optional[str]):  The name of the script to get the logger from.
         Defaults to "root".
 
     Raises:
@@ -202,7 +202,7 @@ def get_actions_from_list(all_actions, default_actions=None):
 
     Args:
       all_actions (list): ordered list of all action names
-      default_actions (list, optional): actions that are enabled by default
+      default_actions (Optional[list]): actions that are enabled by default
 
     Returns:
       tuple of Action objects

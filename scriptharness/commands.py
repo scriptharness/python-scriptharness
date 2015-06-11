@@ -76,10 +76,10 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
 
     Args:
       command (str or list): The command to run.
-      logger_name (str, optional): the logger name to log with.
-      level (int, optional): the logging level to log with.  Defaults to
+      logger_name (Optional[str]): the logger name to log with.
+      level (Optional[int]): the logging level to log with.  Defaults to
         logging.INFO
-      log_output (bool, optional): When true, log the output of the command.
+      log_output (Optional[bool]): When true, log the output of the command.
         Defaults to True.
       **kwargs: sent to `subprocess.check_output()`
     """
@@ -376,9 +376,9 @@ class Output(Command):
         this is not appropriate for large amounts of output.
 
         Args:
-          handle_name ("stdout" or "stderr", optional): the handle to read
+          handle_name (Optional["stdout" or "stderr"]): the handle to read
             from.  Defaults to "stdout"
-          text (bool, optional): whether the output is text.  If so, run
+          text (Optional[bool]): whether the output is text.  If so, run
             output through to_unicode() and rstrip().  Defaults to True.
         """
         if handle_name not in ("stdout", "stderr"):
@@ -413,10 +413,10 @@ def run(command, cmd_class=Command, halt_on_failure=False, *args, **kwargs):
     Args:
       command (list or str): Command line to run.
 
-      cmd_class (Command subclass, optional): the class to instantiate.
+      cmd_class (Optional[Command subclass]): the class to instantiate.
         Defaults to scriptharness.commands.Command.
 
-      halt_on_failure (bool, optional): raise ScriptHarnessFatal on error
+      halt_on_failure (Optional[bool]): raise ScriptHarnessFatal on error
         if True.  Default: False
 
       **kwargs: kwargs for subprocess.Popen.
@@ -482,7 +482,7 @@ def get_output(command, halt_on_failure=False, **kwargs):
     Args:
       command (list or str): the command to use in subprocess.Popen
 
-      halt_on_failure (bool, optional): raise ScriptHarnessFatal on error
+      halt_on_failure (Optional[bool]): raise ScriptHarnessFatal on error
         if True.  Default: False
 
       **kwargs: kwargs to send to scriptharness.commands.Output

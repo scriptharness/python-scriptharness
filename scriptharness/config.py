@@ -114,8 +114,8 @@ def download_url(url, path=None, timeout=None):
 
     Args:
       url (str): the url to download
-      path (str, optional): the path to write the contents to.
-      timeout (float, optional): how long to wait before timing out.
+      path (Optional[str]): the path to write the contents to.
+      timeout (Optional[float]): how long to wait before timing out.
 
     Returns:
       path (str): the path to the downloaded file.
@@ -273,7 +273,7 @@ def get_parser(all_actions=None, parents=None, **kwargs):
     """Create a script option parser.
 
     Args:
-      parents (list, optional): ArgumentParsers to set as parents of the parser
+      parents (Optional[list]): ArgumentParsers to set as parents of the parser
       **kwargs: additional kwargs for ArgumentParser
 
     Returns:
@@ -355,7 +355,7 @@ def build_config(parser, parsed_args, initial_config=None):
     Args:
       parser (ArgumentParser): the parser used to parse_args()
       parsed_args (argparse Namespace): the results of parse_args()
-      initial_config (dict, optional): initial configuration to set before
+      initial_config (Optional[dict]): initial configuration to set before
         commandline args
     """
     config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)

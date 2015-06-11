@@ -56,12 +56,12 @@ def write_version(name=None, path=None):
     """Write the version info to ../version.json, for setup.py
 
     Args:
-      name (str, optional): this is for the ``write_version(name=__name__)``
+      name (Optional[str]): this is for the ``write_version(name=__name__)``
         below.  That's one way to both follow the
         ``if __name__ == '__main__':`` convention but also allow for full
         coverage without ignoring parts of the file.
 
-      path (str, optional): the path to write the version json to.  Defaults
+      path (Optional[str]): the path to write the version json to.  Defaults
         to ../version.json
     """
     # Written like this for coverage purposes.

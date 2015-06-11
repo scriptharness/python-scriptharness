@@ -24,10 +24,10 @@ def kill_proc_tree(pid, include_parent=False, wait=5):
     Args:
       pid (int): The process ID of the parent.
 
-      include_parent (bool, optional): kill the parent as well if True.
+      include_parent (Optional[bool]): kill the parent as well if True.
         Defaults to False.
 
-      wait (int, optional): How long to wait for the children and parent to
+      wait (Optional[int]): How long to wait for the children and parent to
         die.  Defaults to 5.
     """
     parent = psutil.Process(pid)
@@ -105,10 +105,10 @@ def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
 
       add_line_cb (function): any output lines read will be sent here.
 
-      max_timeout (int, optional): when specified, the process will be killed
+      max_timeout (Optional[int]): when specified, the process will be killed
         if it takes longer than this number of seconds.  Default: None
 
-      output_timeout (int, optional): when specified, the process will be
+      output_timeout (Optional[int]): when specified, the process will be
         killed if it doesn't produce any output for this number of seconds.
         Default: None
 
@@ -168,10 +168,10 @@ def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
 
       runner (subprocess.Popen): the runner process to watch.
 
-      max_timeout (int, optional): when specified, the process will be killed
+      max_timeout (Optional[int]): when specified, the process will be killed
         if it takes longer than this number of seconds.  Default: None
 
-      output_timeout (int, optional): when specified, the process will be
+      output_timeout (Optional[int]): when specified, the process will be
         killed if it doesn't produce any output for this number of seconds.
         Default: None
 
