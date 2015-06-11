@@ -389,7 +389,6 @@ def build_config(parser, parsed_args, initial_config=None):
 
 
 # ConfigVariable {{{1
-# TODO parent- and subparser- options
 class ConfigVariable(object):
     """This object defines what a single config variable looks like.
 
@@ -407,6 +406,8 @@ class ConfigVariable(object):
                             #  'store_false', 'append', 'append_const',
                             #  'count', 'help', 'version', 'parsers')
                             # defaults to 'store'
+        'parent_parser': None,  # set to parent_parser name
+        'subparser': None,  # set to subparser name
 
         # argparse-related
         # if 'options' is set, these will be used with
