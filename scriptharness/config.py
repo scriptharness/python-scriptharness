@@ -446,6 +446,11 @@ class ConfigVariable(object):
         above for the format.
     """
     def __init__(self, name, definition):
+        if not isinstance(name, six.text_type):
+            raise ScriptHarnessException(
+                "ConfigDefinition name is not %s!" % six.text_type,
+                name
+            )
         self.name = name
         # TODO validate_config_definition(definition)
         self.definition = definition
@@ -550,17 +555,38 @@ class ConfigTemplate(object):
             'parents': {},
             'subparsers': {},
         }
-        for key, value in config_dict.items():
-            self.add_variable(key, value)
+        self.update(config_dict)
 
-    def _add_variable(self, name, config_variable):
-        """Add a ConfigVariable to self._config_variables.
+    @property
+    def all_options(self):
+        """Build and return set of all commandline options
+        """
+        options = set()
+        for _, config_variable in self._config_variables.items():
+            options.update(set(config_variable.definition.get('options', [])))
+        return options
+
+    def _add_variable(self, config_variable):
+        """Add a ConfigVariable to self._config_variables after checking for
+        conflicts.
 
         Args:
+          config_variable (ConfigVariable): the ConfigVariable to add
         """
-        pass
+        if config_variable.name in self._config_variables:
+            raise ScriptHarnessException(
+                "%s already in config_template!" % config_variable.name
+            )
+        options = set(config_variable.definition.get('options', []))
+        intersection = options.intersection(self.all_options)
+        if intersection:
+            raise ScriptHarnessException(
+                "%s has conflicting options!" % config_variable.name,
+                intersection
+            )
+        self._config_variables[config_variable.name] = config_variable
 
-    def add_variable(self, name, definition):
+    def add_variable(self, definition, name=None):
         """Add a variable to the config template definition.
 
         See scriptharness.config.ConfigVariable for the definition format.
@@ -571,11 +597,11 @@ class ConfigTemplate(object):
           definition (dict or ConfigVariable): a ConfigVariable or the
             definition of the config variable.
         """
-        if not isinstance(definition, ConfigVariable):
+        if isinstance(definition, ConfigVariable):
             config_variable = definition
         else:
-            config_variable = ConfigVariable(definition)
-        self._add_variable(name, config_variable)
+            config_variable = ConfigVariable(name, definition)
+        self._add_variable(config_variable)
 
     def update(self, config_dict):
         """Update self with a new config_dict
@@ -586,5 +612,14 @@ class ConfigTemplate(object):
           strict (Optional[bool]): When True, throw an exception when there's
             a conflicting variable.
         """
+        exceptions = []
         for key, value in config_dict.items():
-            self.add_variable(key, value)
+            try:
+                self.add_variable(key, value)
+            except ScriptHarnessException as exc_info:
+                exceptions.append(exc_info)
+        if exceptions:
+            raise ScriptHarnessException(
+                "Errors while trying to update ConfigTemplate!",
+                exceptions
+            )
