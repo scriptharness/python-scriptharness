@@ -538,6 +538,10 @@ class ConfigTemplate(object):
     expect a family of scripts to have the same ``-f`` functionality.
 
     Attributes:
+      _config_variables (dict): a name to ConfigVariable dictionary
+
+      _parsers (dict): this holds the parents and subparsers, as well as the
+        root ArgumentParser.
     """
     def __init__(self, config_dict):
         self._config_variables = {}
@@ -550,7 +554,9 @@ class ConfigTemplate(object):
             self.add_variable(key, value)
 
     def _add_variable(self, name, config_variable):
-        """
+        """Add a ConfigVariable to self._config_variables.
+
+        Args:
         """
         pass
 
@@ -561,19 +567,22 @@ class ConfigTemplate(object):
 
         Args:
           name (str): the variable name.  This maps to argparse's `dest`
-          option_dict (dict): the definition of the config variable.
+
+          definition (dict or ConfigVariable): a ConfigVariable or the
+            definition of the config variable.
         """
         if not isinstance(definition, ConfigVariable):
-            pass
-            # TODO validate
-            # TODO create ConfigVariable
-        # TODO send to _add_variable
+            config_variable = definition
+        else:
+            config_variable = ConfigVariable(definition)
+        self._add_variable(name, config_variable)
 
     def update(self, config_dict):
         """Update self with a new config_dict
 
         Args:
           config_dict (dict): A dict of ConfigVariables or dicts.
+
           strict (Optional[bool]): When True, throw an exception when there's
             a conflicting variable.
         """
