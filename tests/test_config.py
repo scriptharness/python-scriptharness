@@ -351,3 +351,47 @@ class TestParserFunctions(unittest.TestCase):
         }
         initial_config.update(contents)
         self.helper_build_config(cmdln_args, initial_config=initial_config)
+
+
+# TestValidateConfigDefinition {{{1
+class TestValidateConfigDefinition(unittest.TestCase):
+    """test validate_config_definition()
+    """
+    def test_options(self):
+        """test_config | validate_config_definition options
+        """
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', {'options': ['foo']},
+        )
+        # This should not raise
+        shconfig.validate_config_definition(
+            'foo', {'options': ['--foo', '-f', '--x-y']}
+        )
+
+
+    def test_empty_definition(self):
+        """test_config | validate_config_definition empty definition
+        """
+        defn = {}
+        self.assertTrue(
+            shconfig.validate_config_definition('foo', defn) is None
+        )
+
+    def test_invalid_action(self):
+        """test_config | validate_config_definition invalid action
+        """
+        defn = {'action': 'blarg'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_invalid_help(self):
+        """test_config | validate_config_definition invalid help
+        """
+        defn = {'help': b'foo'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )

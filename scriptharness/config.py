@@ -38,7 +38,7 @@ SCRIPTHARNESS_INITIAL_CONFIG = {
     "scriptharness_artifact_dir":
         "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
 }
-OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S+$')
+OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S*$')
 VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
                           'store_false', 'append', 'append_const', 'count',
                           'help', 'version', 'parsers')
