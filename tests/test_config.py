@@ -422,3 +422,32 @@ class TestValidateConfigDefinition(unittest.TestCase):
             ScriptHarnessException, shconfig.validate_config_definition,
             'foo', defn
         )
+
+
+# TestConfigVariable {{{1
+class TestConfigVariable(unittest.TestCase):
+    """Test ConfigVariable
+    """
+    def test_bad_name(self):
+        """test_config | ConfigVariable bad name
+        """
+        self.assertRaises(
+            ScriptHarnessException, shconfig.ConfigVariable,
+            b'foo', {'help': 'bar'}
+        )
+
+    @staticmethod
+    def test_add_argument():
+        """test_config | ConfigVariable simple argument
+        """
+        parser = mock.MagicMock()
+        defn = {
+            'options': ['-f', '--foo'],
+            'type': str,
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        variable.add_argument(parser)
+        parser.add_argument.assert_called_once_with(
+            '-f', '--foo', dest='foo', action=None, type=str, help='bar'
+        )

@@ -494,6 +494,7 @@ class ConfigVariable(object):
                 name
             )
         self.name = name
+        validate_config_definition(name, definition)
         self.definition = definition
 
     def add_argument(self, parser):
@@ -517,10 +518,11 @@ class ConfigVariable(object):
         kwargs = {
             'dest': self.name,
             'action': self.definition.get('action', None),
-            'type': self.definition['type'],
         }
-        for key in ('help', 'required', 'default'):
-            if self.definition.get(key):
+        for key in self.definition.keys():
+            if key not in ('dest', 'action', 'options', 'validate_cb',
+                           'incompatible_vars', 'required_vars',
+                           'optional_vars'):
                 kwargs[key] = self.definition[key]
         try:
             return parser.add_argument(*args, **kwargs)
