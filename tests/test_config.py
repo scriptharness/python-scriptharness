@@ -74,6 +74,16 @@ def start_webserver():
         except requests.exceptions.ConnectionError:
             pass
 
+def bad_validate(*_):
+    """Return a list for validate_config
+    """
+    return ["bad validate"]
+
+def good_validate(*_):
+    """Return nothing for validate_config
+    """
+    return None
+
 # TestUrlFunctions {{{1
 class TestUrlFunctionss(unittest.TestCase):
     """Test url functions
@@ -519,3 +529,21 @@ class TestConfigVariable(unittest.TestCase):
              {'name': 'foo', 'var': 'bar'}],
             value
         )
+
+    def test_bad_validate(self):
+        """test_config | ConfigVariable bad validate_cb
+        """
+        defn = {'help': 'help', 'validate_cb': bad_validate}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1})
+        print(value)
+        self.assertEqual(["bad validate"], value)
+
+    def test_good_validate(self):
+        """test_config | ConfigVariable good validate_cb
+        """
+        defn = {'help': 'help', 'validate_cb': good_validate}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1})
+        print(value)
+        self.assertFalse(value)
