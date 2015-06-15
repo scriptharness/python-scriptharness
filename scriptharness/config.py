@@ -44,7 +44,8 @@ VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
                           'help', 'version', 'parsers')
 STRINGS = {
     "config_variable": {
-        "required_var": "%(name)s is set without required var %(var)s!",
+        "required_vars": "%(name)s is set without required var %(var)s!",
+        "incompatible_vars": "Incompatible vars %(name)s and %(var)s are set!",
     },
 }
 
@@ -554,14 +555,14 @@ class ConfigVariable(object):
         for var in self.definition.get('incompatible_vars', []):
             if config.get(var) is not None:
                 messages.append(
-                    "Incompatible vars %s and %s are set!" %
-                    (self.name, var)
+                    STRINGS['config_variable']['incompatible_vars'] %
+                    {'name': self.name, 'var': var}
                 )
         # required_vars must be set if this var is set
         for var in self.definition.get('required_vars', []):
             if config.get(var) is None:
                 messages.append(
-                    STRINGS['config_variable']['required_var'] %
+                    STRINGS['config_variable']['required_vars'] %
                     {'name': self.name, 'var': var}
                 )
         # run the validate_cb function if defined

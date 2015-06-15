@@ -491,16 +491,31 @@ class TestConfigVariable(unittest.TestCase):
     def test_required_vars(self):
         """test_config | ConfigVariable required_vars
         """
-        defn = {'help': 'bar', 'required_vars': ['baz']}
+        defn = {'help': 'help', 'required_vars': ['bar']}
         variable = shconfig.ConfigVariable('foo', defn)
-        value = variable.validate_config({'foo': '1', 'baz': '2'})
+        value = variable.validate_config({'foo': '1', 'bar': '2'})
         print(value)
         self.assertFalse(value)
-        value = variable.validate_config({'foo': 1, 'x': 2})
+        value = variable.validate_config({'foo': 1, 'baz': 2})
         print(value)
         self.assertEqual(
-            [shconfig.STRINGS['config_variable']['required_var'] %
-             {'name': 'foo', 'var': 'baz'}],
+            [shconfig.STRINGS['config_variable']['required_vars'] %
+             {'name': 'foo', 'var': 'bar'}],
             value
         )
 
+    def test_incompatible_vars(self):
+        """test_config | ConfigVariable incompatible_vars
+        """
+        defn = {'help': 'help', 'incompatible_vars': ['bar']}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1, 'baz': 2})
+        print(value)
+        self.assertFalse(value)
+        value = variable.validate_config({'foo': 1, 'bar': 2})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['incompatible_vars'] %
+             {'name': 'foo', 'var': 'bar'}],
+            value
+        )
