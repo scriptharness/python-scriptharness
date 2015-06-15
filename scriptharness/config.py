@@ -16,6 +16,7 @@ from copy import deepcopy
 import json
 import logging
 import os
+import re
 import requests
 from requests.exceptions import RequestException, Timeout
 from scriptharness.actions import Action
@@ -37,6 +38,10 @@ SCRIPTHARNESS_INITIAL_CONFIG = {
     "scriptharness_artifact_dir":
         "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
 }
+OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S+$')
+VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
+                          'store_false', 'append', 'append_const', 'count',
+                          'help', 'version', 'parsers')
 
 
 # parse_config_file() {{{1
@@ -388,6 +393,43 @@ def build_config(parser, parsed_args, initial_config=None):
     return config
 
 
+# validate_config_definition {{{1
+def validate_config_definition(name, definition):
+    """Validate the ConfigVariable definition's well-formedness.
+
+    Args:
+      name (str): the name of the variable
+      definition (dict): the definition to validate
+    """
+    messages = []
+    if definition.get('options'):
+        for opt in definition['options']:
+            if OPTION_REGEX.search(opt) is None:
+                messages.append("%s option %s is not valid!" % (name, opt))
+    if 'action' in definition and \
+            definition['action'] not in VALID_ARGPARSE_ACTIONS:
+        messages.append("%s action %s not a valid action!" %
+                        (name, definition['action']))
+    for key in ('parent_parser', 'subparser', 'help'):
+        if key in definition and not \
+                isinstance(definition[key], six.text_type):
+            messages.append('%s %s is not %s!' % (name, key, six.text_type))
+    if 'type' in definition and not isinstance(definition['type'], type):
+        messages.append('%s type %s is not a python type!' %
+                        (name, definition['type']))
+    if 'validate_cb' in definition and not callable(definition['validate_cb']):
+        messages.append('%s validate_cb is not callable!' % name)
+    for key in ('incompatible_vars', 'required_vars', 'optional_vars'):
+        for var in definition.get(key, []):
+            if not isinstance(var, six.text_type):
+                messages.append(
+                    "%s %s %s is not %s!", (name, key, var, six.text_type)
+                )
+    # not sure how to validate 'required', 'choices', 'default'
+    if messages:
+        raise ScriptHarnessException('\n'.join(messages))
+
+
 # ConfigVariable {{{1
 class ConfigVariable(object):
     """This object defines what a single config variable looks like.
@@ -417,11 +459,8 @@ class ConfigVariable(object):
                                 # or highly recommended.
         'required': True,
         'default': 'bar',
-        'type': str  # (dict, list, str, int, float,)
-                     # defaults to str?  Not sure what other types
-                     # need to be supported yet.  These types could be a
-                     # superset of argparse's supported types, as long as
-                     # `options` is not set.
+        'type': str,  # a python type
+        'choices': [],  # enum / list of choices
 
         # Not related to argparse
         'validate_cb': None,  # optional, function to validate the
@@ -452,7 +491,6 @@ class ConfigVariable(object):
                 name
             )
         self.name = name
-        # TODO validate_config_definition(definition)
         self.definition = definition
 
     def add_argument(self, parser):
@@ -489,38 +527,37 @@ class ConfigVariable(object):
                 exc_info
             )
 
-    def validate_args(self, parsed_args):
-        """Once parser.parse_args() has been run, we validate the arguments
-        by sending the parsed args to each of these methods.
+    def validate_config(self, config):
+        """Once we build the config, we can validate it by sending the built
+        config to each of these methods.
 
         Args:
-          parsed_args (argparse.Namespace): the parsed arguments from
-            argparse.ArgumentParser.parse_args()
+          config (dict): the config built from build_config()
 
         Returns:
           messages (list of strings): any error messages, if applicable.
         """
         # Only validate if this option is set
-        if parsed_args.__dict__.get(self.name) is None:
+        if config.get(self.name) is None:
             return
         messages = []
         # incompatible_vars cannot be set if this var is set
         for var in self.definition.get('incompatible_vars', []):
-            if parsed_args.__dict__.get(var) is not None:
+            if config.get(var) is not None:
                 messages.append(
                     "Incompatible vars %s and %s are set!" %
                     (self.name, var)
                 )
         # required_vars must be set if this var is set
         for var in self.definition.get('required_vars', []):
-            if parsed_args.__dict__.get(var) is None:
+            if config.get(var) is None:
                 messages.append(
                     "%s is set without required var %s!" %
                     (self.name, var)
                 )
         # run the validate_cb function if defined
         if self.definition.get('validate_cb'):
-            value = self.definition['validate_cb'](self.name, parsed_args)
+            value = self.definition['validate_cb'](self.name, config)
             if isinstance(value, list):
                 messages.extend(value)
         return messages
