@@ -448,6 +448,36 @@ class TestConfigVariable(unittest.TestCase):
         }
         variable = shconfig.ConfigVariable('foo', defn)
         variable.add_argument(parser)
-        parser.add_argument.assert_called_once_with(
+        parser.add_argument.assert_called_once_with(  # pylint: disable=no-member
             '-f', '--foo', dest='foo', action=None, type=str, help='bar'
         )
+
+    def test_add_empty_argument(self):
+        """test_config | ConfigVariable empty argument
+        """
+        parser = mock.MagicMock()
+        defn = {
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        variable.add_argument(parser)
+        self.assertEqual(
+            parser.add_argument.called, False   # pylint: disable=no-member
+        )
+
+    def test_add_broken_argument(self):
+        """test_config | ConfigVariable broken argument
+        """
+        def raise_value_error(*args, **kwargs):
+            """Raise ValueError"""
+            if args or kwargs:
+                raise ValueError("boo!")
+        parser = mock.MagicMock()
+        parser.add_argument = raise_value_error
+        defn = {
+            'options': ['--foo', '-f'],
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        self.assertRaises(ScriptHarnessException, variable.add_argument,
+                          parser)
