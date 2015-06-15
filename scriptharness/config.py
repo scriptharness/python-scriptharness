@@ -395,6 +395,7 @@ def build_config(parser, parsed_args, initial_config=None):
 
 # validate_config_definition {{{1
 def validate_config_definition(name, definition):
+    # pylint: disable=too-many-branches
     """Validate the ConfigVariable definition's well-formedness.
 
     Args:
@@ -406,6 +407,8 @@ def validate_config_definition(name, definition):
         for opt in definition['options']:
             if OPTION_REGEX.search(opt) is None:
                 messages.append("%s option %s is not valid!" % (name, opt))
+    if 'help' not in definition:
+        messages.append("%s must define 'help'" % name)
     if 'action' in definition and \
             definition['action'] not in VALID_ARGPARSE_ACTIONS:
         messages.append("%s action %s not a valid action!" %
@@ -423,7 +426,7 @@ def validate_config_definition(name, definition):
         for var in definition.get(key, []):
             if not isinstance(var, six.text_type):
                 messages.append(
-                    "%s %s %s is not %s!", (name, key, var, six.text_type)
+                    "%s %s %s is not %s!" % (name, key, var, six.text_type)
                 )
     # not sure how to validate 'required', 'choices', 'default'
     if messages:

@@ -362,26 +362,26 @@ class TestValidateConfigDefinition(unittest.TestCase):
         """
         self.assertRaises(
             ScriptHarnessException, shconfig.validate_config_definition,
-            'foo', {'options': ['foo']},
+            'foo', {'options': ['foo'], 'help': 'bar'},
         )
         # This should not raise
         shconfig.validate_config_definition(
-            'foo', {'options': ['--foo', '-f', '--x-y']}
+            'foo', {'options': ['--foo', '-f', '--x-y'], 'help': 'bar'}
         )
 
 
     def test_empty_definition(self):
         """test_config | validate_config_definition empty definition
         """
-        defn = {}
-        self.assertTrue(
-            shconfig.validate_config_definition('foo', defn) is None
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', {}
         )
 
     def test_invalid_action(self):
         """test_config | validate_config_definition invalid action
         """
-        defn = {'action': 'blarg'}
+        defn = {'action': 'foo', 'help': 'bar'}
         self.assertRaises(
             ScriptHarnessException, shconfig.validate_config_definition,
             'foo', defn
@@ -391,6 +391,33 @@ class TestValidateConfigDefinition(unittest.TestCase):
         """test_config | validate_config_definition invalid help
         """
         defn = {'help': b'foo'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_invalid_type(self):
+        """test_config | validate_config_definition invalid type
+        """
+        defn = {'type': 'foo', 'help': 'bar'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_validate_cb(self):
+        """test_config | validate_config_definition invalid callback
+        """
+        defn = {'validate_cb': 'foo', 'help': 'bar'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_required_vars(self):
+        """test_config | validate_config_definition required vars
+        """
+        defn = {'required_vars': [b'foo', 'bar'], 'help': 'baz'}
         self.assertRaises(
             ScriptHarnessException, shconfig.validate_config_definition,
             'foo', defn
