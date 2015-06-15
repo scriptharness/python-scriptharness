@@ -42,7 +42,11 @@ OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S*$')
 VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
                           'store_false', 'append', 'append_const', 'count',
                           'help', 'version', 'parsers')
-
+STRINGS = {
+    "config_variable": {
+        "required_var": "%(name)s is set without required var %(var)s!",
+    },
+}
 
 # parse_config_file() {{{1
 def parse_config_file(path):
@@ -557,8 +561,8 @@ class ConfigVariable(object):
         for var in self.definition.get('required_vars', []):
             if config.get(var) is None:
                 messages.append(
-                    "%s is set without required var %s!" %
-                    (self.name, var)
+                    STRINGS['config_variable']['required_var'] %
+                    {'name': self.name, 'var': var}
                 )
         # run the validate_cb function if defined
         if self.definition.get('validate_cb'):

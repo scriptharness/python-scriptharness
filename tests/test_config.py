@@ -481,3 +481,26 @@ class TestConfigVariable(unittest.TestCase):
         variable = shconfig.ConfigVariable('foo', defn)
         self.assertRaises(ScriptHarnessException, variable.add_argument,
                           parser)
+
+    def test_empty_config(self):
+        """test_config | ConfigVariable empty config
+        """
+        variable = shconfig.ConfigVariable('foo', {'help': 'bar'})
+        self.assertTrue(variable.validate_config({}) is None)
+
+    def test_required_vars(self):
+        """test_config | ConfigVariable required_vars
+        """
+        defn = {'help': 'bar', 'required_vars': ['baz']}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': '1', 'baz': '2'})
+        print(value)
+        self.assertFalse(value)
+        value = variable.validate_config({'foo': 1, 'x': 2})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['required_var'] %
+             {'name': 'foo', 'var': 'baz'}],
+            value
+        )
+
