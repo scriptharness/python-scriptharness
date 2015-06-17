@@ -607,6 +607,9 @@ class ConfigTemplate(object):
     @property
     def all_options(self):
         """Build and return set of all commandline options
+
+        Returns:
+          options (set): all commandline options
         """
         options = set()
         for _, config_variable in self._config_variables.items():
@@ -632,6 +635,12 @@ class ConfigTemplate(object):
                 intersection
             )
         self._config_variables[config_variable.name] = config_variable
+        if config_variable.definition.get('parent_parser'):
+            parent = config_variable.definition['parent_parser']
+            self._parsers['parents'][parent].setdefault(None)
+        elif config_variable.definition.get('subparser'):
+            subparser = config_variable.definition['subparser']
+            self._parsers['subparsers'][subparser].setdefault(None)
 
     def add_variable(self, definition, name=None):
         """Add a variable to the config template definition.
@@ -670,3 +679,9 @@ class ConfigTemplate(object):
                 "Errors while trying to update ConfigTemplate!",
                 exceptions
             )
+
+    def get_parser(self):
+        pass
+
+    def validate_config(self, config):
+        pass
