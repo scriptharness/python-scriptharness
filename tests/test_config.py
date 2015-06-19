@@ -4,9 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-import argparse
 from contextlib import contextmanager
-from copy import deepcopy
 import json
 import mock
 import os
@@ -226,19 +224,19 @@ class TestUrlFunctionss(unittest.TestCase):
 
 
 # TestParserFunctions {{{1
-class TestParserFunctions(unittest.TestCase):
-    """Test parser functions
+class TestTemplateFunctions(unittest.TestCase):
+    """Test template functions
     """
-    @staticmethod
     @mock.patch('%s.print' % BUILTIN)
-    def test_list_actions(mock_print):
+    def test_list_actions(self, mock_print):
         """test_config | --list-actions
         """
-        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
-        try:
-            shconfig.parse_args(parser, cmdln_args=["--list-actions"])
-        except SystemExit:
-            pass
+        template = shconfig.get_config_template(all_actions=TEST_ACTIONS)
+        self.assertRaises(
+            SystemExit,
+            shconfig.parse_args,
+            template, cmdln_args=["--list-actions"]
+        )
         if six.PY2:
             groups_str = "[u'all']"
         else:
@@ -263,7 +261,8 @@ class TestParserFunctions(unittest.TestCase):
             pass
         for name, enabled in TEST_ACTIONS:
             actions.append(Action(name, enabled=enabled, function=func))
-        parser = shconfig.get_action_parser(actions)
+        template = shconfig.action_config_template(actions)
+        parser = template.get_parser()
         args = parser.parse_args("--actions build package".split())
         self.assertEqual(args.scriptharness_volatile_actions,
                          ["build", "package"])
@@ -274,7 +273,8 @@ class TestParserFunctions(unittest.TestCase):
     def test_config_parser(self):
         """test_config | config parser
         """
-        parser = shconfig.get_config_parser()
+        template = shconfig.get_config_template()
+        parser = template.get_parser()
         args = parser.parse_args("-c file1 -c file2 -c file3".split())
         self.assertEqual(
             args.config_files,
@@ -284,22 +284,18 @@ class TestParserFunctions(unittest.TestCase):
     def test_no_actions(self):
         """test_config | no actions, get_parser no kwargs
         """
-        parser = shconfig.get_parser()
+        template = shconfig.get_config_template()
+        parser = template.get_parser()
         with stdstar_redirected(os.devnull):
             self.assertRaises(SystemExit, parser.parse_args, ["--list-actions"])
-
-    def test_no_actions2(self):
-        """test_config | no actions, setting get_parser parents
-        """
-        parents = []
-        parser = shconfig.get_parser(parents=parents)
-        parsed_args = shconfig.parse_args(parser, cmdln_args=[])
-        self.assertEqual(parsed_args, argparse.Namespace())
 
     def helper_build_config(self, cmdln_args, initial_config=None):
         """Help test build_config()
         """
-        config2 = deepcopy(shconfig.SCRIPTHARNESS_INITIAL_CONFIG)
+        config2 = {}
+        for key, value in shconfig.DEFAULT_CONFIG_DEFINITION.items():
+            if value.get('default'):
+                config2[key] = value['default']
         shconfig.update_dirs(config2)
         if initial_config is None:
             initial_config = {
@@ -312,11 +308,12 @@ class TestParserFunctions(unittest.TestCase):
                             'test_config.json')
         with open(path) as filehandle:
             contents = json.load(filehandle)
-        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
-        parser.add_argument("--test-default", default="default")
-        parser.add_argument("--override-default", default="default")
-        parsed_args = shconfig.parse_args(parser, cmdln_args=cmdln_args)
-        config = shconfig.build_config(parser, parsed_args, initial_config)
+        template = shconfig.get_config_template(all_actions=TEST_ACTIONS)
+        template.add_argument("--test-default", default="default", help="help")
+        template.add_argument("--override-default", default="default",
+                              help="help")
+        parsed_args = shconfig.parse_args(template, cmdln_args=cmdln_args)
+        config = shconfig.build_config(template, parsed_args, initial_config)
         config2.update(contents)
         config2['test_default'] = 'default'
         config2['override_default'] = 'not_default'
@@ -392,15 +389,6 @@ class TestValidateConfigDefinition(unittest.TestCase):
         """test_config | validate_config_definition invalid action
         """
         defn = {'action': 'foo', 'help': 'bar'}
-        self.assertRaises(
-            ScriptHarnessException, shconfig.validate_config_definition,
-            'foo', defn
-        )
-
-    def test_invalid_help(self):
-        """test_config | validate_config_definition invalid help
-        """
-        defn = {'help': b'foo'}
         self.assertRaises(
             ScriptHarnessException, shconfig.validate_config_definition,
             'foo', defn
@@ -496,7 +484,7 @@ class TestConfigVariable(unittest.TestCase):
         """test_config | ConfigVariable empty config
         """
         variable = shconfig.ConfigVariable('foo', {'help': 'bar'})
-        self.assertTrue(variable.validate_config({}) is None)
+        self.assertFalse(variable.validate_config({}))
 
     def test_required_vars(self):
         """test_config | ConfigVariable required_vars

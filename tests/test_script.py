@@ -5,12 +5,11 @@
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import argparse
-from copy import deepcopy
 import json
 import os
 import scriptharness.actions as actions
-from scriptharness.config import get_parser, update_dirs, \
-    SCRIPTHARNESS_INITIAL_CONFIG
+from scriptharness.config import get_config_template, update_dirs, \
+    DEFAULT_CONFIG_DEFINITION
 from scriptharness.exceptions import ScriptHarnessException, ScriptHarnessFatal
 import scriptharness.script as script
 import shutil
@@ -129,7 +128,7 @@ class TestScript(unittest.TestCase):
         return actions.Action(name, function=self.get_timing_func(name),
                               enabled=enabled)
 
-    def get_script(self, parser=None, cmdln_args=None, initial_config=None):
+    def get_script(self, template=None, cmdln_args=None, initial_config=None):
         """Create a Script for testing
         """
         action_list = [
@@ -138,12 +137,12 @@ class TestScript(unittest.TestCase):
             self.get_action("three", enabled=False),
             self.get_action("four"),
         ]
-        parser = parser or get_parser(action_list)
+        template = template or get_config_template(all_actions=action_list)
         cmdln_args = cmdln_args or []
         kwargs = {}
         if initial_config is not None:
             kwargs['initial_config'] = initial_config
-        return script.Script(action_list, parser, cmdln_args=cmdln_args,
+        return script.Script(action_list, template, cmdln_args=cmdln_args,
                              **kwargs)
 
     def raise_fatal(self, _):
@@ -288,15 +287,18 @@ class TestScript(unittest.TestCase):
             self.get_action("one", enabled=False),
             self.get_action("four"),
         ]
-        parser = get_parser(action_list)
+        template = get_config_template(all_actions=action_list)
         cmdln_args = []
         self.assertRaises(ScriptHarnessException, script.Script,
-                          action_list, parser, cmdln_args=cmdln_args)
+                          action_list, template, cmdln_args=cmdln_args)
 
     def test_dump_config(self):
         """test_script | --dump-config
         """
-        initial_config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
+        initial_config = {}
+        for key, value in DEFAULT_CONFIG_DEFINITION.items():
+            if value.get("default"):
+                initial_config[key] = value['default']
         update_dirs(initial_config)
         initial_config['a'] = 1
         self.assertRaises(SystemExit, self.get_script,
@@ -330,7 +332,7 @@ class TestStrictScript(unittest.TestCase):
             shutil.rmtree("artifacts")
 
     @staticmethod
-    def get_script(parser=None, cmdln_args=None, initial_config=None):
+    def get_script(template=None, cmdln_args=None, initial_config=None):
         """Create a StrictScript for testing
         """
         action_list = [
@@ -338,12 +340,12 @@ class TestStrictScript(unittest.TestCase):
             get_action("two", change_config2),
             get_action("three", change_attribute, enabled=False),
         ]
-        parser = parser or get_parser(action_list)
+        template = template or get_config_template(all_actions=action_list)
         cmdln_args = cmdln_args or []
         kwargs = {}
         if initial_config is not None:
             kwargs['initial_config'] = initial_config
-        return script.StrictScript(action_list, parser, cmdln_args=cmdln_args,
+        return script.StrictScript(action_list, template, cmdln_args=cmdln_args,
                                    **kwargs)
 
     def test_pre_run(self):

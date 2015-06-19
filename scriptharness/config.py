@@ -6,13 +6,12 @@ variety of contexts and environments.
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
 
-  SCRIPTHARNESS_INITIAL_CONFIG (dict): These key/value pairs are available
-    in all scriptharness scripts.
+  DEFAULT_CONFIG_DEFINITION (dict): Config definition to create the default
+    ConfigTemplate for all scriptharness scripts.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import argparse
-from copy import deepcopy
 import json
 import logging
 import os
@@ -619,15 +618,6 @@ class ConfigTemplate(object):
           self.config_variables.items()
         """
         return self.config_variables.items()
-
-    def get_default(self, name):
-        """Wrapper method for ArgumentParser.get_default()
-
-        Args:
-          name (str): the variable name, aka the argparse dest
-        """
-        parser = self.get_parser()
-        return parser.get_default(name)
 
     def defaults(self):
         """Get the defaults for all the variables, even the non-commandline
