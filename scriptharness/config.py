@@ -31,13 +31,6 @@ import time
 
 
 LOGGER_NAME = "scriptharness.config"
-SCRIPTHARNESS_INITIAL_CONFIG = {
-    "scriptharness_base_dir": six.text_type(os.getcwd()),
-    "scriptharness_work_dir":
-        "%(scriptharness_base_dir)s{}build".format(os.sep),
-    "scriptharness_artifact_dir":
-        "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
-}
 OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S*$')
 VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
                           'store_false', 'append', 'append_const', 'count',
@@ -49,6 +42,18 @@ STRINGS = {
     },
 }
 DEFAULT_CONFIG_DEFINITION = {
+    "scriptharness_base_dir": {
+        "default": six.text_type(os.getcwd()),
+        "help": "The base directory to run the script in.",
+    },
+    "scriptharness_work_dir": {
+        "default": "%(scriptharness_base_dir)s{}build".format(os.sep),
+        "help": "The directory to perform the work in."
+    },
+    "scriptharness_artifact_dir": {
+        "default": "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
+        "help": "The directory to copy artifacts to."
+    },
     "config_files": {
         "options": ['--config-file', '--cfg', '-c'],
         "action": 'append',
@@ -186,7 +191,7 @@ def download_url(url, path=None, timeout=None):
         )
 
 
-# get_parser() {{{1
+# config template functions {{{1
 def get_list_actions_string(action_name, enabled, groups=None):
     """Build a string for --list-actions output.
 
@@ -256,7 +261,7 @@ def action_config_template(all_actions):
             "help": "Specify the actions to run.",
         },
         "scriptharness_volatile_skip_actions": {
-            "options": "--skip-actions",
+            "options": ["--skip-actions"],
             "nargs": '+',
             "choices": action_names,
             "metavar": "ACTION",
@@ -364,12 +369,12 @@ def update_dirs(config, max_depth=2):
     config.update(repl_dict)
 
 # build_config {{{1
-def build_config(parser, parsed_args, initial_config=None):
+def build_config(template, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
 
     The configuration is built in this order:
 
-      * parser defaults
+      * template defaults
       * initial_config
       * parsed_args.config_files, in order
       * parsed_args.opt_config_files, in order, if they exist
@@ -387,7 +392,8 @@ def build_config(parser, parsed_args, initial_config=None):
       initial_config (Optional[dict]): initial configuration to set before
         commandline args
     """
-    config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
+    config = template.defaults()
+    parser = template.get_parser()
     cmdln_config = {}
     resources = {}
     initial_config = initial_config or {}
@@ -414,6 +420,7 @@ def build_config(parser, parsed_args, initial_config=None):
     if cmdln_config:
         config.update(cmdln_config)
     update_dirs(config)
+    template.validate_config(config)
     return config
 
 
@@ -561,7 +568,7 @@ class ConfigVariable(object):
         """
         # Only validate if this option is set
         if config.get(self.name) is None:
-            return
+            return []
         messages = []
         # incompatible_vars cannot be set if this var is set
         for var in self.definition.get('incompatible_vars', []):
@@ -595,26 +602,45 @@ class ConfigTemplate(object):
     By allowing the developer to create a config template definition, we
     can check for config well-formedness.
 
-    One unwritten-to-date idea is to add a
-    ``remove_option(self, name, option)`` which would allow us to, say,
-    remove the ``-f`` option from one variable so we can set it in another.
-    This could be very useful, or potentially confusing to end users that
-    expect a family of scripts to have the same ``-f`` functionality.
-
     Attributes:
-      _config_variables (dict): a name to ConfigVariable dictionary
+      config_variables (dict): a name to ConfigVariable dictionary
 
       parser (argparse.ArgumentParser): this is the commandline parser.
     """
     def __init__(self, config_dict):
-        self._config_variables = {}
+        self.config_variables = {}
         self.parser = None
         self.update(config_dict)
 
     def items(self):
         """Have ConfigTemplate act more like a dict.
+
+        Returns:
+          self.config_variables.items()
         """
-        return self._config_variables.items()
+        return self.config_variables.items()
+
+    def get_default(self, name):
+        """Wrapper method for ArgumentParser.get_default()
+
+        Args:
+          name (str): the variable name, aka the argparse dest
+        """
+        parser = self.get_parser()
+        return parser.get_default(name)
+
+    def defaults(self):
+        """Get the defaults for all the variables, even the non-commandline
+        ones.
+
+        Returns:
+          dict: name to default value.
+        """
+        defaults = {}
+        for name, variable in self.config_variables.items():
+            if variable.definition.get("default"):
+                defaults[name] = variable.definition['default']
+        return defaults
 
     @property
     def all_options(self):
@@ -624,18 +650,18 @@ class ConfigTemplate(object):
           options (set): all commandline options
         """
         options = set()
-        for _, config_variable in self._config_variables.items():
+        for _, config_variable in self.config_variables.items():
             options.update(set(config_variable.definition.get('options', [])))
         return options
 
     def _add_variable(self, config_variable):
-        """Add a ConfigVariable to self._config_variables after checking for
+        """Add a ConfigVariable to self.config_variables after checking for
         conflicts.
 
         Args:
           config_variable (ConfigVariable): the ConfigVariable to add
         """
-        if config_variable.name in self._config_variables:
+        if config_variable.name in self.config_variables:
             raise ScriptHarnessException(
                 "%s already in config_template!" % config_variable.name
             )
@@ -646,7 +672,7 @@ class ConfigTemplate(object):
                 "%s has conflicting options!" % config_variable.name,
                 intersection
             )
-        self._config_variables[config_variable.name] = config_variable
+        self.config_variables[config_variable.name] = config_variable
 
     def add_variable(self, definition, name=None):
         """Add a variable to the config template definition.
@@ -664,6 +690,38 @@ class ConfigTemplate(object):
         else:
             config_variable = ConfigVariable(name, definition)
         self._add_variable(config_variable)
+
+    def remove_option(self, option):
+        """Remove a commandline option from the ConfigTemplate.
+
+        Because we can add templates together, we may sometimes
+        encounter conflicting commandline options.  This method allows us
+        to remove those options from one or both templates.
+
+        Args:
+          option (str): The commandline option to remove.
+        """
+        for name, variable in self.config_variables.items():
+            if option in variable.definition:
+                del variable.definition[option]
+                logger = logging.getLogger(LOGGER_NAME)
+                logger.info("Removed option %s from %s.", option, name)
+                break
+
+    def add_argument(self, *args, **kwargs):
+        """Helper method to make ConfigTemplate usage more similar to
+        ArgumentParser.
+        """
+        if not args:
+            raise ScriptHarnessException(
+                "ConfigTemplate.add_argument needs *args!"
+            )
+        kwargs['options'] = args
+        if 'dest' in kwargs:
+            name = kwargs['dest']
+        else:
+            name = args[0].lstrip('-').replace('-', '_')
+        self.add_variable(kwargs, name=name)
 
     def update(self, config_dict):
         """Update self with a new config_dict
@@ -697,9 +755,10 @@ class ConfigTemplate(object):
           argparse.ArgumentParser: the commandline parser for this Config
             Template
         """
-        self.parser = argparse.ArgumentParser(**kwargs)
-        for variable in self._config_variables.values():
-            variable.add_argument(self.parser)
+        if self.parser is None:
+            self.parser = argparse.ArgumentParser(**kwargs)
+            for variable in self.config_variables.values():
+                variable.add_argument(self.parser)
         return self.parser
 
     def validate_config(self, config):
@@ -713,7 +772,8 @@ class ConfigTemplate(object):
           scriptharness.exceptions.ScriptHarnessException: on error.
         """
         messages = []
-        for variable in self._config_variables.values():
-            messages += variable.validate_config(config)
+        for variable in self.config_variables.values():
+            message = variable.validate_config(config)
+            messages += message
         if messages:
             raise ScriptHarnessException("Invalid config!", messages)

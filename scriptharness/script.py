@@ -137,12 +137,12 @@ class Script(object):
     """
     config = None
 
-    def __init__(self, actions, parser, name='root', **kwargs):
+    def __init__(self, actions, template, name='root', **kwargs):
         """Script.__init__
 
         Args:
           actions (tuple): Action objects to run.
-          parser (ArgumentParser): parser to use
+          template (ConfigTemplate): template to use
           name (Optional[str]): The name of the Script in
             scriptharness.ScriptManager
           **kwargs: These are passed to self.build_config()
@@ -156,21 +156,21 @@ class Script(object):
         for phase in LISTENER_PHASES:
             self.listeners.setdefault(phase, [])
         self.verify_actions(actions)
-        self.build_config(parser, **kwargs)
+        self.build_config(template, **kwargs)
         self.logger = self.get_logger()
         self.start_message()
         self.log_enabled_actions()
         self.save_config()
 
-    def build_config(self, parser, cmdln_args=None, initial_config=None):
+    def build_config(self, template, cmdln_args=None, initial_config=None):
         """Create self.config from the parsed args.
 
         If --dump-config is in the commandline arguments, the script will
         dump the config to screen and disk, and exit.
 
         Args:
-          parser (argparse.ArgumentParser): parser to parse the commandline
-            args.
+          template (ConfigTemplate): template to parse and validate
+            the config.
 
           cmdln_args (Optional[tuple]): override the commandline args
 
@@ -179,8 +179,8 @@ class Script(object):
         Returns:
           parsed_args from parse_args()
         """
-        parsed_args = shconfig.parse_args(parser, cmdln_args)
-        config = shconfig.build_config(parser, parsed_args, initial_config)
+        parsed_args = shconfig.parse_args(template, cmdln_args)
+        config = shconfig.build_config(template, parsed_args, initial_config)
         self.dict_to_config(config)
         enable_actions(parsed_args, self.actions)
         if parsed_args.__dict__.get("scriptharness_volatile_dump_config"):

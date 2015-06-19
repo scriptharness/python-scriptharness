@@ -81,13 +81,13 @@ if __name__ == '__main__':
     """Create a commandline argument parser, with default scriptharness
     argument options pre-populated.
     """
-    parser = scriptharness.get_parser(all_actions=actions)
+    template = scriptharness.get_config_template(all_actions=actions)
 
     """Add new commandline argument(s)
     https://docs.python.org/dev/library/argparse.html#argparse.ArgumentParser.add_argument
     """
-    parser.add_argument("--new-argument", action='store',
-                        help="help message for --new-argument")
+    template.add_argument("--new-argument", action='store',
+                          help="help message for --new-argument")
 
     """Create the Script object.  If ``get_script()`` is called a second time,
     it will return the same-named script object.  (`name` in get_script()
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     above; the Script object will parse it and store the new_argument
     value in its config.
     """
-    script = scriptharness.get_script(actions=actions, parser=parser)
+    script = scriptharness.get_script(actions=actions, template=template)
 
     """This will run the script.
     Essentially, it will go through the list of actions, and if the action

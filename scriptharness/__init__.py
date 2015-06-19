@@ -17,7 +17,7 @@ from __future__ import absolute_import, division, print_function, \
                        unicode_literals
 import os
 import scriptharness.actions
-from scriptharness.config import get_parser
+from scriptharness.config import get_config_template
 from scriptharness.exceptions import ScriptHarnessException
 from scriptharness.log import prepare_simple_logging
 import scriptharness.script
@@ -25,7 +25,7 @@ from scriptharness.structures import iterate_pairs
 
 __all__ = [
     'get_script', 'get_config', 'get_actions', 'get_actions_from_list',
-    'get_logger', 'get_parser', 'prepare_simple_logging',
+    'get_logger', 'get_config_template', 'prepare_simple_logging',
     'set_action_class', 'set_script_class',
 ]
 
