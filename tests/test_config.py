@@ -547,3 +547,28 @@ class TestConfigVariable(unittest.TestCase):
         value = variable.validate_config({'foo': 1})
         print(value)
         self.assertFalse(value)
+
+
+# TestConfigTemplate {{{1
+class TestConfigTemplate(unittest.TestCase):
+    """Test ConfigTemplate
+    """
+    def test_add_variable(self):
+        """test_config | ConfigTemplate.add_variable()
+        """
+        template = shconfig.ConfigTemplate({})
+        defn = {'help': 'help', 'options': ['-f', '--foo']}
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn
+        )
+        template.add_variable(defn, name="foo")
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn, name="foo"
+        )
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn, name="bar"
+        )
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable,
+            shconfig.ConfigVariable("baz", defn)
+        )

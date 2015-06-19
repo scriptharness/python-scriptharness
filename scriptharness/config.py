@@ -494,7 +494,7 @@ class ConfigVariable(object):
     def __init__(self, name, definition):
         if not isinstance(name, six.text_type):
             raise ScriptHarnessException(
-                "ConfigDefinition name is not %s!" % six.text_type,
+                "ConfigVariable name is not %s!" % six.text_type,
                 name
             )
         self.name = name
@@ -707,7 +707,7 @@ class ConfigTemplate(object):
 
     def validate_config(self, config):
         """Validate a config dict against each
-        ConfigDefinition.validate_config check.
+        ConfigVariable.validate_config check.
 
         Args:
           config (dict): the config dictionary to validate.
