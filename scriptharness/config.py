@@ -414,14 +414,12 @@ def validate_config_definition(name, definition):
                 messages.append("%s option %s is not valid!" % (name, opt))
     if 'help' not in definition:
         messages.append("%s must define 'help'" % name)
+    elif not isinstance(definition['help'], six.text_type):
+        messages.append('%s help is not %s!' % (name, six.text_type))
     if 'action' in definition and \
             definition['action'] not in VALID_ARGPARSE_ACTIONS:
         messages.append("%s action %s not a valid action!" %
                         (name, definition['action']))
-    for key in ('parent_parser', 'help'):
-        if key in definition and not \
-                isinstance(definition[key], six.text_type):
-            messages.append('%s %s is not %s!' % (name, key, six.text_type))
     if 'type' in definition and not isinstance(definition['type'], type):
         messages.append('%s type %s is not a python type!' %
                         (name, definition['type']))
@@ -456,7 +454,6 @@ class ConfigVariable(object):
                             #  'store_false', 'append', 'append_const',
                             #  'count', 'help', 'version', 'parsers')
                             # defaults to 'store'
-        'parent_parser': None,  # set to parent_parser name
 
         # argparse-related
         # if 'options' is set, these will be used with
@@ -591,15 +588,11 @@ class ConfigTemplate(object):
     Attributes:
       _config_variables (dict): a name to ConfigVariable dictionary
 
-      _parsers (dict): this holds the parents as well as the
-        root ArgumentParser.
+      parser (argparse.ArgumentParser): this is the commandline parser.
     """
     def __init__(self, config_dict):
         self._config_variables = {}
-        self._parsers = {
-            'root': None,
-            'parents': {},
-        }
+        self.parser = None
         self.update(config_dict)
 
     @property
@@ -633,12 +626,6 @@ class ConfigTemplate(object):
                 intersection
             )
         self._config_variables[config_variable.name] = config_variable
-        if config_variable.definition.get('parent_parser'):
-            parent = config_variable.definition['parent_parser']
-            if parent not in self._parsers['parents']:
-                self._parsers['parents'][parent] = argparse.ArgumentParser(
-                    add_help=False
-                )
 
     def add_variable(self, definition, name=None):
         """Add a variable to the config template definition.
@@ -680,7 +667,7 @@ class ConfigTemplate(object):
 
     def get_parser(self, **kwargs):
         """Create and populate the argparse.ArgumentParser for commandline
-        parsing.  This currently supports parent parsers but not subparsers.
+        parsing.
 
         Args:
           **kwargs: keyword arguments to send to argparse.ArgumentParser.
@@ -689,21 +676,10 @@ class ConfigTemplate(object):
           argparse.ArgumentParser: the commandline parser for this Config
             Template
         """
-        # create parent parsers
-        for variable in [x for x in self._config_variables if
-                         x.definition.get('parent_parser')]:
-            variable.add_argument(
-                self._parsers['parents'][variable.definition['parent_parser']]
-            )
-        kwargs['parents'] = self._parsers['parents'].values() or None
-        # create parser
-        parser = argparse.ArgumentParser(**kwargs)
-        self._parsers['root'] = parser
-        # populate parser
-        for variable in [x for x in self._config_variables if not
-                         x.definition.get('parent_parser')]:
-            variable.add_argument(parser)
-        return self._parsers['root']
+        self.parser = argparse.ArgumentParser(**kwargs)
+        for variable in self._config_variables.values():
+            variable.add_argument(self.parser)
+        return self.parser
 
     def validate_config(self, config):
         """Validate a config dict against each

@@ -10,6 +10,7 @@ from copy import deepcopy
 import json
 import mock
 import os
+import pprint
 import requests
 from scriptharness.actions import Action
 import scriptharness.config as shconfig
@@ -586,3 +587,18 @@ class TestConfigTemplate(unittest.TestCase):
         template.update({'bar': {'help': 'help', 'options': ['-b', '--bar']}})
         self.assertEqual(template.all_options,
                          set(['-f', '--foo', '-b', '--bar']))
+
+    def test_get_parser(self):
+        """test_config | ConfigTemplate.get_parser()
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'options': ['-f', '--foo']},
+            'bar': {'help': 'help', 'options': ['-b', '--bar']},
+        })
+        parser = template.get_parser()
+        for opt in ['-f', '--foo', '-b', '--bar']:
+            self.assertTrue(opt in parser.__dict__['_option_string_actions'])
+
+    def test_validate_config(self):
+        """test_config | ConfigTemplate validate_config
+        """
