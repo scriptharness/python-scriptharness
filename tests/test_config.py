@@ -311,7 +311,7 @@ class TestTemplateFunctions(unittest.TestCase):
         template = shconfig.get_config_template(all_actions=TEST_ACTIONS)
         template.add_argument("--test-default", default="default", help="help")
         template.add_argument("--override-default", default="default",
-                              help="help")
+                              dest="override_default", help="help")
         parsed_args = shconfig.parse_args(template, cmdln_args=cmdln_args)
         config = shconfig.build_config(template, parsed_args, initial_config)
         config2.update(contents)
@@ -593,6 +593,21 @@ class TestConfigTemplate(unittest.TestCase):
         for opt in ['-f', '--foo', '-b', '--bar']:
             self.assertTrue(opt in parser.__dict__['_option_string_actions'])
 
+    def test_remove_option(self):
+        """test_config | ConfigTemplate.remove_option()
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'options': ['-f', '--foo']},
+            'bar': {'help': 'help', 'options': ['-b', '--bar']},
+        })
+        template.remove_option('-f')
+        template.remove_option('-q')
+        parser = template.get_parser()
+        for opt in ['--foo', '-b', '--bar']:
+            self.assertTrue(opt in parser.__dict__['_option_string_actions'])
+        self.assertFalse('-q' in parser.__dict__['_option_string_actions'])
+        self.assertFalse('-f' in parser.__dict__['_option_string_actions'])
+
     def test_bad_validate(self):
         """test_config | ConfigTemplate bad validate_cb
         """
@@ -612,3 +627,12 @@ class TestConfigTemplate(unittest.TestCase):
         })
         # this should not raise
         template.validate_config({'foo': 1})
+
+    def test_bad_add_argument(self):
+        """test_config | ConfigTemplate bad add_argument
+        """
+        template = shconfig.ConfigTemplate({})
+        self.assertRaises(
+            ScriptHarnessException, template.add_argument,
+            dest="bar", help="help"
+        )

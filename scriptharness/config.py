@@ -691,8 +691,8 @@ class ConfigTemplate(object):
           option (str): The commandline option to remove.
         """
         for name, variable in self.config_variables.items():
-            if option in variable.definition:
-                del variable.definition[option]
+            if option in variable.definition['options']:
+                variable.definition['options'].remove(option)
                 logger = logging.getLogger(LOGGER_NAME)
                 logger.info("Removed option %s from %s.", option, name)
                 break
