@@ -223,7 +223,7 @@ class TestUrlFunctionss(unittest.TestCase):
         )
 
 
-# TestParserFunctions {{{1
+# TestTemplateFunctions {{{1
 class TestTemplateFunctions(unittest.TestCase):
     """Test template functions
     """
@@ -358,6 +358,13 @@ class TestTemplateFunctions(unittest.TestCase):
         }
         initial_config.update(contents)
         self.helper_build_config(cmdln_args, initial_config=initial_config)
+
+    def test_misc(self):
+        """test_config | get_config_template misc
+        """
+        self.assertEqual(0, shconfig.get_config_template(template=0))
+        template = shconfig.get_config_template(definition={})
+        self.assertEqual({}, template.config_variables)
 
 
 # TestValidateConfigDefinition {{{1

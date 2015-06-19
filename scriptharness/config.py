@@ -315,11 +315,11 @@ def get_config_template(template=None, all_actions=None, definition=None):
     return template
 
 
-def parse_args(parser, cmdln_args=None, **kwargs):
+def parse_args(template, cmdln_args=None, **kwargs):
     """Parse the commandline args.
 
     Args:
-      parser (ConfigTemplate or ArgumentParser): specify the parser to use
+      template (ConfigTemplate): specify the config template to use
 
       cmdln_args (Optional[list]): override the commandline args with these
 
@@ -330,8 +330,7 @@ def parse_args(parser, cmdln_args=None, **kwargs):
       tuple(ArgumentParser, parsed_args)
     """
     args = []
-    if isinstance(parser, ConfigTemplate):
-        parser = parser.get_parser(**kwargs)
+    parser = template.get_parser(**kwargs)
     if cmdln_args is not None:  # pragma: no branch
         args.append(cmdln_args)
     parsed_args = parser.parse_args(*args)
