@@ -48,6 +48,25 @@ STRINGS = {
         "incompatible_vars": "Incompatible vars %(name)s and %(var)s are set!",
     },
 }
+DEFAULT_CONFIG_DEFINITION = {
+    "config_files": {
+        "options": ['--config-file', '--cfg', '-c'],
+        "action": 'append',
+        "metavar": "CONFIG_FILE",
+        "help": "Specify required config files/urls",
+    },
+    "opt_config_files": {
+        "options": ['--opt-config-file', '--opt-cfg'],
+        "action": 'append',
+        "metavar": "CONFIG_FILE",
+        "help": "Specify optional config files/urls",
+    },
+    "scriptharness_volatile_dump_config": {
+        "options": ['--dump-config'],
+        "action": 'store_true',
+        "help": "Log the built configuration and exit.",
+    },
+}
 
 # parse_config_file() {{{1
 def parse_config_file(path):
@@ -187,7 +206,7 @@ def get_list_actions_string(action_name, enabled, groups=None):
     string += '%s %s' % (action_name, list(groups))
     return string
 
-def get_action_parser(all_actions):
+def action_config_template(all_actions):
     """Create an action option parser from the action list.
 
     Actions to run are specified as the argparse.REMAINDER options.
@@ -197,12 +216,9 @@ def get_action_parser(all_actions):
         script, or a data structure of pairs of action_name:enabled to pass
         to iterate_pairs().
 
-      **kwargs: additional kwargs for ArgumentParser
-
     Returns:
-      ArgumentParser with action options
+      ConfigTemplate: with action options
     """
-    parser = argparse.ArgumentParser(add_help=False)
     message = []
     action_names = []
     action_groups = set(['all', 'none'])
@@ -225,90 +241,93 @@ def get_action_parser(all_actions):
         """Helper function to list all actions (enabled shown with a '*')"""
         print(os.linesep.join(message))
         sys.exit(0)
-    parser.add_argument(
-        "--list-actions", action='store_const', const=list_actions,
-        dest="scriptharness_volatile_list_actions",
-        help="List all actions (default prepended with '*') and exit."
-    )
-    parser.add_argument(
-        "--actions", nargs='+', choices=action_names, metavar="ACTION",
-        dest="scriptharness_volatile_actions",
-        help="Specify the actions to run."
-    )
-    parser.add_argument(
-        "--skip-actions", nargs='+', choices=action_names, metavar="ACTION",
-        dest="scriptharness_volatile_skip_actions",
-        help="Specify the actions to skip."
-    )
-    parser.add_argument(
-        "--add-actions", nargs='+', choices=action_names, metavar="ACTION",
-        dest="scriptharness_volatile_add_actions",
-        help="Specify the actions to add to the default set."
-    )
-    parser.add_argument(
-        "--action-group", choices=action_groups,
-        dest="scriptharness_volatile_action_group",
-        help="Specify the action group to use."
-    )
-    return parser
+    template = ConfigTemplate({
+        "scriptharness_volatile_list_actions": {
+            "options": ["--list-actions"],
+            "action": 'store_const',
+            "const": list_actions,
+            "help": "List all actions (default prepended with '*') and exit.",
+        },
+        "scriptharness_volatile_actions": {
+            "options": ["--actions"],
+            "nargs": '+',
+            "choices": action_names,
+            "metavar": "ACTION",
+            "help": "Specify the actions to run.",
+        },
+        "scriptharness_volatile_skip_actions": {
+            "options": "--skip-actions",
+            "nargs": '+',
+            "choices": action_names,
+            "metavar": "ACTION",
+            "help": "Specify the actions to skip.",
+        },
+        "scriptharness_volatile_add_actions": {
+            "options": ["--add-actions"],
+            "nargs": '+',
+            "choices": action_names,
+            "metavar": "ACTION",
+            "help": "Specify the actions to add to the default set.",
+        },
+        "scriptharness_volatile_action_group": {
+            "options": ["--action-group"],
+            "choices": action_groups,
+            "help": "Specify the action group to use.",
+        },
+    })
+    return template
 
-def get_config_parser():
-    """Create a config option parser.
+
+def get_config_template(template=None, all_actions=None, definition=None):
+    """Create a script ConfigTemplate.
+
+    If template is not defined, it will take the definition (defaults to
+    DEFAULT_CONFIG_DEFINITION) and create a new ConfigTemplate.  Otherwise
+    it uses template.
+
+    If all_actions is defined, it will add an action ConfigTemplate to the
+    template.
 
     Args:
-      kwargs: additional kwargs for ArgumentParser
+      template (Optional[ConfigTemplate]): the ConfigTemplate to optionally
+        append the action_template to.  Defaults to None.
+
+      all_actions (Optional[list]): list of actions to generate an action
+        ConfigTemplate.  Defaults to None.
+
+      definition (Optional[dict]): config definition to prepopulate the
+        ConfigTemplate with.  Defaults to DEFAULT_CONFIG_DEFINITION.
 
     Returns:
-      ArgumentParser with config options
+      ConfigTemplate
     """
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument(
-        '--config-file', '--cfg', '-c', action='append', dest='config_files',
-        metavar="CONFIG_FILE", help="Specify required config files/urls"
-    )
-    parser.add_argument(
-        '--opt-config-file', '--opt-cfg', action='append',
-        dest='opt_config_files', metavar="CONFIG_FILE",
-        help="Specify optional config files/urls"
-    )
-    parser.add_argument(
-        '--dump-config', action='store_true',
-        dest="scriptharness_volatile_dump_config",
-        help="Log the built configuration and exit."
-    )
-    return parser
+    if template is None:
+        if definition is None:
+            definition = DEFAULT_CONFIG_DEFINITION
+        template = ConfigTemplate(definition)
+    if all_actions:
+        action_template = action_config_template(all_actions)
+        template.update(action_template)
+    return template
 
 
-def get_parser(all_actions=None, parents=None, **kwargs):
-    """Create a script option parser.
+def parse_args(parser, cmdln_args=None, **kwargs):
+    """Parse the commandline args.
 
     Args:
-      parents (Optional[list]): ArgumentParsers to set as parents of the parser
-      **kwargs: additional kwargs for ArgumentParser
+      parser (ConfigTemplate or ArgumentParser): specify the parser to use
 
-    Returns:
-      ArgumentParser with config options
-    """
-    if parents is None:
-        parents = []
-        if all_actions:
-            parents.append(get_action_parser(all_actions))
-        parents.append(get_config_parser())
-    parser = argparse.ArgumentParser(parents=parents, **kwargs)
-    return parser
+      cmdln_args (Optional[list]): override the commandline args with these
 
-
-def parse_args(parser, cmdln_args=None):
-    """Build the parser and parse the commandline args.
-
-    Args:
-      parser (ArgumentParser): specify the parser to use
-      cmdln_args (optional): override the commandline args with these
+      **kwargs: sent to ConfigTemplate.get_parser() if parser is a
+        ConfigTemplate
 
     Returns:
       tuple(ArgumentParser, parsed_args)
     """
     args = []
+    if isinstance(parser, ConfigTemplate):
+        parser = parser.get_parser(**kwargs)
     if cmdln_args is not None:  # pragma: no branch
         args.append(cmdln_args)
     parsed_args = parser.parse_args(*args)
@@ -318,8 +337,7 @@ def parse_args(parser, cmdln_args=None):
     return parsed_args
 
 
-# build_config {{{1
-
+# update_dirs {{{1
 def update_dirs(config, max_depth=2):
     """Directory paths for the script are defined in config.
     Absolute paths help avoid chdir issues.
@@ -345,6 +363,7 @@ def update_dirs(config, max_depth=2):
             repl_dict[key] = repl_dict[key] % repl_dict
     config.update(repl_dict)
 
+# build_config {{{1
 def build_config(parser, parsed_args, initial_config=None):
     """Build a configuration dict from the parser and initial config.
 
@@ -400,7 +419,6 @@ def build_config(parser, parsed_args, initial_config=None):
 
 # validate_config_definition {{{1
 def validate_config_definition(name, definition):
-    # pylint: disable=too-many-branches
     """Validate the ConfigVariable definition's well-formedness.
 
     Args:
@@ -414,8 +432,6 @@ def validate_config_definition(name, definition):
                 messages.append("%s option %s is not valid!" % (name, opt))
     if 'help' not in definition:
         messages.append("%s must define 'help'" % name)
-    elif not isinstance(definition['help'], six.text_type):
-        messages.append('%s help is not %s!' % (name, six.text_type))
     if 'action' in definition and \
             definition['action'] not in VALID_ARGPARSE_ACTIONS:
         messages.append("%s action %s not a valid action!" %
@@ -594,6 +610,11 @@ class ConfigTemplate(object):
         self._config_variables = {}
         self.parser = None
         self.update(config_dict)
+
+    def items(self):
+        """Have ConfigTemplate act more like a dict.
+        """
+        return self._config_variables.items()
 
     @property
     def all_options(self):

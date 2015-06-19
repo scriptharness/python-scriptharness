@@ -169,9 +169,11 @@ class Script(object):
         dump the config to screen and disk, and exit.
 
         Args:
-          parser (ArgumentParser): parser to use to parse the commandline
+          parser (argparse.ArgumentParser): parser to parse the commandline
             args.
+
           cmdln_args (Optional[tuple]): override the commandline args
+
           initial_config (Optional[dict]): initial config dict to apply.
 
         Returns:
