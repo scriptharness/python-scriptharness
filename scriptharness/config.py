@@ -57,17 +57,20 @@ DEFAULT_CONFIG_DEFINITION = {
         "options": ['--config-file', '--cfg', '-c'],
         "action": 'append',
         "metavar": "CONFIG_FILE",
+        "parent_parser": "config",
         "help": "Specify required config files/urls",
     },
     "opt_config_files": {
         "options": ['--opt-config-file', '--opt-cfg'],
         "action": 'append',
         "metavar": "CONFIG_FILE",
+        "parent_parser": "config",
         "help": "Specify optional config files/urls",
     },
     "scriptharness_volatile_dump_config": {
         "options": ['--dump-config'],
         "action": 'store_true',
+        "parent_parser": "config",
         "help": "Log the built configuration and exit.",
     },
 }
@@ -250,6 +253,7 @@ def action_config_template(all_actions):
             "options": ["--list-actions"],
             "action": 'store_const',
             "const": list_actions,
+            "parent_parser": "actions",
             "help": "List all actions (default prepended with '*') and exit.",
         },
         "scriptharness_volatile_actions": {
@@ -257,6 +261,7 @@ def action_config_template(all_actions):
             "nargs": '+',
             "choices": action_names,
             "metavar": "ACTION",
+            "parent_parser": "actions",
             "help": "Specify the actions to run.",
         },
         "scriptharness_volatile_skip_actions": {
@@ -264,6 +269,7 @@ def action_config_template(all_actions):
             "nargs": '+',
             "choices": action_names,
             "metavar": "ACTION",
+            "parent_parser": "actions",
             "help": "Specify the actions to skip.",
         },
         "scriptharness_volatile_add_actions": {
@@ -271,11 +277,13 @@ def action_config_template(all_actions):
             "nargs": '+',
             "choices": action_names,
             "metavar": "ACTION",
+            "parent_parser": "actions",
             "help": "Specify the actions to add to the default set.",
         },
         "scriptharness_volatile_action_group": {
             "options": ["--action-group"],
             "choices": action_groups,
+            "parent_parser": "actions",
             "help": "Specify the action group to use.",
         },
     })
@@ -544,7 +552,7 @@ class ConfigVariable(object):
         for key in self.definition.keys():
             if key not in ('dest', 'action', 'options', 'validate_cb',
                            'incompatible_vars', 'required_vars',
-                           'optional_vars'):
+                           'optional_vars', 'parent_parser'):
                 kwargs[key] = self.definition[key]
         try:
             return parser.add_argument(*args, **kwargs)
@@ -745,8 +753,20 @@ class ConfigTemplate(object):
             Template
         """
         if self.parser is None:
+            # Create parent parsers for neater --help output.
+            parents = {}
+            for variable in [x for x in self.config_variables.values() if
+                             x.definition.get('parent_parser')]:
+                parent = variable.definition['parent_parser']
+                if parents.get(parent) is None:
+                    parents[parent] = argparse.ArgumentParser(add_help=False)
+                variable.add_argument(parents[parent])
+            if parents:
+                kwargs['parents'] = parents.values()
+            # Create parser
             self.parser = argparse.ArgumentParser(**kwargs)
-            for variable in self.config_variables.values():
+            for variable in [x for x in self.config_variables.values() if not
+                             x.definition.get('parent_parser')]:
                 variable.add_argument(self.parser)
         return self.parser
 
