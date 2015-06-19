@@ -16,6 +16,7 @@ from copy import deepcopy
 import json
 import logging
 import os
+import re
 import requests
 from requests.exceptions import RequestException, Timeout
 from scriptharness.actions import Action
@@ -37,7 +38,16 @@ SCRIPTHARNESS_INITIAL_CONFIG = {
     "scriptharness_artifact_dir":
         "%(scriptharness_base_dir)s{}artifacts".format(os.sep),
 }
-
+OPTION_REGEX = re.compile(r'^-{1,2}[a-zA-Z0-9]\S*$')
+VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
+                          'store_false', 'append', 'append_const', 'count',
+                          'help', 'version', 'parsers')
+STRINGS = {
+    "config_variable": {
+        "required_vars": "%(name)s is set without required var %(var)s!",
+        "incompatible_vars": "Incompatible vars %(name)s and %(var)s are set!",
+    },
+}
 
 # parse_config_file() {{{1
 def parse_config_file(path):
@@ -386,3 +396,303 @@ def build_config(parser, parsed_args, initial_config=None):
         config.update(cmdln_config)
     update_dirs(config)
     return config
+
+
+# validate_config_definition {{{1
+def validate_config_definition(name, definition):
+    # pylint: disable=too-many-branches
+    """Validate the ConfigVariable definition's well-formedness.
+
+    Args:
+      name (str): the name of the variable
+      definition (dict): the definition to validate
+    """
+    messages = []
+    if definition.get('options'):
+        for opt in definition['options']:
+            if OPTION_REGEX.search(opt) is None:
+                messages.append("%s option %s is not valid!" % (name, opt))
+    if 'help' not in definition:
+        messages.append("%s must define 'help'" % name)
+    elif not isinstance(definition['help'], six.text_type):
+        messages.append('%s help is not %s!' % (name, six.text_type))
+    if 'action' in definition and \
+            definition['action'] not in VALID_ARGPARSE_ACTIONS:
+        messages.append("%s action %s not a valid action!" %
+                        (name, definition['action']))
+    if 'type' in definition and not isinstance(definition['type'], type):
+        messages.append('%s type %s is not a python type!' %
+                        (name, definition['type']))
+    if 'validate_cb' in definition and not callable(definition['validate_cb']):
+        messages.append('%s validate_cb is not callable!' % name)
+    for key in ('incompatible_vars', 'required_vars', 'optional_vars'):
+        for var in definition.get(key, []):
+            if not isinstance(var, six.text_type):
+                messages.append(
+                    "%s %s %s is not %s!" % (name, key, var, six.text_type)
+                )
+    # not sure how to validate 'required', 'choices', 'default'
+    if messages:
+        raise ScriptHarnessException('\n'.join(messages))
+
+
+# ConfigVariable {{{1
+class ConfigVariable(object):
+    """This object defines what a single config variable looks like.
+
+    The variable is overridable from the commandline when when
+    self.definition['options'] is defined.  Otherwise the variable is only
+    script-level and config-file-level settable.
+
+    The definition will look like this::
+
+      {
+        # argparse-specific, for argparse.ArgumentParser.add_argument
+        # if 'options' is not set, these will be ignored.
+        'options': ['--foo', '-f'],
+        'action': 'store',  # (None, 'store', 'store_const', 'store_true',
+                            #  'store_false', 'append', 'append_const',
+                            #  'count', 'help', 'version', 'parsers')
+                            # defaults to 'store'
+
+        # argparse-related
+        # if 'options' is set, these will be used with
+        # argparse.ArgumentParser.add_argument; otherwise they're here for
+        # the non-commandline-config.
+        'help': 'help string',  # not sure whether this should be required
+                                # or highly recommended.
+        'required': True,
+        'default': 'bar',
+        'type': str,  # a python type
+        'choices': [],  # enum / list of choices
+
+        # Not related to argparse
+        'validate_cb': None,  # optional, function to validate the
+                              # config.  This function should take the args
+                              # (name, parsed_args) and return a list of
+                              # error message strings.
+        'incompatible_vars': [],  # names of incompatible vars if this var
+                                  # is set
+        'required_vars': [],  # names of other vars that are required to be
+                              # set if this var is set
+        'optional_vars': [],  # names of other vars that are optionally
+                              # used in relation to this var.  This is purely
+                              # informational.
+      }
+
+
+    Attributes:
+      name (str): the name of the variable.  This corresponds to the
+        argparse `dest`, or the config dict key.
+
+      definition (dict): the config definition for this variable.  See
+        above for the format.
+    """
+    def __init__(self, name, definition):
+        if not isinstance(name, six.text_type):
+            raise ScriptHarnessException(
+                "ConfigVariable name is not %s!" % six.text_type,
+                name
+            )
+        self.name = name
+        validate_config_definition(name, definition)
+        self.definition = definition
+
+    def add_argument(self, parser):
+        """If self.definition['options'] is set, add the appropriate argument
+        to the parser.
+
+        Args:
+          parser (argparse.ArgumentParser): the parser to add the argument to.
+
+        Returns:
+          argparse.Action: on success.
+
+        Raises:
+          ScriptHarnessException: on argparse.ArgumentParser.add_argument
+            error.
+        """
+        if not self.definition.get('options'):
+            return
+
+        args = self.definition['options']
+        kwargs = {
+            'dest': self.name,
+            'action': self.definition.get('action', None),
+        }
+        for key in self.definition.keys():
+            if key not in ('dest', 'action', 'options', 'validate_cb',
+                           'incompatible_vars', 'required_vars',
+                           'optional_vars'):
+                kwargs[key] = self.definition[key]
+        try:
+            return parser.add_argument(*args, **kwargs)
+        except ValueError as exc_info:
+            raise ScriptHarnessException(
+                "Error adding %s argument to parser!" % self.name,
+                exc_info
+            )
+
+    def validate_config(self, config):
+        """Once we build the config, we can validate it by sending the built
+        config to each of these methods.
+
+        Args:
+          config (dict): the config built from build_config()
+
+        Returns:
+          messages (list of strings): any error messages, if applicable.
+        """
+        # Only validate if this option is set
+        if config.get(self.name) is None:
+            return
+        messages = []
+        # incompatible_vars cannot be set if this var is set
+        for var in self.definition.get('incompatible_vars', []):
+            if config.get(var) is not None:
+                messages.append(
+                    STRINGS['config_variable']['incompatible_vars'] %
+                    {'name': self.name, 'var': var}
+                )
+        # required_vars must be set if this var is set
+        for var in self.definition.get('required_vars', []):
+            if config.get(var) is None:
+                messages.append(
+                    STRINGS['config_variable']['required_vars'] %
+                    {'name': self.name, 'var': var}
+                )
+        # run the validate_cb function if defined
+        if self.definition.get('validate_cb'):
+            value = self.definition['validate_cb'](self.name, config)
+            if isinstance(value, list):
+                messages.extend(value)
+        return messages
+
+
+# ConfigTemplate {{{1
+class ConfigTemplate(object):
+    """Short for Config Template Definition, or CTD.
+    Because scriptharness scripts can take any arbitrary configuration
+    variables or commandline options from various locations, it's difficult
+    to tell what requires what, what's optional, and what's extraneous.
+
+    By allowing the developer to create a config template definition, we
+    can check for config well-formedness.
+
+    One unwritten-to-date idea is to add a
+    ``remove_option(self, name, option)`` which would allow us to, say,
+    remove the ``-f`` option from one variable so we can set it in another.
+    This could be very useful, or potentially confusing to end users that
+    expect a family of scripts to have the same ``-f`` functionality.
+
+    Attributes:
+      _config_variables (dict): a name to ConfigVariable dictionary
+
+      parser (argparse.ArgumentParser): this is the commandline parser.
+    """
+    def __init__(self, config_dict):
+        self._config_variables = {}
+        self.parser = None
+        self.update(config_dict)
+
+    @property
+    def all_options(self):
+        """Build and return set of all commandline options
+
+        Returns:
+          options (set): all commandline options
+        """
+        options = set()
+        for _, config_variable in self._config_variables.items():
+            options.update(set(config_variable.definition.get('options', [])))
+        return options
+
+    def _add_variable(self, config_variable):
+        """Add a ConfigVariable to self._config_variables after checking for
+        conflicts.
+
+        Args:
+          config_variable (ConfigVariable): the ConfigVariable to add
+        """
+        if config_variable.name in self._config_variables:
+            raise ScriptHarnessException(
+                "%s already in config_template!" % config_variable.name
+            )
+        options = set(config_variable.definition.get('options', []))
+        intersection = options.intersection(self.all_options)
+        if intersection:
+            raise ScriptHarnessException(
+                "%s has conflicting options!" % config_variable.name,
+                intersection
+            )
+        self._config_variables[config_variable.name] = config_variable
+
+    def add_variable(self, definition, name=None):
+        """Add a variable to the config template definition.
+
+        See scriptharness.config.ConfigVariable for the definition format.
+
+        Args:
+          name (str): the variable name.  This maps to argparse's `dest`
+
+          definition (dict or ConfigVariable): a ConfigVariable or the
+            definition of the config variable.
+        """
+        if isinstance(definition, ConfigVariable):
+            config_variable = definition
+        else:
+            config_variable = ConfigVariable(name, definition)
+        self._add_variable(config_variable)
+
+    def update(self, config_dict):
+        """Update self with a new config_dict
+
+        Args:
+          config_dict (dict): A dict of ConfigVariables or dicts.
+
+          strict (Optional[bool]): When True, throw an exception when there's
+            a conflicting variable.
+        """
+        exceptions = []
+        for name, definition in config_dict.items():
+            try:
+                self.add_variable(definition, name=name)
+            except ScriptHarnessException as exc_info:
+                exceptions.append(exc_info)
+        if exceptions:
+            raise ScriptHarnessException(
+                "Errors while trying to update ConfigTemplate!",
+                exceptions
+            )
+
+    def get_parser(self, **kwargs):
+        """Create and populate the argparse.ArgumentParser for commandline
+        parsing.
+
+        Args:
+          **kwargs: keyword arguments to send to argparse.ArgumentParser.
+
+        Returns:
+          argparse.ArgumentParser: the commandline parser for this Config
+            Template
+        """
+        self.parser = argparse.ArgumentParser(**kwargs)
+        for variable in self._config_variables.values():
+            variable.add_argument(self.parser)
+        return self.parser
+
+    def validate_config(self, config):
+        """Validate a config dict against each
+        ConfigVariable.validate_config check.
+
+        Args:
+          config (dict): the config dictionary to validate.
+
+        Raises:
+          scriptharness.exceptions.ScriptHarnessException: on error.
+        """
+        messages = []
+        for variable in self._config_variables.values():
+            messages += variable.validate_config(config)
+        if messages:
+            raise ScriptHarnessException("Invalid config!", messages)
