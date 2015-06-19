@@ -680,7 +680,7 @@ class ConfigTemplate(object):
 
     def get_parser(self, **kwargs):
         """Create and populate the argparse.ArgumentParser for commandline
-        parsing.
+        parsing.  This currently supports parent parsers but not subparsers.
 
         Args:
           **kwargs: keyword arguments to send to argparse.ArgumentParser.
