@@ -572,3 +572,17 @@ class TestConfigTemplate(unittest.TestCase):
             ScriptHarnessException, template.add_variable,
             shconfig.ConfigVariable("baz", defn)
         )
+
+    def test_update(self):
+        """test_config | ConfigTemplate update and all_options
+        """
+        template = shconfig.ConfigTemplate({})
+        template.update({'foo': {'help': 'help', 'options': ['-f', '--foo']}})
+        self.assertEqual(template.all_options, set(['-f', '--foo']))
+        self.assertRaises(
+            ScriptHarnessException, template.update,
+            {'foo': {'help': 'help', 'options': ['-f', '--foo']}}
+        )
+        template.update({'bar': {'help': 'help', 'options': ['-b', '--bar']}})
+        self.assertEqual(template.all_options,
+                         set(['-f', '--foo', '-b', '--bar']))

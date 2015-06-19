@@ -667,9 +667,9 @@ class ConfigTemplate(object):
             a conflicting variable.
         """
         exceptions = []
-        for key, value in config_dict.items():
+        for name, definition in config_dict.items():
             try:
-                self.add_variable(key, value)
+                self.add_variable(definition, name=name)
             except ScriptHarnessException as exc_info:
                 exceptions.append(exc_info)
         if exceptions:
