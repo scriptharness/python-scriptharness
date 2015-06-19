@@ -692,7 +692,7 @@ class ConfigTemplate(object):
           scriptharness.exceptions.ScriptHarnessException: on error.
         """
         messages = []
-        for variable in self._config_variables:
+        for variable in self._config_variables.values():
             messages += variable.validate_config(config)
         if messages:
             raise ScriptHarnessException("Invalid config!", messages)
