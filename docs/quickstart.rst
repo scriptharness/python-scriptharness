@@ -241,19 +241,24 @@ see what the config is without running anything, you can use the
 You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
-    usage: quickstart.py [-h] [--add-actions ACTION [ACTION ...]]
-                         [--action-group {all,none}] [--list-actions]
+    usage: quickstart.py [-h] [--config-file CONFIG_FILE] [--dump-config]
+                         [--opt-config-file CONFIG_FILE]
+                         [--add-actions ACTION [ACTION ...]]
+                         [--action-group {none,all}] [--list-actions]
                          [--actions ACTION [ACTION ...]]
                          [--skip-actions ACTION [ACTION ...]]
-                         [--config-file CONFIG_FILE] [--dump-config]
-                         [--opt-config-file CONFIG_FILE]
                          [--new-argument NEW_ARGUMENT]
     
     optional arguments:
       -h, --help            show this help message and exit
+      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
+                            Specify required config files/urls
+      --dump-config         Log the built configuration and exit.
+      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
+                            Specify optional config files/urls
       --add-actions ACTION [ACTION ...]
                             Specify the actions to add to the default set.
-      --action-group {all,none}
+      --action-group {none,all}
                             Specify the action group to use.
       --list-actions        List all actions (default prepended with '*') and
                             exit.
@@ -261,11 +266,6 @@ You can always use the ``--help`` option::
                             Specify the actions to run.
       --skip-actions ACTION [ACTION ...]
                             Specify the actions to skip.
-      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
-                            Specify required config files/urls
-      --dump-config         Log the built configuration and exit.
-      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
-                            Specify optional config files/urls
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
 

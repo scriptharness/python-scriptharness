@@ -36,6 +36,7 @@ VALID_ARGPARSE_ACTIONS = (None, 'store', 'store_const', 'store_true',
                           'help', 'version', 'parsers')
 STRINGS = {
     "config_variable": {
+        "missing_required": "%(name)s is required but not set!",
         "required_vars": "%(name)s is set without required var %(var)s!",
         "incompatible_vars": "Incompatible vars %(name)s and %(var)s are set!",
     },
@@ -574,6 +575,9 @@ class ConfigVariable(object):
         """
         # Only validate if this option is set
         if config.get(self.name) is None:
+            if self.definition.get('required'):
+                return [STRINGS['config_variable']['missing_required'] %
+                        {'name': self.name}]
             return []
         messages = []
         # incompatible_vars cannot be set if this var is set
