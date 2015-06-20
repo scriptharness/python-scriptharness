@@ -98,3 +98,14 @@ If multiple lines match, and a line of output is marked as multiple levels, the 
 ###########################################
 Output, get_output(), and get_text_output()
 ###########################################
+
+Sometimes you need to manipulate the output from a command, not just log it or perform general error parsing.  There's ``subprocess.check_output()``, but that doesn't log or have full timeout support.
+
+Enter Output_.  This also inherits ``Command``, but because ``Output.run`` is a completely different method than ``Command.run``, it has its own timeout implementation.  (It does still support both ``output_timeout`` and ``max_timeout``.)  It redirects STDOUT and STDERR to temp files.
+
+.. _Output: scriptharness.commands.html#scriptharness.commands.Output
+
+Much like ``Command`` has its helper ``run`` function, ``Output`` has `two` helper functions: get_output_ and get_text_output_.  The former yields the ``Output`` object, and the caller can either access the ``NamedTemporaryFile`` ``Output.stdout`` and ``Output.stderr`` objects, or use the ``Output.get_output()`` method.  Because of this, it is suitable for binary or lengthy output.  ``get_text_output()`` will get the STDOUT contents for you, log them, and return them to you.
+
+.. _get_output: scriptharness.commands.html#scriptharness.commands.get_output
+.. _get_text_output: scriptharness.commands.html#scriptharness.commands.get_text_output
