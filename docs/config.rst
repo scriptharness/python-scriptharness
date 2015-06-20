@@ -49,6 +49,35 @@ Parent parsers are supported, to group commandline options in the ``--help`` out
 When supporting downstream scripts, it's best to keep each ``ConfigTemplate`` modular.  It's easy to combine them via ``ConfigTemplate.update()``, but less trivial to remove functionality.  The action config template, for instance, can be added to the base config template right before running ``parse_args()``.
 
 
-###########
-LoggingDict
-###########
+############################
+LoggingDict and ReadOnlyDict
+############################
+
+Each Script has a config dict.  By default, this dict is a ``LoggingDict``, which logs any changes made to the config.
+
+For example, if the config looked like::
+
+    {
+        "foo": 1,
+        "bar": [2, 3, 4],
+        "baz": {
+            "z": 5,
+            "y": 6,
+            "x": 7,
+        },
+    }
+
+then updating the config might log::
+
+    00:11:22  INFO - root.config['baz'] update: y now 8
+
+Alternatively, someone could change the script class to ``StrictScript``, which uses ``ReadOnlyDict``.  Once the ``ReadOnlyDict`` is locked, it cannot be modified.
+
+By either explicitly logging any changes to the config, and/or preventing any changes to the config, it's easier to debug any unexpected behavior.
+
+
+########
+Contexts
+########
+
+
