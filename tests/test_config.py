@@ -383,7 +383,6 @@ class TestValidateConfigDefinition(unittest.TestCase):
             'foo', {'options': ['--foo', '-f', '--x-y'], 'help': 'bar'}
         )
 
-
     def test_empty_definition(self):
         """test_config | validate_config_definition empty definition
         """
@@ -492,6 +491,19 @@ class TestConfigVariable(unittest.TestCase):
         """
         variable = shconfig.ConfigVariable('foo', {'help': 'bar'})
         self.assertFalse(variable.validate_config({}))
+
+    def test_missing_required(self):
+        """test_config | ConfigVariable missing required
+        """
+        defn = {'help': 'help', 'required': True}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'bar': '2'})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['missing_required'] %
+             {'name': 'foo'}],
+            value
+        )
 
     def test_required_vars(self):
         """test_config | ConfigVariable required_vars

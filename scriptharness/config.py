@@ -576,8 +576,8 @@ class ConfigVariable(object):
         # Only validate if this option is set
         if config.get(self.name) is None:
             if self.definition.get('required'):
-                return STRINGS['config_variable']['missing_required'] % \
-                        {'name': self.name}
+                return [STRINGS['config_variable']['missing_required'] %
+                        {'name': self.name}]
             return []
         messages = []
         # incompatible_vars cannot be set if this var is set
