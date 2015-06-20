@@ -22,6 +22,8 @@ What's New
 
 * Added ``Output`` object with cross-platform output_timeout and max_timeout support.  Also added ``get_output()``, and ``get_text_output()`` wrapper functions for easier use.  This is for capturing the output of an external tool for later use.
 
+* Added ``ConfigVariable`` and ``ConfigTemplate`` objects for configuration definition and validation support.
+
 * Script.actions is now a namedtuple
 
 * test_config.py no longer hardcodes port 8001.
@@ -34,6 +36,8 @@ What's New
 
 Known Issues
 ------------
-*
+* Current issues are tracked here_.
+
+.. _here: https://github.com/scriptharness/python-scriptharness/issues
 
 .. note:: If you've cloned python-scriptharness 0.1.0, you may need to remove the ``scriptharness/commands`` directory, as it will conflict with the new ``scriptharness/commands.py`` module.
