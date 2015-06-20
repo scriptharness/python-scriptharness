@@ -7,7 +7,7 @@ Configuration Overview
 
 The runtime configuration of a Script is built from several layers.
 
-* There is a ``ConfigTemplate`` that can have default values for certain config variables.  These defaults are the basis of the config dict.  (See :ref:`Config-Templates` for more details on ``ConfigTemplate``s).
+* There is a ``ConfigTemplate`` that can have default values for certain config variables.  These defaults are the basis of the config dict.  (See :ref:`Config-Templates` for more details on ``ConfigTemplates``).
 
 * The script can define an ``initial_config`` dict that is laid on top of the ``ConfigTemplate`` defaults, so any shared config variables are overwritten by the ``initial_config``.
 
@@ -80,4 +80,12 @@ By either explicitly logging any changes to the config, and/or preventing any ch
 Contexts
 ########
 
+As each Action is run, it passes a ``Context`` to the action function.  The ``Context`` is a ``namedtuple`` with the following properties:
 
+* script (Script object): the Script calling the Action
+* config (dict): by default this is a ``LoggingDict``
+* logger (logging.Logger): the logger for the Script
+* action (Action object): this is only defined during the ``RUN_ACTION``, ``PRE_ACTION``, and ``POST_ACTION`` phases.
+* phase (str): this will be one of ``PRE_RUN``, ``POST_RUN``, ``PRE_ACTION``, ``POST_ACTION``, or ``POST_FATAL``, depending on which phase we're in.
+
+The logger and config (and to a lesser degree, the script and action) objects are all available to each function called for convenience and consistency.
