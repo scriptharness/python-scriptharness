@@ -76,6 +76,8 @@ Alternatively, someone could change the script class to ``StrictScript``, which 
 By either explicitly logging any changes to the config, and/or preventing any changes to the config, it's easier to debug any unexpected behavior.
 
 
+.. _Contexts:
+
 ########
 Contexts
 ########
