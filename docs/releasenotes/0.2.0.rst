@@ -11,16 +11,16 @@ What's New
 ----------
 * More ways to enable and disable actions.  Now, in addition to ``--actions``, there's ``--add-actions``, ``--skip-actions``, and ``--action-group`` to change the set of default actions to run.  (See :ref:`Enabling-and-Disabling-Actions`.)
 
-* Added ``Command`` object with cross-platform output_timeout and max_timeout support, with a ``run()`` wrapper function for easier use.  This is for running external tools with timeouts.
+* Added ``Command`` object with cross-platform output_timeout and max_timeout support, with a ``run()`` wrapper function for easier use.  This is for running external tools with timeouts.  (See :ref:`Command-and-run`.)
 
     * Added ``ScriptHarnessTimeout`` exception
 
-* Added ``ParsedCommand`` subclass of ``Command``.  Also added a ``parse()`` wrapper function for easier use.  This is for running external tools, and parsing the output of those tools to detect errors.
+* Added ``ParsedCommand`` subclass of ``Command``.  Also added a ``parse()`` wrapper function for easier use.  This is for running external tools, and parsing the output of those tools to detect errors. (See :ref:`ParsedCommand-and-parse`.)
 
-    * Added ``ErrorList``, ``OutputParser`` objects for ``ParsedCommand`` error parsing.
-    * Added ``OutputBuffer`` object for ``ParsedCommand`` context lines support.
+    * Added ``ErrorList``, ``OutputParser`` objects for ``ParsedCommand`` error parsing.  (See :ref:`ErrorLists` and :ref:`OutputParser`.)
+    * Added ``OutputBuffer`` object for ``ParsedCommand`` context lines support.  (See :ref:`OutputBuffer-and-context-lines`.)
 
-* Added ``Output`` object with cross-platform output_timeout and max_timeout support.  Also added ``get_output()``, and ``get_text_output()`` wrapper functions for easier use.  This is for capturing the output of an external tool for later use.
+* Added ``Output`` object with cross-platform output_timeout and max_timeout support.  Also added ``get_output()``, and ``get_text_output()`` wrapper functions for easier use.  This is for capturing the output of an external tool for later use.  (See :ref:`Output-get_output-and-get_text_output`.)
 
 * Added ``ConfigVariable`` and ``ConfigTemplate`` objects for configuration definition and validation support.  See :ref:`Config-Templates`.
 

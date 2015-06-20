@@ -12,6 +12,7 @@
    quickstart
    enabling_actions
    config
+   commands
    scriptharness
    releasenotes
    README
