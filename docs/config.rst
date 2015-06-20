@@ -40,8 +40,13 @@ To make the config more well-defined, we have the ``ConfigTemplate``.  The ``Con
 
 * There is a ``ConfigTemplate.remove_option()`` method to remove a commandline option from the corresponding ``ConfigVariable``.  This may be needed if you want to add two config templates together, but they both have a ``-f`` commandline option specified, for example.
 
-* validation
-* best practice modular
+* The ``ConfigTemplate.validate_config()`` method validates the built configuration.  Each ``ConfigVariable`` can define whether they're required, whether they require or are incompatible with other variables (``required_vars`` and ``incompatible_vars``), and each can define their own ``validate_cb`` callback function.
+
+* There is a ``ConfigTemplate.add_argument()`` for those who want to maintain argparse syntax.
+
+Parent parsers are supported, to group commandline options in the ``--help`` output.  Subparsers are not currently supported, though it may be possible to replace the ``ConfigTemplate.parser`` with a subparser-enabled parser at the expense of validation and the ability to ``ConfigTemplate.update()``.
+
+When supporting downstream scripts, it's best to keep each ``ConfigTemplate`` modular.  It's easy to combine them via ``ConfigTemplate.update()``, but less trivial to remove functionality.  The action config template, for instance, can be added to the base config template right before running ``parse_args()``.
 
 
 ###########

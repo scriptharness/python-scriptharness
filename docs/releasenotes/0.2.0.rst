@@ -22,7 +22,7 @@ What's New
 
 * Added ``Output`` object with cross-platform output_timeout and max_timeout support.  Also added ``get_output()``, and ``get_text_output()`` wrapper functions for easier use.  This is for capturing the output of an external tool for later use.
 
-* Added ``ConfigVariable`` and ``ConfigTemplate`` objects for configuration definition and validation support.
+* Added ``ConfigVariable`` and ``ConfigTemplate`` objects for configuration definition and validation support.  See :ref:`Config-Templates`.
 
 * Script.actions is now a namedtuple
 
