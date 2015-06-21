@@ -5,7 +5,7 @@ Configuration
 Configuration Overview
 ######################
 
-The runtime configuration of a Script is built from several layers.
+The runtime configuration of a Script_ is built from several layers.
 
 * There is a ConfigTemplate_ that can have default values for certain config variables.  These defaults are the basis of the config dict.  (See :ref:`Config-Templates` for more details on ConfigTemplate_).
 
@@ -76,23 +76,6 @@ Alternatively, someone could change the script class to StrictScript_, which use
 By either explicitly logging any changes to the config, and/or preventing any changes to the config, it's easier to debug any unexpected behavior.
 
 
-.. _Contexts:
-
-########
-Contexts
-########
-
-As each Action is run, it passes a Context_ to the action function.  The Context_ is a ``namedtuple`` with the following properties:
-
-* script (Script object): the Script calling the Action
-* config (dict): by default this is a LoggingDict_
-* logger (logging.Logger): the logger for the Script
-* action (Action object): this is only defined during the ``RUN_ACTION``, ``PRE_ACTION``, and ``POST_ACTION`` phases.
-* phase (str): this will be one of ``PRE_RUN``, ``POST_RUN``, ``PRE_ACTION``, ``POST_ACTION``, or ``POST_FATAL``, depending on which phase we're in.
-
-The logger and config (and to a lesser degree, the script and action) objects are all available to each function called for convenience and consistency.
-
-
 .. _ConfigTemplate: scriptharness.config.html#scriptharness.config.ConfigTemplate
 .. _ConfigTemplate.add_argument(): scriptharness.config.html#scriptharness.config.ConfigTemplate.add_argument
 .. _ConfigTemplate.get_parser(): scriptharness.config.html#scriptharness.config.ConfigTemplate.get_parser
@@ -101,7 +84,6 @@ The logger and config (and to a lesser degree, the script and action) objects ar
 .. _ConfigTemplate.update(): scriptharness.config.html#scriptharness.config.ConfigTemplate.update
 .. _ConfigTemplate.validate_config(): scriptharness.config.html#scriptharness.config.ConfigTemplate.validate_config
 .. _ConfigVariable: scriptharness.config.html#scriptharness.config.ConfigVariable
-.. _Context: scriptharness.script.html#scriptharness.script.Context
 .. _LoggingDict: scriptharness.structures.html#scriptharness.structures.LoggingDict
 .. _ReadOnlyDict: scriptharness.structures.html#scriptharness.structures.ReadOnlyDict
 .. _Script: scriptharness.script.html#scriptharness.script.Script

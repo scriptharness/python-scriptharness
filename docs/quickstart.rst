@@ -239,31 +239,31 @@ see what the config is without running anything, you can use the
 You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
-    usage: quickstart.py [-h] [--opt-config-file CONFIG_FILE] [--dump-config]
-                         [--config-file CONFIG_FILE]
-                         [--skip-actions ACTION [ACTION ...]]
-                         [--actions ACTION [ACTION ...]]
+    usage: quickstart.py [-h] [--dump-config] [--config-file CONFIG_FILE]
+                         [--opt-config-file CONFIG_FILE]
                          [--action-group {none,all}] [--list-actions]
+                         [--actions ACTION [ACTION ...]]
                          [--add-actions ACTION [ACTION ...]]
+                         [--skip-actions ACTION [ACTION ...]]
                          [--new-argument NEW_ARGUMENT]
     
     optional arguments:
       -h, --help            show this help message and exit
-      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
-                            Specify optional config files/urls
       --dump-config         Log the built configuration and exit.
       --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
                             Specify required config files/urls
-      --skip-actions ACTION [ACTION ...]
-                            Specify the actions to skip.
-      --actions ACTION [ACTION ...]
-                            Specify the actions to run.
+      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
+                            Specify optional config files/urls
       --action-group {none,all}
                             Specify the action group to use.
       --list-actions        List all actions (default prepended with '*') and
                             exit.
+      --actions ACTION [ACTION ...]
+                            Specify the actions to run.
       --add-actions ACTION [ACTION ...]
                             Specify the actions to add to the default set.
+      --skip-actions ACTION [ACTION ...]
+                            Specify the actions to skip.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
 
