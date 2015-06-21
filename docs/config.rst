@@ -7,7 +7,7 @@ Configuration Overview
 
 The runtime configuration of a Script_ is built from several layers.
 
-* There is a ConfigTemplate_ that can have default values for certain config variables.  These defaults are the basis of the config dict.  (See :ref:`Config-Templates` for more details on ConfigTemplate_).
+* There is a ConfigTemplate_ that can have default values for certain config variables.  These defaults are the basis of the config dict.  (See :ref:`ConfigTemplates` for more details on ConfigTemplate_).
 
 * The script can define an ``initial_config`` dict that is laid on top of the ConfigTemplate_ defaults, so any shared config variables are overwritten by the ``initial_config``.
 
@@ -22,7 +22,7 @@ The runtime configuration of a Script_ is built from several layers.
 After the config is built, the script logs the config, and saves it to a ``localconfig.json`` file.  This file can be inspected or reused for a later script run.
 
 
-.. _Config-Templates:
+.. _ConfigTemplates:
 
 ###############
 ConfigTemplates

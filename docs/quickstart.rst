@@ -125,7 +125,7 @@ output
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
-    00:00:00     INFO - Starting at 2015-05-25 00:00 PDT.
+    00:00:00     INFO - Starting at 2015-06-21 00:00 PDT.
     00:00:00     INFO - Enabled actions:
     00:00:00     INFO -  pull, build, package
     00:00:00     INFO - {'new_argument': None,
@@ -168,7 +168,7 @@ The same output is written to the file ``artifacts/log.txt``.
 You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
-    00:00:05     INFO - Starting at 2015-05-25 00:00 PDT.
+    00:00:05     INFO - Starting at 2015-06-21 00:00 PDT.
     00:00:05     INFO - Enabled actions:
     00:00:05     INFO -  package, upload, notify
     00:00:05     INFO - {'new_argument': None,
@@ -239,31 +239,30 @@ see what the config is without running anything, you can use the
 You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
-    usage: quickstart.py [-h] [--dump-config] [--config-file CONFIG_FILE]
-                         [--opt-config-file CONFIG_FILE]
-                         [--action-group {none,all}] [--list-actions]
+    usage: quickstart.py [-h] [--opt-config-file CONFIG_FILE]
+                         [--config-file CONFIG_FILE] [--dump-config]
                          [--actions ACTION [ACTION ...]]
-                         [--add-actions ACTION [ACTION ...]]
                          [--skip-actions ACTION [ACTION ...]]
-                         [--new-argument NEW_ARGUMENT]
+                         [--add-actions ACTION [ACTION ...]] [--list-actions]
+                         [--action-group {none,all}] [--new-argument NEW_ARGUMENT]
     
     optional arguments:
       -h, --help            show this help message and exit
-      --dump-config         Log the built configuration and exit.
-      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
-                            Specify required config files/urls
       --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
                             Specify optional config files/urls
-      --action-group {none,all}
-                            Specify the action group to use.
-      --list-actions        List all actions (default prepended with '*') and
-                            exit.
+      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
+                            Specify required config files/urls
+      --dump-config         Log the built configuration and exit.
       --actions ACTION [ACTION ...]
                             Specify the actions to run.
-      --add-actions ACTION [ACTION ...]
-                            Specify the actions to add to the default set.
       --skip-actions ACTION [ACTION ...]
                             Specify the actions to skip.
+      --add-actions ACTION [ACTION ...]
+                            Specify the actions to add to the default set.
+      --list-actions        List all actions (default prepended with '*') and
+                            exit.
+      --action-group {none,all}
+                            Specify the action group to use.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
 

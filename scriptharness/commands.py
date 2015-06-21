@@ -76,11 +76,15 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
 
     Args:
       command (str or list): The command to run.
+
       logger_name (Optional[str]): the logger name to log with.
+
       level (Optional[int]): the logging level to log with.  Defaults to
         logging.INFO
+
       log_output (Optional[bool]): When true, log the output of the command.
         Defaults to True.
+
       **kwargs: sent to `subprocess.check_output()`
     """
     logger = logging.getLogger(logger_name)
@@ -160,7 +164,6 @@ class Command(object):
         self.history = {}
         self.kwargs = kwargs or {}
         self.strings = deepcopy(STRINGS['command'])
-        self.process = None
 
     def log_env(self, env):
         """Log environment variables.  Here for subclassing.
@@ -311,8 +314,11 @@ class Output(Command):
 
     Attributes:
       strings (dict): Strings to log.
+
       stdout (NamedTemporaryFile): file to log stdout to
+
       stderr (NamedTemporaryFile): file to log stderr to
+
       + all of the attributes in scriptharness.commands.Command
     """
     def __init__(self, *args, **kwargs):
@@ -378,6 +384,7 @@ class Output(Command):
         Args:
           handle_name (Optional["stdout" or "stderr"]): the handle to read
             from.  Defaults to "stdout"
+
           text (Optional[bool]): whether the output is text.  If so, run
             output through to_unicode() and rstrip().  Defaults to True.
         """
@@ -454,6 +461,7 @@ def parse(command, **kwargs):
 
     Args:
       command (list or str): Command line to run.
+
       **kwargs: kwargs for run/ParsedCommand.
 
     Returns:
