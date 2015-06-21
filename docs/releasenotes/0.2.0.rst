@@ -1,7 +1,7 @@
 Scriptharness 0.2.0 Release Notes
 =================================
 
-:date: 2015/06/20
+:date: 2015/06/21
 
 Highlights
 ----------

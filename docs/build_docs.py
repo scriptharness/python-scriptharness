@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-RELEASE_DATE = "2015-06-20 00:00 PDT"
+RELEASE_DATE = "2015-06-21 00:00 PDT"
 READTHEDOCS_LINK = """
 .. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
     :target: https://readthedocs.org/projects/python-scriptharness/?badge=latest
