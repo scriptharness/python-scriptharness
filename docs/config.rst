@@ -11,7 +11,7 @@ The runtime configuration of a Script is built from several layers.
 
 * The script can define an ``initial_config`` dict that is laid on top of the ConfigTemplate_ defaults, so any shared config variables are overwritten by the ``initial_config``.
 
-* The ConfigTemplate.get_parser_ method generates an ``argparse.ArgumentParser``.  This parser parses the commandline options.
+* The `ConfigTemplate.get_parser()`_ method generates an ``argparse.ArgumentParser``.  This parser parses the commandline options.
 
 * If the commandline options specify any files via the ``--config-file`` option, then those files are read, and the contents are overlaid on top of the config.  The first file specified will be overlaid first, then the second, and so on.
 
@@ -34,19 +34,19 @@ To make the config more well-defined, we have the ConfigTemplate_.  The ConfigTe
 
 * The ConfigTemplate_ can keep track of all config variables, including ones that aren't available as commandline options.  The option-less config variables must be specified via default, config file, or ``initial_config``.
 
-* The templates can be added together, via ConfigTemplate.update_.
+* The templates can be added together, via `ConfigTemplate.update()`_.
 
 * Each ConfigVariable_ self-validates, and the ConfigTemplate_ makes sure there are no conflicting commandline options.
 
-* There is a ConfigTemplate.remove_option_ method to remove a commandline option from the corresponding ConfigVariable_.  This may be needed if you want to add two config templates together, but they both have a ``-f`` commandline option specified, for example.
+* There is a `ConfigTemplate.remove_option()`_ method to remove a commandline option from the corresponding ConfigVariable_.  This may be needed if you want to add two config templates together, but they both have a ``-f`` commandline option specified, for example.
 
-* The ConfigTemplate.validate_config_ method validates the built configuration.  Each ConfigVariable_ can define whether they're required, whether they require or are incompatible with other variables (``required_vars`` and ``incompatible_vars``), and each can define their own ``validate_cb`` callback function.
+* The `ConfigTemplate.validate_config()`_ method validates the built configuration.  Each ConfigVariable_ can define whether they're required, whether they require or are incompatible with other variables (``required_vars`` and ``incompatible_vars``), and each can define their own ``validate_cb`` callback function.
 
-* There is a ConfigTemplate.add_argument_ for those who want to maintain argparse syntax.
+* There is a `ConfigTemplate.add_argument()`_ for those who want to maintain argparse syntax.
 
-Parent parsers are supported, to group commandline options in the ``--help`` output.  Subparsers are not currently supported, though it may be possible to replace the ConfigTemplate.parser_ with a subparser-enabled parser at the expense of validation and the ability to ConfigTemplate.update_.
+Parent parsers are supported, to group commandline options in the ``--help`` output.  Subparsers are not currently supported, though it may be possible to replace the ConfigTemplate.parser_ with a subparser-enabled parser at the expense of validation and the ability to `ConfigTemplate.update()`_.
 
-When supporting downstream scripts, it's best to keep each ConfigTemplate_ modular.  It's easy to combine them via ConfigTemplate.update_, but less trivial to remove functionality.  The action config template, for instance, can be added to the base config template right before running parse_args_.
+When supporting downstream scripts, it's best to keep each ConfigTemplate_ modular.  It's easy to combine them via `ConfigTemplate.update()`_, but less trivial to remove functionality.  The action config template, for instance, can be added to the base config template right before running `parse_args()`_.
 
 
 ############################
@@ -94,16 +94,16 @@ The logger and config (and to a lesser degree, the script and action) objects ar
 
 
 .. _ConfigTemplate: scriptharness.config.html#scriptharness.config.ConfigTemplate
-.. _ConfigTemplate.add_argument: scriptharness.config.html#scriptharness.config.ConfigTemplate.add_argument
-.. _ConfigTemplate.get_parser: scriptharness.config.html#scriptharness.config.ConfigTemplate.get_parser
+.. _ConfigTemplate.add_argument(): scriptharness.config.html#scriptharness.config.ConfigTemplate.add_argument
+.. _ConfigTemplate.get_parser(): scriptharness.config.html#scriptharness.config.ConfigTemplate.get_parser
 .. _ConfigTemplate.parser: scriptharness.config.html#scriptharness.config.ConfigTemplate.parser
-.. _ConfigTemplate.remove_option: scriptharness.config.html#scriptharness.config.ConfigTemplate.remove_option
-.. _ConfigTemplate.update: scriptharness.config.html#scriptharness.config.ConfigTemplate.update
-.. _ConfigTemplate.validate_config: scriptharness.config.html#scriptharness.config.ConfigTemplate.validate_config
+.. _ConfigTemplate.remove_option(): scriptharness.config.html#scriptharness.config.ConfigTemplate.remove_option
+.. _ConfigTemplate.update(): scriptharness.config.html#scriptharness.config.ConfigTemplate.update
+.. _ConfigTemplate.validate_config(): scriptharness.config.html#scriptharness.config.ConfigTemplate.validate_config
 .. _ConfigVariable: scriptharness.config.html#scriptharness.config.ConfigVariable
 .. _Context: scriptharness.script.html#scriptharness.script.Context
 .. _LoggingDict: scriptharness.structures.html#scriptharness.structures.LoggingDict
 .. _ReadOnlyDict: scriptharness.structures.html#scriptharness.structures.ReadOnlyDict
 .. _Script: scriptharness.script.html#scriptharness.script.Script
 .. _StrictScript: scriptharness.script.html#scriptharness.script.StrictScript
-.. _parse_args: scriptharness.config.html#scriptharness.config.parse_args
+.. _parse_args(): scriptharness.config.html#scriptharness.config.parse_args

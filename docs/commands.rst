@@ -13,7 +13,7 @@ The Command_ object simply takes an external command and runs it, logging stdout
 
 After the command is run, it runs the ``detect_error_cb`` callback function to determine whether the command was run successfully.
 
-The process of creating and running a Command_ is twofold: `Command.__init__`_ and `Command.run`_.  As a shortcut, there is a run_ function that will do both steps for you.
+The process of creating and running a Command_ is twofold: `Command.__init__()`_ and `Command.run()`_.  As a shortcut, there is a `run()`_ function that will do both steps for you.
 
 
 .. _ParsedCommand-and-parse:
@@ -26,7 +26,7 @@ Ideally, external command output would be for humans only, and the exit code wou
 
 ParsedCommand_ takes the output of a command and parses it for matching substrings or regular expressions, using :ref:`ErrorLists-and-OutputParser` to determine the log level of a line of output.  Because it subclasses Command_, ParsedCommand_ also has built-in ``output_timeout`` and ``max_timeout`` support.
 
-As with Command_ and run_, ParsedCommand_ has a shortcut function, parse_.
+As with Command_ and `run()`_, ParsedCommand_ has a shortcut function, `parse()`_.
 
 
 .. _ErrorLists-and-OutputParser:
@@ -92,23 +92,23 @@ Output, get_output(), and get_text_output()
 
 Sometimes you need to manipulate the output from a command, not just log it or perform general error parsing.  There's ``subprocess.check_output()``, but that doesn't log or have full timeout support.
 
-Enter Output_.  This also inherits Command_, but because Output.run_ is a completely different method than Command.run_, it has its own timeout implementation.  (It does still support both ``output_timeout`` and ``max_timeout``.)  It redirects STDOUT and STDERR to temp files.
+Enter Output_.  This also inherits Command_, but because `Output.run()`_ is a completely different method than `Command.run()`_, it has its own timeout implementation.  (It does still support both ``output_timeout`` and ``max_timeout``.)  It redirects STDOUT and STDERR to temp files.
 
-Much like Command_ has its helper run_ function, Output_ has `two` helper functions: get_output_ and get_text_output_.  The former yields the Output_ object, and the caller can either access the ``NamedTemporaryFile`` Output.stdout_ and Output.stderr_ objects, or use the Output.get_output_ method.  Because of this, it is suitable for binary or lengthy output.  get_text_output_ will get the STDOUT contents for you, log them, and return them to you.
+Much like Command_ has its helper `run()`_ function, Output_ has `two` helper functions: `get_output()`_ and `get_text_output()`_.  The former yields the Output_ object, and the caller can either access the ``NamedTemporaryFile`` Output.stdout_ and Output.stderr_ objects, or use the `Output.get_output()`_ method.  Because of this, it is suitable for binary or lengthy output.  `get_text_output()`_ will get the STDOUT contents for you, log them, and return them to you.
 
 .. _Command: scriptharness.commands.html#scriptharness.commands.Command
-.. _Command.__init__: scriptharness.commands.html#scriptharness.commands.Command.__init__
-.. _Command.run: scriptharness.commands.html#scriptharness.commands.Command.run
+.. _Command.__init__(): scriptharness.commands.html#scriptharness.commands.Command.__init__
+.. _Command.run(): scriptharness.commands.html#scriptharness.commands.Command.run
 .. _ErrorList: scriptharness.errorlists.html#scriptharness.errorlists.ErrorList
 .. _Output: scriptharness.commands.html#scriptharness.commands.Output
-.. _Output.get_output: scriptharness.commands.html#scriptharness.commands.Output.get_output
-.. _Output.run: scriptharness.commands.html#scriptharness.commands.Output.run
+.. _Output.get_output(): scriptharness.commands.html#scriptharness.commands.Output.get_output
+.. _Output.run(): scriptharness.commands.html#scriptharness.commands.Output.run
 .. _Output.stdout: scriptharness.commands.html#scriptharness.commands.Output.stdout
 .. _Output.stderr: scriptharness.commands.html#scriptharness.commands.Output.stderr
 .. _OutputBuffer: scriptharness.log.html#scriptharness.log.OutputBuffer
 .. _OutputParser: scriptharness.log.html#scriptharness.log.OutputParser
 .. _ParsedCommand: scriptharness.commands.html#scriptharness.commands.ParsedCommand
-.. _get_output: scriptharness.commands.html#scriptharness.commands.get_output
-.. _get_text_output: scriptharness.commands.html#scriptharness.commands.get_text_output
-.. _parse: scriptharness.commands.html#scriptharness.commands.parse
-.. _run: scriptharness.commands.html#scriptharness.commands.run
+.. _get_output(): scriptharness.commands.html#scriptharness.commands.get_output
+.. _get_text_output(): scriptharness.commands.html#scriptharness.commands.get_text_output
+.. _parse(): scriptharness.commands.html#scriptharness.commands.parse
+.. _run(): scriptharness.commands.html#scriptharness.commands.run
