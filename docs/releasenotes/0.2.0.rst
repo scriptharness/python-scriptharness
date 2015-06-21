@@ -44,17 +44,17 @@ What's New
 .. note:: If you've cloned python-scriptharness 0.1.0, you may need to remove the ``scriptharness/commands`` directory, as it will conflict with the new ``scriptharness/commands.py`` module.
 
 
-.. _Command: scriptharness.commands.html#scriptharness.commands.Command
-.. _ConfigTemplate: scriptharness.config.html#scriptharness.config.ConfigTemplate
-.. _ConfigVariable: scriptharness.config.html#scriptharness.config.ConfigVariable
+.. _Command: ../scriptharness.commands/#scriptharness.commands.Command
+.. _ConfigTemplate: ../scriptharness.config/#scriptharness.config.ConfigTemplate
+.. _ConfigVariable: ../scriptharness.config/#scriptharness.config.ConfigVariable
 .. _Current issues: https://github.com/scriptharness/python-scriptharness/issues
-.. _ErrorList: scriptharness.errorlists.html#scriptharness.errorlists.ErrorList
-.. _Output: scriptharness.commands.html#scriptharness.commands.Output
-.. _OutputBuffer: scriptharness.log.html#scriptharness.log.OutputBuffer
-.. _OutputParser: scriptharness.log.html#scriptharness.log.OutputParser
-.. _ParsedCommand: scriptharness.commands.html#scriptharness.commands.ParsedCommand
-.. _ScriptHarnessTimeout: scriptharness.exceptions.html#scriptharness.exceptions.ScriptHarnessTimeout
-.. _get_output(): scriptharness.commands.html#scriptharness.commands.get_output
-.. _get_text_output(): scriptharness.commands.html#scriptharness.commands.get_text_output
-.. _parse(): scriptharness.commands.html#scriptharness.commands.parse
-.. _run(): scriptharness.commands.html#scriptharness.commands.run
+.. _ErrorList: ../scriptharness.errorlists/#scriptharness.errorlists.ErrorList
+.. _Output: ../scriptharness.commands/#scriptharness.commands.Output
+.. _OutputBuffer: ../scriptharness.log/#scriptharness.log.OutputBuffer
+.. _OutputParser: ../scriptharness.log/#scriptharness.log.OutputParser
+.. _ParsedCommand: ../scriptharness.commands/#scriptharness.commands.ParsedCommand
+.. _ScriptHarnessTimeout: ../scriptharness.exceptions/#scriptharness.exceptions.ScriptHarnessTimeout
+.. _get_output(): ../scriptharness.commands/#scriptharness.commands.get_output
+.. _get_text_output(): ../scriptharness.commands/#scriptharness.commands.get_text_output
+.. _parse(): ../scriptharness.commands/#scriptharness.commands.parse
+.. _run(): ../scriptharness.commands/#scriptharness.commands.run
