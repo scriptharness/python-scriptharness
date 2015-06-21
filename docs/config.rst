@@ -76,16 +76,16 @@ Alternatively, someone could change the script class to StrictScript_, which use
 By either explicitly logging any changes to the config, and/or preventing any changes to the config, it's easier to debug any unexpected behavior.
 
 
-.. _ConfigTemplate: scriptharness.config.html#scriptharness.config.ConfigTemplate
-.. _ConfigTemplate.add_argument(): scriptharness.config.html#scriptharness.config.ConfigTemplate.add_argument
-.. _ConfigTemplate.get_parser(): scriptharness.config.html#scriptharness.config.ConfigTemplate.get_parser
-.. _ConfigTemplate.parser: scriptharness.config.html#scriptharness.config.ConfigTemplate.parser
-.. _ConfigTemplate.remove_option(): scriptharness.config.html#scriptharness.config.ConfigTemplate.remove_option
-.. _ConfigTemplate.update(): scriptharness.config.html#scriptharness.config.ConfigTemplate.update
-.. _ConfigTemplate.validate_config(): scriptharness.config.html#scriptharness.config.ConfigTemplate.validate_config
-.. _ConfigVariable: scriptharness.config.html#scriptharness.config.ConfigVariable
-.. _LoggingDict: scriptharness.structures.html#scriptharness.structures.LoggingDict
-.. _ReadOnlyDict: scriptharness.structures.html#scriptharness.structures.ReadOnlyDict
-.. _Script: scriptharness.script.html#scriptharness.script.Script
-.. _StrictScript: scriptharness.script.html#scriptharness.script.StrictScript
-.. _parse_args(): scriptharness.config.html#scriptharness.config.parse_args
+.. _ConfigTemplate: ../scriptharness.config/#scriptharness.config.ConfigTemplate
+.. _ConfigTemplate.add_argument(): ../scriptharness.config/#scriptharness.config.ConfigTemplate.add_argument
+.. _ConfigTemplate.get_parser(): ../scriptharness.config/#scriptharness.config.ConfigTemplate.get_parser
+.. _ConfigTemplate.parser: ../scriptharness.config/#scriptharness.config.ConfigTemplate.parser
+.. _ConfigTemplate.remove_option(): ../scriptharness.config/#scriptharness.config.ConfigTemplate.remove_option
+.. _ConfigTemplate.update(): ../scriptharness.config/#scriptharness.config.ConfigTemplate.update
+.. _ConfigTemplate.validate_config(): ../scriptharness.config/#scriptharness.config.ConfigTemplate.validate_config
+.. _ConfigVariable: ../scriptharness.config/#scriptharness.config.ConfigVariable
+.. _LoggingDict: ../scriptharness.structures/#scriptharness.structures.LoggingDict
+.. _ReadOnlyDict: ../scriptharness.structures/#scriptharness.structures.ReadOnlyDict
+.. _Script: ../scriptharness.script/#scriptharness.script.Script
+.. _StrictScript: ../scriptharness.script/#scriptharness.script.StrictScript
+.. _parse_args(): ../scriptharness.config/#scriptharness.config.parse_args

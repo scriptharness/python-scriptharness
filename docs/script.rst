@@ -45,16 +45,16 @@ When run, the Action_ calls the Action.function_ with a Context_.  The function 
 Afterwards, the Action.history_ contains the ``return_value``, status_, ``start_time``, and ``end_time``.
 
 
-.. _ALL_PHASES: scriptharness.script.html#scriptharness.script.ALL_PHASES
-.. _LISTENER_PHASES: scriptharness.script.html#scriptharness.script.LISTENER_PHASES
-.. _Action: scriptharness.actions.html#scriptharness.actions.Action
-.. _Action.function: scriptharness.actions.html#scriptharness.actions.Action.function
-.. _Action.history: scriptharness.actions.html#scriptharness.actions.Action.history
-.. _Context: scriptharness.script.html#scriptharness.script.Context
-.. _LoggingDict: scriptharness.structures.html#scriptharness.structures.LoggingDict
-.. _Script: scriptharness.script.html#scriptharness.script.Script
-.. _Script.run(): scriptharness.script.html#scriptharness.script.Script.run
-.. _ScriptHarnessError: scriptharness.exceptions.html#scriptharness.exceptions.ScriptHarnessError
-.. _ScriptHarnessFatal: scriptharness.exceptions.html#scriptharness.exceptions.ScriptHarnessFatal
+.. _ALL_PHASES: ../scriptharness.script/#scriptharness.script.ALL_PHASES
+.. _LISTENER_PHASES: ../scriptharness.script/#scriptharness.script.LISTENER_PHASES
+.. _Action: ../scriptharness.actions/#scriptharness.actions.Action
+.. _Action.function: ../scriptharness.actions/#scriptharness.actions.Action.function
+.. _Action.history: ../scriptharness.actions/#scriptharness.actions.Action.history
+.. _Context: ../scriptharness.script/#scriptharness.script.Context
+.. _LoggingDict: ../scriptharness.structures/#scriptharness.structures.LoggingDict
+.. _Script: ../scriptharness.script/#scriptharness.script.Script
+.. _Script.run(): ../scriptharness.script/#scriptharness.script.Script.run
+.. _ScriptHarnessError: ../scriptharness.exceptions/#scriptharness.exceptions.ScriptHarnessError
+.. _ScriptHarnessFatal: ../scriptharness.exceptions/#scriptharness.exceptions.ScriptHarnessFatal
 .. _running multiple Scripts in parallel: https://github.com/scriptharness/python-scriptharness/issues/12
-.. _status: scriptharness.status.html
+.. _status: scriptharness.status/
