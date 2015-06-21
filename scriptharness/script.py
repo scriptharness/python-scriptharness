@@ -381,6 +381,7 @@ class Script(object):
         self.end_message()
 
 
+# StrictScript {{{1
 class StrictScript(Script):
     """A subclass of Script that uses a ReadOnlyDict for config, and locks
     its attributes.

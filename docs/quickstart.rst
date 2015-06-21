@@ -3,9 +3,7 @@
 Quickstart
 ==========
 
-Here's an example script.  The file is also viewable here_.
-
-.. _here: https://github.com/scriptharness/python-scriptharness/blob/master/examples/quickstart.py
+Here's an example script, quickstart.py_.
 
 ::
 
@@ -241,31 +239,34 @@ see what the config is without running anything, you can use the
 You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
-    usage: quickstart.py [-h] [--config-file CONFIG_FILE] [--dump-config]
+    usage: quickstart.py [-h] [--dump-config] [--config-file CONFIG_FILE]
                          [--opt-config-file CONFIG_FILE]
-                         [--add-actions ACTION [ACTION ...]]
                          [--action-group {none,all}] [--list-actions]
                          [--actions ACTION [ACTION ...]]
+                         [--add-actions ACTION [ACTION ...]]
                          [--skip-actions ACTION [ACTION ...]]
                          [--new-argument NEW_ARGUMENT]
     
     optional arguments:
       -h, --help            show this help message and exit
+      --dump-config         Log the built configuration and exit.
       --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
                             Specify required config files/urls
-      --dump-config         Log the built configuration and exit.
       --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
                             Specify optional config files/urls
-      --add-actions ACTION [ACTION ...]
-                            Specify the actions to add to the default set.
       --action-group {none,all}
                             Specify the action group to use.
       --list-actions        List all actions (default prepended with '*') and
                             exit.
       --actions ACTION [ACTION ...]
                             Specify the actions to run.
+      --add-actions ACTION [ACTION ...]
+                            Specify the actions to add to the default set.
       --skip-actions ACTION [ACTION ...]
                             Specify the actions to skip.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
 
+
+
+.. _quickstart.py: https://github.com/scriptharness/python-scriptharness/blob/master/examples/quickstart.py

@@ -47,6 +47,7 @@ Linux and OS X
     # You can run |tox -e ENV| to run a specific env, e.g. |tox -e py27|
     pip install tox
     tox
+    # alternately, ./run_tests.sh
 
 Windows
 -------
