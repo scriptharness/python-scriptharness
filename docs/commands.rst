@@ -96,19 +96,19 @@ Enter Output_.  This also inherits Command_, but because `Output.run()`_ is a co
 
 Much like Command_ has its helper `run()`_ function, Output_ has `two` helper functions: `get_output()`_ and `get_text_output()`_.  The former yields the Output_ object, and the caller can either access the ``NamedTemporaryFile`` Output.stdout_ and Output.stderr_ objects, or use the `Output.get_output()`_ method.  Because of this, it is suitable for binary or lengthy output.  `get_text_output()`_ will get the STDOUT contents for you, log them, and return them to you.
 
-.. _Command: scriptharness.commands.html#scriptharness.commands.Command
-.. _Command.__init__(): scriptharness.commands.html#scriptharness.commands.Command.__init__
-.. _Command.run(): scriptharness.commands.html#scriptharness.commands.Command.run
-.. _ErrorList: scriptharness.errorlists.html#scriptharness.errorlists.ErrorList
-.. _Output: scriptharness.commands.html#scriptharness.commands.Output
-.. _Output.get_output(): scriptharness.commands.html#scriptharness.commands.Output.get_output
-.. _Output.run(): scriptharness.commands.html#scriptharness.commands.Output.run
-.. _Output.stdout: scriptharness.commands.html#scriptharness.commands.Output.stdout
-.. _Output.stderr: scriptharness.commands.html#scriptharness.commands.Output.stderr
-.. _OutputBuffer: scriptharness.log.html#scriptharness.log.OutputBuffer
-.. _OutputParser: scriptharness.log.html#scriptharness.log.OutputParser
-.. _ParsedCommand: scriptharness.commands.html#scriptharness.commands.ParsedCommand
-.. _get_output(): scriptharness.commands.html#scriptharness.commands.get_output
-.. _get_text_output(): scriptharness.commands.html#scriptharness.commands.get_text_output
-.. _parse(): scriptharness.commands.html#scriptharness.commands.parse
-.. _run(): scriptharness.commands.html#scriptharness.commands.run
+.. _Command: ../scriptharness.commands/#scriptharness.commands.Command
+.. _Command.__init__(): ../scriptharness.commands/#scriptharness.commands.Command.__init__
+.. _Command.run(): ../scriptharness.commands/#scriptharness.commands.Command.run
+.. _ErrorList: ../scriptharness.errorlists/#scriptharness.errorlists.ErrorList
+.. _Output: ../scriptharness.commands/#scriptharness.commands.Output
+.. _Output.get_output(): ../scriptharness.commands/#scriptharness.commands.Output.get_output
+.. _Output.run(): ../scriptharness.commands/#scriptharness.commands.Output.run
+.. _Output.stdout: ../scriptharness.commands/#scriptharness.commands.Output.stdout
+.. _Output.stderr: ../scriptharness.commands/#scriptharness.commands.Output.stderr
+.. _OutputBuffer: ../scriptharness.log/#scriptharness.log.OutputBuffer
+.. _OutputParser: ../scriptharness.log/#scriptharness.log.OutputParser
+.. _ParsedCommand: ../scriptharness.commands/#scriptharness.commands.ParsedCommand
+.. _get_output(): ../scriptharness.commands/#scriptharness.commands.get_output
+.. _get_text_output(): ../scriptharness.commands/#scriptharness.commands.get_text_output
+.. _parse(): ../scriptharness.commands/#scriptharness.commands.parse
+.. _run(): ../scriptharness.commands/#scriptharness.commands.run
