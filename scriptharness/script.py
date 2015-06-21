@@ -144,7 +144,7 @@ class Script(object):
           actions (tuple): Action objects to run.
           template (ConfigTemplate): template to use
           name (Optional[str]): The name of the Script in
-            scriptharness.ScriptManager
+            scriptharness.ScriptManager.  Defaults to 'root'
           **kwargs: These are passed to self.build_config()
 
         Raises:

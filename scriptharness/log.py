@@ -338,7 +338,8 @@ class OutputBuffer(object):
         level set for each line.
 
         Args:
-          num (int): The number of lines to pop and log.
+          num (Optional[int]): The number of lines to pop and log.  Defaults
+            to 1.
         """
         for _ in range(0, num):
             self.logger.log(
@@ -406,7 +407,7 @@ class OutputParser(object):
         Args:
           error_list (list of dicts): list of errors to look for.
 
-          logger (Optional[logging.Logger]): logger to use.
+          logger (Optional[logging.Logger]): logger to use.  Defaults to None.
 
           **kwargs: These are ignored, and are here so we can subclass
             ParsedCommand.

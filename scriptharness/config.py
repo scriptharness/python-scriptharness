@@ -6,6 +6,13 @@ variety of contexts and environments.
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
 
+  OPTION_REGEX (re.compile): regular expression to validate a commandline
+    option
+
+  VALID_ARGPARSE_ACTIONS (tuple): for validating the ConfigVariable action
+
+  STRINGS (dict): strings for ConfigVariable
+
   DEFAULT_CONFIG_DEFINITION (dict): Config definition to create the default
     ConfigTemplate for all scriptharness scripts.
 """
@@ -151,7 +158,9 @@ def download_url(url, path=None, timeout=None):
 
     Args:
       url (str): the url to download
+
       path (Optional[str]): the path to write the contents to.
+
       timeout (Optional[float]): how long to wait before timing out.
 
     Returns:
@@ -200,8 +209,11 @@ def get_list_actions_string(action_name, enabled, groups=None):
 
     Args:
       action_name (str):  name of the action
+
       enabled (bool): whether the action is enabled by default
-      groups (list): a list of action_group names that the action belongs to.
+
+      groups (Optional[list]): a list of action_group names that the action
+        belongs to.  Defaults to None.
 
     Returns:
       string (str): a line of --list-actions output.
@@ -438,6 +450,9 @@ def validate_config_definition(name, definition):
     Args:
       name (str): the name of the variable
       definition (dict): the definition to validate
+
+    Raises:
+      ScriptHarnessException: if there are any error messages
     """
     messages = []
     if definition.get('options'):
@@ -493,6 +508,7 @@ class ConfigVariable(object):
                                 # or highly recommended.
         'required': True,
         'default': 'bar',
+        'parent_parser': 'parent',  # this is for argparse --help sorting
         'type': str,  # a python type
         'choices': [],  # enum / list of choices
 
