@@ -118,7 +118,8 @@ def main():
     build_readme_rst()
     build_releasenotes_rst()
     build_quickstart()
-    subprocess.check_call(["make", "html"])
+    subprocess.check_call(["make", "clean", "html"])
+    subprocess.check_call(["make", "dirhtml"])
     subprocess.check_call(["make", "text"])
     subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
     if os.path.exists("artifacts"):

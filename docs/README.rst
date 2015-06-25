@@ -34,6 +34,18 @@ Scriptharness actions allow for:
 
 This is in the same spirit of other frameworks that allow for discrete targets, tasks, or actions: make, maven, ansible, and many more.
 
+#######
+Install
+#######
+
+::
+
+    # This will automatically bring in all requirements.
+    pip install scriptharness
+
+    # To do a full install with docs/testing requirements,
+    pip install -r requirements.txt
+
 ##################
 Running unit tests
 ##################
