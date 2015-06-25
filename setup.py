@@ -36,7 +36,7 @@ setup(
     long_description=read('README'),
     author='Aki Sasaki',
     author_email='aki@escapewindow.com',
-    url='https://github.com/scriptharness/scriptharness',
+    url='https://github.com/scriptharness/python-scriptharness',
     license='MPL2',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
