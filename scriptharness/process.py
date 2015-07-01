@@ -103,7 +103,7 @@ def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
 
       runner (multiprocessing.Process): the runner Process to watch.
 
-      add_line_cb (function): any output lines read will be sent here.
+      add_line_cb (Callable[[str]]): any output lines read will be sent here.
 
       max_timeout (Optional[int]): when specified, the process will be killed
         if it takes longer than this number of seconds.  Default: None

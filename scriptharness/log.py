@@ -99,7 +99,7 @@ def get_file_handler(path, level=logging.INFO, formatter=None,
       path (str): the path to the logfile.
       level (Optional[int]): logging level for the file.
       formatter (Optional[logging.Formatter]): formatter to use for logs.
-      logger (Optional[logging logger]): logger to add the file handler to.
+      logger (Optional[logging.Logger]): logger to add the file handler to.
       mode (Optional[str]): mode to open the file
 
     Returns:
@@ -122,7 +122,7 @@ def get_console_handler(formatter=None, logger=None, level=logging.INFO):
 
     Args:
       formatter (Optional[logging.Formatter]): formatter to use for logs.
-      logger (Optional[logging logger]): logger to add the file handler to.
+      logger (Optional[logging.Logger]): logger to add the file handler to.
       level (Optional[int]): logging level for the file.
 
     Returns:
@@ -146,7 +146,7 @@ class LogMethod(object):
 
     Attributes:
 
-      default_config (dict): contains the config defaults that can be
+      default_config (Dict[str, str]): contains the config defaults that can be
         overridden via __init__ kwargs.  Changing default_config directly
         may carry over to other decorated LogMethod functions!
     """
@@ -188,7 +188,7 @@ class LogMethod(object):
         has the empty (), the function will be sent to LogMethod.__call__()
 
         Args:
-          func (Optional[function]): This is the decorated function.
+          func (Optional[Callable[[Any, ...] Any]]): This is the decorated function.
           **kwargs: Contains any config options to override default_config
         """
         self.func = func
@@ -217,7 +217,7 @@ class LogMethod(object):
         so we need to create and return a wrapping function.
 
         Args:
-          func (function): this is the decorated function.
+          func (Callable[[*args, **kwargs], Any]): this is the decorated function.
           *args: the args from the wrapped function call.
           **kwargs: the kwargs from the wrapped function call.
         """
@@ -404,7 +404,8 @@ class OutputParser(object):
         """Initialization method for the OutputParser class
 
         Args:
-          error_list (list of dicts): list of errors to look for.
+          error_list (ErrorList): list of errors to look for; as defined
+            in `errorlists.py`.
 
           logger (Optional[logging.Logger]): logger to use.
 
@@ -434,8 +435,8 @@ class OutputParser(object):
 
           line (str): line to log
 
-          error_check (Optional[dict]): the error_check in error_list that
-            first matched line, if applicable.  Defaults to None.
+          error_check (Optional[Dict[str, str or regex]]): the error_check in
+            error_list that first matched line, if applicable.  Defaults to None.
         """
         error_check = error_check or {}
         for line in messages.split('\n'):

@@ -26,9 +26,9 @@ def exactly_one(key1, key2, error_check, messages):
 
       key2 (str): Dictionary key.
 
-      error_check (dict): a single item of error_list.
+      error_check (Dict[str, str or regex]): a single item of error_list.
 
-      messages (list): the list of error messages so far.
+      messages (List[str]): the list of error messages so far.
 
     Returns:
       Bool: True if there is exactly one of the two keys in error_check.
@@ -53,8 +53,8 @@ def verify_unicode(key, error_check, messages):
 
     Args:
       key (str): a dict key
-      error_check (dict): a single item of error_list
-      messages (list): The error messages so far
+      error_check (Dict[str, str or regex]): a single item of error_list
+      messages (List[str]): The error messages so far
     """
     if key in error_check and not \
             isinstance(error_check[key], six.text_type):
@@ -75,7 +75,7 @@ def check_ignore(strict, ignore, message, messages):
       strict (bool): Whether the error-checking is strict or not.
       ignore (bool): True when 'level' is in error_check and negative.
       message (str): The message to append if ignore and strict.
-      messages (list): The error messages so far.
+      messages (List[str]): The error messages so far.
     """
     if ignore and strict:
         messages.append(message)
@@ -94,7 +94,7 @@ def check_context_lines(context_lines, orig_context_lines, name, messages):
       name (str): The name of the field (pre_context_lines or
         post_context_lines)
 
-      messages (list): The list of error messages so far.
+      messages (List[str]): The list of error messages so far.
 
     Returns:
       int: If context_lines is a non-int or negative, an error is appended
@@ -165,10 +165,10 @@ class ErrorList(list):
         This is going to be a pain to unit test properly.
 
         Args:
-          error_list (list of dicts): an error_list.
+          error_list (List[Dict[str, str or regex]]): an error_list.
 
         Returns:
-          (pre_context_lines, post_context_lines) (tuple of int, int)
+          Tuple[int, int]: (pre_context_lines, post_context_lines)
 
         Raises:
           scriptharness.exceptions.ScriptHarnessException: if error_list is not

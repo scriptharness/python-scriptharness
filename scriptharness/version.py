@@ -9,7 +9,8 @@ When called as a script, this will update ../version.json with the appropriate
 version info.
 
 Attributes:
-  __version__ (tuple): semver version - three integers and an optional string.
+  __version__ (Tuple[int, int, int, str]): semver version - three integers and an
+    optional string.
   __version_string__ (str): semver version in string format.
 """
 from __future__ import absolute_import, division, print_function, \
@@ -28,7 +29,7 @@ def get_version_string(version):
     This function exists primarily for easier unit testing.
 
     Args:
-      version (tuple): three ints and an optional string.
+      version (Tuple[int, int, int, str]): three ints and an optional string.
 
     Returns:
       version_string (str): the tuple translated into a string per semver.org

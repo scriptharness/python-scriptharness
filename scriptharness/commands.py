@@ -4,7 +4,7 @@
 
 Attributes:
   LOGGER_NAME (str): default logging.Logger name.
-  STRINGS (dict): Strings for logging.
+  STRINGS (Dict[str, Dict[str, str]]): Strings for logging.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -75,7 +75,7 @@ def check_output(command, logger_name="scriptharness.commands.check_output",
     """Wrap subprocess.check_output with logging
 
     Args:
-      command (str or list): The command to run.
+      command (str or List[str]): The command to run.
       logger_name (Optional[str]): the logger name to log with.
       level (Optional[int]): the logging level to log with.  Defaults to
         logging.INFO
@@ -103,7 +103,7 @@ def detect_errors(command):
     Otherwise it's unsuccessful.
 
     Args:
-      command (Command obj):
+      command (Command): instance of `Command` class
     """
     status = scriptharness.status.SUCCESS
     return_value = command.history.get('return_value')
@@ -119,7 +119,7 @@ def detect_parsed_errors(command):
     to 0, the command is successful.  Otherwise it's unsuccessful.
 
     Args:
-      command (Command obj):
+      command (Command): instance of `Command` class
     """
     status = scriptharness.status.SUCCESS
     if command.parser.history.get('num_errors'):
@@ -135,23 +135,23 @@ class Command(object):
     scriptharness.commands.Output object.
 
     Attributes:
-      command (list or string): The command to send to subprocess.Popen
+      command (List[str] or str): The command to send to subprocess.Popen
 
       logger (logging.Logger): logger to log with.
 
-      detect_error_cb (function): this function determines whether the
-        command was successful.
+      detect_error_cb (Callable[[Any], scriptharness.status]): this function
+        determines whether the command was successful.
 
-      history (dict): This dictionary holds the timestamps and status of
+      history (Dict[str, Any]): This dictionary holds the timestamps and status of
         the command.
 
-      kwargs (dict): These kwargs will be passed to subprocess.Popen, except
+      kwargs (Dict[Any, Any]): These kwargs will be passed to subprocess.Popen, except
         for the optional 'output_timeout' and 'timeout', which are processed by
         Command.  `output_timeout` is how long a command can run without
         outputting anything to the screen/log.  `timeout` is how long the
         command can run, total.
 
-      strings (dict): Strings to log.
+      strings (Dict[str, str]): Strings to log.
     """
     def __init__(self, command, logger=None, detect_error_cb=None, **kwargs):
         self.command = command
@@ -166,7 +166,7 @@ class Command(object):
         """Log environment variables.  Here for subclassing.
 
         Args:
-          env (dict): the environment we'll be passing to subprocess.Popen.
+          env (Dict[str, str]): the environment we'll be passing to subprocess.Popen.
         """
         env = self.fix_env(env)
         self.logger.info(self.strings['env'], {'env': pprint.pformat(env)})
@@ -176,7 +176,10 @@ class Command(object):
         """Windows environments are fiddly.
 
         Args:
-          env (dict): the environment we'll be passing to subprocess.Popen.
+          env (Dict[str, str]): the environment we'll be passing to subprocess.Popen.
+
+        Returns:
+          Dict[bytes, bytes]: copy of the env key and values but as byte strings
         """
         if os.name == 'nt':
             env.setdefault("SystemRoot", os.environ["SystemRoot"])
@@ -310,7 +313,7 @@ class Output(Command):
     The output can be binary or text.
 
     Attributes:
-      strings (dict): Strings to log.
+      strings (Dict[str, str]): Strings to log.
       stdout (NamedTemporaryFile): file to log stdout to
       stderr (NamedTemporaryFile): file to log stderr to
       + all of the attributes in scriptharness.commands.Command
@@ -411,7 +414,7 @@ def run(command, cmd_class=Command, halt_on_failure=False, *args, **kwargs):
     are explicitly trying to kill the script.
 
     Args:
-      command (list or str): Command line to run.
+      command (List[str] or str): Command line to run.
 
       cmd_class (Optional[Command subclass]): the class to instantiate.
         Defaults to scriptharness.commands.Command.
@@ -422,7 +425,7 @@ def run(command, cmd_class=Command, halt_on_failure=False, *args, **kwargs):
       **kwargs: kwargs for subprocess.Popen.
 
     Returns:
-      command exit code (int)
+      int: command exit code
 
     Raises:
       scriptharness.exceptions.ScriptHarnessFatal: on fatal error
@@ -453,11 +456,11 @@ def parse(command, **kwargs):
     are explicitly trying to kill the script.
 
     Args:
-      command (list or str): Command line to run.
+      command (List[str] or str): Command line to run.
       **kwargs: kwargs for run/ParsedCommand.
 
     Returns:
-      command exit code (int)
+      int: command exit code
 
     Raises:
       scriptharness.exceptions.ScriptHarnessFatal: on fatal error
@@ -480,7 +483,7 @@ def get_output(command, halt_on_failure=False, **kwargs):
     scriptharness.unicode.to_unicode().
 
     Args:
-      command (list or str): the command to use in subprocess.Popen
+      command (List[str] or str): the command to use in subprocess.Popen
 
       halt_on_failure (Optional[bool]): raise ScriptHarnessFatal on error
         if True.  Default: False
@@ -520,14 +523,14 @@ def get_text_output(command, level=logging.INFO, **kwargs):
     Because we log the output, we're assuming the output is text.
 
     Args:
-      command (list or str): command for subprocess.Popen
+      command (List[str] or str): command for subprocess.Popen
 
       level (int): logging level
 
       **kwargs: kwargs to send to scriptharness.commands.Output
 
     Returns:
-      output (text): the stdout from the command.
+      output (str): the stdout from the command.
     """
     cmd = Output(command, **kwargs)
     with get_output(command, **kwargs) as cmd:

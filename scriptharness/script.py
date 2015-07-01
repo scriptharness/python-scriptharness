@@ -4,8 +4,8 @@
 
 Attributes:
   LOGGER_NAME (str): logging.Logger name to use
-  LISTENER_PHASES (tuple): valid phases for Script.add_listener()
-  ALL_PHASES (tuple): valid phases for build_context()
+  LISTENER_PHASES (Tuple[str, ...]): valid phases for Script.add_listener()
+  ALL_PHASES (Tuple[str, ...]): valid phases for build_context()
   PRE_RUN (str): the pre-run phase constant
   POST_RUN (str): the post-run phase constant
   PRE_ACTION (str): the pre-action phase constant
@@ -55,7 +55,7 @@ def save_config(config, path):
     """Save the configuration file to path as json.
 
     Args:
-      config (dict): The config to save
+      config (Dict[str, str]): The config to save
       path (str): The path to write the config to
     """
     make_parent_dir(path)
@@ -93,8 +93,8 @@ def enable_actions(parsed_args, action_list):
     as appropriate.
 
     Args:
-      parsed_args (argparse Namespace)
-      action_list (list of Actions)
+      parsed_args (Argparse.Namespace)
+      action_list (List[Action])
     """
     args = parsed_args.__dict__
     if args.get('scriptharness_volatile_action_group') is not None:
@@ -129,10 +129,10 @@ class Script(object):
 
     Attributes:
       config (LoggingDict): the config for the script
-      actions (tuple): Action objects to run.
-      name (string): The name of the script
-      listeners (dict): Callbacks for run().  Listener functions can be
-        set for each of LISTENER_PHASES.
+      actions (Tuple[Action, ...]): Action objects to run.
+      name (str): The name of the script
+      listeners (Dict[str, Tuple[Callable[], List[str]]): Callbacks for run().
+        Listener functions can be set for each of LISTENER_PHASES.
       logger (logging.Logger): the logger for the script
     """
     config = None
@@ -141,7 +141,7 @@ class Script(object):
         """Script.__init__
 
         Args:
-          actions (tuple): Action objects to run.
+          actions (Tuple[Action]): Action objects to run.
           parser (ArgumentParser): parser to use
           name (Optional[str]): The name of the Script in
             scriptharness.ScriptManager
@@ -171,8 +171,8 @@ class Script(object):
         Args:
           parser (ArgumentParser): parser to use to parse the commandline
             args.
-          cmdln_args (Optional[tuple]): override the commandline args
-          initial_config (Optional[dict]): initial config dict to apply.
+          cmdln_args (Optional[Tuple[str, ...]]): override the commandline args
+          initial_config (Optional[Dict[str, str]): initial config dict to apply.
 
         Returns:
           parsed_args from parse_args()
@@ -219,7 +219,7 @@ class Script(object):
         by name easily.
 
         Args:
-          actions (list of Action objects): these are passed from __init__().
+          actions (List[Action]): these are passed from __init__().
         """
         action_dict = collections.OrderedDict()
         for action in actions:
@@ -257,9 +257,9 @@ class Script(object):
         those action(s).
 
         Args:
-          listener (function): Function to call at the right time.
+          listener (Callable[Any, ...] Any): Function to call at the right time.
           phase (str): When to run the function.  Choices in LISTENER_PHASES
-          action_names (iterable): for pre/post action phase listeners,
+          action_names (Iterable[str]): for pre/post action phase listeners,
             only run before/after these action(s).
         """
         for name_var in ('__qualname__', '__name__'):
@@ -288,7 +288,7 @@ class Script(object):
         """Run a specific action.
 
         Args:
-          action (Action object).
+          action (Action).
 
         Raises:
           scriptharness.exceptions.ScriptHarnessFatal: when the Action

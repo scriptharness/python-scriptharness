@@ -13,12 +13,12 @@ There are two config dict models here:
 Attributes:
   DEFAULT_LEVEL (int): the default logging level to set
   DEFAULT_LOGGER_NAME (str): the default logger name to use
-  QUOTES (tuple): the order of quotes to use for key logging
-  LOGGING_STRINGS (dict): a dict of strings to use for logging, for easier
-    unittesting and potentially for future localization.
-  MUTED_LOGGING_STRINGS (dict): a dict of strings to use for logging when
+  QUOTES (Tuple[str, ...]): the order of quotes to use for key logging
+  LOGGING_STRINGS (Dict[str, Dict[str, str]]): a dict of strings to use for
+    logging, for easier unittesting and potentially for future localization.
+  MUTED_LOGGING_STRINGS (Dict[str, Dict[str, str]): a dict of strings to use for logging when
     the values in the list/dict shouldn't be logged
-  SUPPORTED_LOGGING_TYPES (dict): a non-logging to logging class map, e.g.
+  SUPPORTED_LOGGING_TYPES (Dict[TypeVar, Class]): a non-logging to logging class map, e.g.
     dict: LoggingDict.  Not currently supporting sets or collections.
 """
 
@@ -122,7 +122,7 @@ def iterate_pairs(data):
     Usage:: for key, value in iterate_pairs(data_structure)::
 
     Args:
-      data (data structure): a dict, iterable-of-iterable pairs
+      data (Sequence[Any, Any]): a dict, iterable-of-iterable pairs
     """
     if isinstance(data, dict):
         if six.PY2:
@@ -196,8 +196,8 @@ class LoggingClass(object):
         """If child is a Logging* instance, set its parent and name.
 
         Args:
-          child: an object, which might be a Logging* instance
-          child_name: the name to set in the child
+          child (Any): an object, which might be a Logging* instance
+          child_name (str): the name to set in the child
         """
         if is_logging_class(child):
             child.recursively_set_parent(child_name, parent=self)
@@ -208,14 +208,14 @@ class LoggingClass(object):
 
         Args:
 
-          child_list (list, automatically generated): in a multi-level nested
+          child_list (List[str]): in a multi-level nested
             Logging* class, generate the list of children's names. This list
             will be built by prepending our name and calling
             ancestor_child_list() on self.parent.
 
         Returns:
-          (ancestor, child_list) (LoggingClass, list): for self.full_name and
-          self.log_change support
+          LoggingClass, List[str]: (ancestor, child_list) for self.full_name and
+            self.log_change support
         """
         child_list = child_list or []
         if self.parent:
@@ -233,10 +233,10 @@ class LoggingClass(object):
 
         Args:
           ancestor (Optional[LoggingClass]): specify the ancestor
-          child_list (Optional[list]): a list of descendents' names, in order
+          child_list (Optional[List[str]]): a list of descendents' names, in order
 
         Returns:
-          name (string): the full name of self.
+          str: the full name of self.
         """
         ancestor, child_list = self.ancestor_child_list()
         name = ancestor.name or ""
@@ -277,7 +277,7 @@ class LoggingList(LoggingClass, list):
       level (int): the logging level for changes
       logger_name (str): the logger name to use
       muted (bool): whether our logging messages are muted
-      strings (dict): a dict of strings to use for messages
+      strings (Dict[str, str]): a dict of strings to use for messages
     """
     def __init__(self, items, level=DEFAULT_LEVEL, muted=False,
                  logger_name=DEFAULT_LOGGER_NAME):
@@ -433,7 +433,7 @@ class LoggingDict(LoggingClass, dict):
       level (int): the logging level for changes
       logger_name (str): the logger name to use
       muted (bool): whether our logging messages are muted
-      strings (dict): a dict of strings to use for messages
+      strings (Dict[str, str]): a dict of strings to use for messages
     """
     def __init__(self, items, level=DEFAULT_LEVEL, muted=False,
                  logger_name=DEFAULT_LOGGER_NAME):
@@ -589,7 +589,7 @@ def is_logging_class(item):
     """Determine if a class is one of the Logging* classes.
 
     Args:
-      item (object): the object to check.
+      item (Any): the object to check.
     """
     return issubclass(item.__class__, LoggingClass)
 
@@ -600,7 +600,7 @@ def add_logging_to_obj(item, **kwargs):
     Currently supported:: list, tuple, dict.
 
     Args:
-      item (object): a child of a LoggingDict.
+      item (LoggingDict): a child of a LoggingDict.
 
     Returns:
       A logging version of item, when applicable, or item.

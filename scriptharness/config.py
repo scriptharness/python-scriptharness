@@ -6,7 +6,7 @@ variety of contexts and environments.
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
 
-  SCRIPTHARNESS_INITIAL_CONFIG (dict): These key/value pairs are available
+  SCRIPTHARNESS_INITIAL_CONFIG (Dict[str, str]): These key/value pairs are available
     in all scriptharness scripts.
 """
 from __future__ import absolute_import, division, print_function, \
@@ -48,7 +48,7 @@ def parse_config_file(path):
       path (str): path or url to config file.
 
     Returns:
-      config (dict): the parsed json dict.
+      config (Dict[str, Any]): the parsed json dict.
 
     Raises:
       scriptharness.exceptions.ScriptHarnessException: if the path is
@@ -164,7 +164,7 @@ def get_list_actions_string(action_name, enabled, groups=None):
     Args:
       action_name (str):  name of the action
       enabled (bool): whether the action is enabled by default
-      groups (list): a list of action_group names that the action belongs to.
+      groups (List[str]): a list of action_group names that the action belongs to.
 
     Returns:
       string (str): a line of --list-actions output.
@@ -183,9 +183,9 @@ def get_action_parser(all_actions):
     Actions to run are specified as the argparse.REMAINDER options.
 
     Args:
-      all_actions (iterable): this is either all Action objects for the
-        script, or a data structure of pairs of action_name:enabled to pass
-        to iterate_pairs().
+      all_actions (scriptharness.actions.Action or Sequence[str, bool]): this
+        is either all Action objects for the script, or a data structure of
+        pairs of action_name:enabled to pass to iterate_pairs().
 
       **kwargs: additional kwargs for ArgumentParser
 
@@ -273,7 +273,8 @@ def get_parser(all_actions=None, parents=None, **kwargs):
     """Create a script option parser.
 
     Args:
-      parents (Optional[list]): ArgumentParsers to set as parents of the parser
+      parents (Optional[List[ArgumentParser]]): ArgumentParsers to set as
+        parents of the parser. Defaults to None.
       **kwargs: additional kwargs for ArgumentParser
 
     Returns:
@@ -293,10 +294,10 @@ def parse_args(parser, cmdln_args=None):
 
     Args:
       parser (ArgumentParser): specify the parser to use
-      cmdln_args (optional): override the commandline args with these
+      cmdln_args (Optional[str]): override the commandline args with these
 
     Returns:
-      tuple(ArgumentParser, parsed_args)
+      Tuple[ArgumentParser, parsed_args]
     """
     args = []
     if cmdln_args is not None:  # pragma: no branch
@@ -322,7 +323,7 @@ def update_dirs(config, max_depth=2):
     with the other dirs as the replacement dictionary.
 
     Args:
-      config (dict): the config to parse for scriptharness_SOMETHING_dir keys.
+      config (Dict[str, str]): the config to parse for scriptharness_SOMETHING_dir keys.
     """
     repl_dict = {}
     for key, value in config.items():
@@ -355,7 +356,7 @@ def build_config(parser, parsed_args, initial_config=None):
     Args:
       parser (ArgumentParser): the parser used to parse_args()
       parsed_args (argparse Namespace): the results of parse_args()
-      initial_config (Optional[dict]): initial configuration to set before
+      initial_config (Optional[Dict[str, str]]): initial configuration to set before
         commandline args
     """
     config = deepcopy(SCRIPTHARNESS_INITIAL_CONFIG)
