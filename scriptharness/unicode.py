@@ -16,7 +16,7 @@ def to_unicode(obj, encoding='utf-8'):
 
     Args:
         obj (str): the string to encode
-        encoding (Optional[str]): the encoding to use
+        encoding (Optional[str]): the encoding to use.  Defaults to 'utf-8'.
 
     Returns:
         obj (unicode): the encoded string

@@ -18,7 +18,9 @@ def makedirs(path, level=logging.INFO, context=None):
 
     Args:
       path (str): path to the directory
-      level (Optional[int]): the logging level to log with.
+
+      level (Optional[int]): the logging level to log with.  Defaults to
+        logging.INFO.
     """
     if context:
         logger = context.logger

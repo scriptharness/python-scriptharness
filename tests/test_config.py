@@ -4,9 +4,7 @@
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
-import argparse
 from contextlib import contextmanager
-from copy import deepcopy
 import json
 import mock
 import os
@@ -73,6 +71,16 @@ def start_webserver():
                 response = requests.get(host)
         except requests.exceptions.ConnectionError:
             pass
+
+def bad_validate(*_):
+    """Return a list for validate_config
+    """
+    return ["bad validate"]
+
+def good_validate(*_):
+    """Return nothing for validate_config
+    """
+    return None
 
 # TestUrlFunctions {{{1
 class TestUrlFunctionss(unittest.TestCase):
@@ -215,20 +223,20 @@ class TestUrlFunctionss(unittest.TestCase):
         )
 
 
-# TestParserFunctions {{{1
-class TestParserFunctions(unittest.TestCase):
-    """Test parser functions
+# TestTemplateFunctions {{{1
+class TestTemplateFunctions(unittest.TestCase):
+    """Test template functions
     """
-    @staticmethod
     @mock.patch('%s.print' % BUILTIN)
-    def test_list_actions(mock_print):
+    def test_list_actions(self, mock_print):
         """test_config | --list-actions
         """
-        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
-        try:
-            shconfig.parse_args(parser, cmdln_args=["--list-actions"])
-        except SystemExit:
-            pass
+        template = shconfig.get_config_template(all_actions=TEST_ACTIONS)
+        self.assertRaises(
+            SystemExit,
+            shconfig.parse_args,
+            template, cmdln_args=["--list-actions"]
+        )
         if six.PY2:
             groups_str = "[u'all']"
         else:
@@ -253,7 +261,8 @@ class TestParserFunctions(unittest.TestCase):
             pass
         for name, enabled in TEST_ACTIONS:
             actions.append(Action(name, enabled=enabled, function=func))
-        parser = shconfig.get_action_parser(actions)
+        template = shconfig.action_config_template(actions)
+        parser = template.get_parser()
         args = parser.parse_args("--actions build package".split())
         self.assertEqual(args.scriptharness_volatile_actions,
                          ["build", "package"])
@@ -264,7 +273,8 @@ class TestParserFunctions(unittest.TestCase):
     def test_config_parser(self):
         """test_config | config parser
         """
-        parser = shconfig.get_config_parser()
+        template = shconfig.get_config_template()
+        parser = template.get_parser()
         args = parser.parse_args("-c file1 -c file2 -c file3".split())
         self.assertEqual(
             args.config_files,
@@ -274,22 +284,18 @@ class TestParserFunctions(unittest.TestCase):
     def test_no_actions(self):
         """test_config | no actions, get_parser no kwargs
         """
-        parser = shconfig.get_parser()
+        template = shconfig.get_config_template()
+        parser = template.get_parser()
         with stdstar_redirected(os.devnull):
             self.assertRaises(SystemExit, parser.parse_args, ["--list-actions"])
-
-    def test_no_actions2(self):
-        """test_config | no actions, setting get_parser parents
-        """
-        parents = []
-        parser = shconfig.get_parser(parents=parents)
-        parsed_args = shconfig.parse_args(parser, cmdln_args=[])
-        self.assertEqual(parsed_args, argparse.Namespace())
 
     def helper_build_config(self, cmdln_args, initial_config=None):
         """Help test build_config()
         """
-        config2 = deepcopy(shconfig.SCRIPTHARNESS_INITIAL_CONFIG)
+        config2 = {}
+        for key, value in shconfig.DEFAULT_CONFIG_DEFINITION.items():
+            if value.get('default'):
+                config2[key] = value['default']
         shconfig.update_dirs(config2)
         if initial_config is None:
             initial_config = {
@@ -302,11 +308,12 @@ class TestParserFunctions(unittest.TestCase):
                             'test_config.json')
         with open(path) as filehandle:
             contents = json.load(filehandle)
-        parser = shconfig.get_parser(all_actions=TEST_ACTIONS)
-        parser.add_argument("--test-default", default="default")
-        parser.add_argument("--override-default", default="default")
-        parsed_args = shconfig.parse_args(parser, cmdln_args=cmdln_args)
-        config = shconfig.build_config(parser, parsed_args, initial_config)
+        template = shconfig.get_config_template(all_actions=TEST_ACTIONS)
+        template.add_argument("--test-default", default="default", help="help")
+        template.add_argument("--override-default", default="default",
+                              dest="override_default", help="help")
+        parsed_args = shconfig.parse_args(template, cmdln_args=cmdln_args)
+        config = shconfig.build_config(template, parsed_args, initial_config)
         config2.update(contents)
         config2['test_default'] = 'default'
         config2['override_default'] = 'not_default'
@@ -351,3 +358,293 @@ class TestParserFunctions(unittest.TestCase):
         }
         initial_config.update(contents)
         self.helper_build_config(cmdln_args, initial_config=initial_config)
+
+    def test_misc(self):
+        """test_config | get_config_template misc
+        """
+        self.assertEqual(0, shconfig.get_config_template(template=0))
+        template = shconfig.get_config_template(definition={})
+        self.assertEqual({}, template.config_variables)
+
+
+# TestValidateConfigDefinition {{{1
+class TestValidateConfigDefinition(unittest.TestCase):
+    """test validate_config_definition()
+    """
+    def test_options(self):
+        """test_config | validate_config_definition options
+        """
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', {'options': ['foo'], 'help': 'bar'},
+        )
+        # This should not raise
+        shconfig.validate_config_definition(
+            'foo', {'options': ['--foo', '-f', '--x-y'], 'help': 'bar'}
+        )
+
+    def test_empty_definition(self):
+        """test_config | validate_config_definition empty definition
+        """
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', {}
+        )
+
+    def test_invalid_action(self):
+        """test_config | validate_config_definition invalid action
+        """
+        defn = {'action': 'foo', 'help': 'bar'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_invalid_type(self):
+        """test_config | validate_config_definition invalid type
+        """
+        defn = {'type': 'foo', 'help': 'bar'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_validate_cb(self):
+        """test_config | validate_config_definition invalid callback
+        """
+        defn = {'validate_cb': 'foo', 'help': 'bar'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+    def test_required_vars(self):
+        """test_config | validate_config_definition required vars
+        """
+        defn = {'required_vars': [b'foo', 'bar'], 'help': 'baz'}
+        self.assertRaises(
+            ScriptHarnessException, shconfig.validate_config_definition,
+            'foo', defn
+        )
+
+
+# TestConfigVariable {{{1
+class TestConfigVariable(unittest.TestCase):
+    """Test ConfigVariable
+    """
+    def test_bad_name(self):
+        """test_config | ConfigVariable bad name
+        """
+        self.assertRaises(
+            ScriptHarnessException, shconfig.ConfigVariable,
+            b'foo', {'help': 'bar'}
+        )
+
+    @staticmethod
+    def test_add_argument():
+        """test_config | ConfigVariable simple argument
+        """
+        parser = mock.MagicMock()
+        defn = {
+            'options': ['-f', '--foo'],
+            'type': str,
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        variable.add_argument(parser)
+        parser.add_argument.assert_called_once_with(  # pylint: disable=no-member
+            '-f', '--foo', dest='foo', action=None, type=str, help='bar'
+        )
+
+    def test_add_empty_argument(self):
+        """test_config | ConfigVariable empty argument
+        """
+        parser = mock.MagicMock()
+        defn = {
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        variable.add_argument(parser)
+        self.assertEqual(
+            parser.add_argument.called, False   # pylint: disable=no-member
+        )
+
+    def test_add_broken_argument(self):
+        """test_config | ConfigVariable broken argument
+        """
+        def raise_value_error(*args, **kwargs):
+            """Raise ValueError"""
+            if args or kwargs:
+                raise ValueError("boo!")
+        parser = mock.MagicMock()
+        parser.add_argument = raise_value_error
+        defn = {
+            'options': ['--foo', '-f'],
+            'help': 'bar',
+        }
+        variable = shconfig.ConfigVariable('foo', defn)
+        self.assertRaises(ScriptHarnessException, variable.add_argument,
+                          parser)
+
+    def test_empty_config(self):
+        """test_config | ConfigVariable empty config
+        """
+        variable = shconfig.ConfigVariable('foo', {'help': 'bar'})
+        self.assertFalse(variable.validate_config({}))
+
+    def test_missing_required(self):
+        """test_config | ConfigVariable missing required
+        """
+        defn = {'help': 'help', 'required': True}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'bar': '2'})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['missing_required'] %
+             {'name': 'foo'}],
+            value
+        )
+
+    def test_required_vars(self):
+        """test_config | ConfigVariable required_vars
+        """
+        defn = {'help': 'help', 'required_vars': ['bar']}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': '1', 'bar': '2'})
+        print(value)
+        self.assertFalse(value)
+        value = variable.validate_config({'foo': 1, 'baz': 2})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['required_vars'] %
+             {'name': 'foo', 'var': 'bar'}],
+            value
+        )
+
+    def test_incompatible_vars(self):
+        """test_config | ConfigVariable incompatible_vars
+        """
+        defn = {'help': 'help', 'incompatible_vars': ['bar']}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1, 'baz': 2})
+        print(value)
+        self.assertFalse(value)
+        value = variable.validate_config({'foo': 1, 'bar': 2})
+        print(value)
+        self.assertEqual(
+            [shconfig.STRINGS['config_variable']['incompatible_vars'] %
+             {'name': 'foo', 'var': 'bar'}],
+            value
+        )
+
+    def test_bad_validate(self):
+        """test_config | ConfigVariable bad validate_cb
+        """
+        defn = {'help': 'help', 'validate_cb': bad_validate}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1})
+        print(value)
+        self.assertEqual(["bad validate"], value)
+
+    def test_good_validate(self):
+        """test_config | ConfigVariable good validate_cb
+        """
+        defn = {'help': 'help', 'validate_cb': good_validate}
+        variable = shconfig.ConfigVariable('foo', defn)
+        value = variable.validate_config({'foo': 1})
+        print(value)
+        self.assertFalse(value)
+
+
+# TestConfigTemplate {{{1
+class TestConfigTemplate(unittest.TestCase):
+    """Test ConfigTemplate
+    """
+    def test_add_variable(self):
+        """test_config | ConfigTemplate.add_variable()
+        """
+        template = shconfig.ConfigTemplate({})
+        defn = {'help': 'help', 'options': ['-f', '--foo']}
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn
+        )
+        template.add_variable(defn, name="foo")
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn, name="foo"
+        )
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable, defn, name="bar"
+        )
+        self.assertRaises(
+            ScriptHarnessException, template.add_variable,
+            shconfig.ConfigVariable("baz", defn)
+        )
+
+    def test_update(self):
+        """test_config | ConfigTemplate update and all_options
+        """
+        template = shconfig.ConfigTemplate({})
+        template.update({'foo': {'help': 'help', 'options': ['-f', '--foo']}})
+        self.assertEqual(template.all_options, set(['-f', '--foo']))
+        self.assertRaises(
+            ScriptHarnessException, template.update,
+            {'foo': {'help': 'help', 'options': ['-f', '--foo']}}
+        )
+        template.update({'bar': {'help': 'help', 'options': ['-b', '--bar']}})
+        self.assertEqual(template.all_options,
+                         set(['-f', '--foo', '-b', '--bar']))
+
+    def test_get_parser(self):
+        """test_config | ConfigTemplate.get_parser()
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'options': ['-f', '--foo']},
+            'bar': {'help': 'help', 'options': ['-b', '--bar']},
+        })
+        parser = template.get_parser()
+        for opt in ['-f', '--foo', '-b', '--bar']:
+            self.assertTrue(opt in parser.__dict__['_option_string_actions'])
+
+    def test_remove_option(self):
+        """test_config | ConfigTemplate.remove_option()
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'options': ['-f', '--foo']},
+            'bar': {'help': 'help', 'options': ['-b', '--bar']},
+        })
+        template.remove_option('-f')
+        template.remove_option('-q')
+        parser = template.get_parser()
+        for opt in ['--foo', '-b', '--bar']:
+            self.assertTrue(opt in parser.__dict__['_option_string_actions'])
+        self.assertFalse('-q' in parser.__dict__['_option_string_actions'])
+        self.assertFalse('-f' in parser.__dict__['_option_string_actions'])
+
+    def test_bad_validate(self):
+        """test_config | ConfigTemplate bad validate_cb
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'validate_cb': bad_validate}
+        })
+        self.assertRaises(
+            ScriptHarnessException, template.validate_config, {'foo': 1}
+        )
+
+    @staticmethod
+    def test_good_validate():
+        """test_config | ConfigTemplate good validate_cb
+        """
+        template = shconfig.ConfigTemplate({
+            'foo': {'help': 'help', 'validate_cb': good_validate}
+        })
+        # this should not raise
+        template.validate_config({'foo': 1})
+
+    def test_bad_add_argument(self):
+        """test_config | ConfigTemplate bad add_argument
+        """
+        template = shconfig.ConfigTemplate({})
+        self.assertRaises(
+            ScriptHarnessException, template.add_argument,
+            dest="bar", help="help"
+        )

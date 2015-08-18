@@ -1,9 +1,9 @@
 {
     "version": [
         0,
-        2,
+        3,
         0,
         "alpha"
     ],
-    "version_string": "0.2.0-alpha"
+    "version_string": "0.3.0-alpha"
 }

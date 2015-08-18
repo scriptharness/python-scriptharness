@@ -180,7 +180,10 @@ class LoggingClass(object):
 
         Args:
           name (Optional[str]): set self.name, for later logging purposes.
+            Defaults to None.
+
           parent (Optional[Logging*]): set self.parent, for logging purposes.
+            Defaults to None.
         """
         if name is not None:
             self.name = name

@@ -38,6 +38,18 @@ Scriptharness actions allow for:
 
 This is in the same spirit of other frameworks that allow for discrete targets, tasks, or actions: make, maven, ansible, and many more.
 
+#######
+Install
+#######
+
+::
+
+    # This will automatically bring in all requirements.
+    pip install scriptharness
+
+    # To do a full install with docs/testing requirements,
+    pip install -r requirements.txt
+
 ##################
 Running unit tests
 ##################
@@ -51,6 +63,7 @@ Linux and OS X
     # You can run |tox -e ENV| to run a specific env, e.g. |tox -e py27|
     pip install tox
     tox
+    # alternately, ./run_tests.sh
 
 Windows
 -------

@@ -3,9 +3,7 @@
 Quickstart
 ==========
 
-Here's an example script.  The file is also viewable here_.
-
-.. _here: https://github.com/scriptharness/python-scriptharness/blob/master/examples/quickstart.py
+Here's an example script, quickstart.py_.
 
 ::
 
@@ -92,13 +90,13 @@ Here's an example script.  The file is also viewable here_.
         """Create a commandline argument parser, with default scriptharness
         argument options pre-populated.
         """
-        parser = scriptharness.get_parser(all_actions=actions)
+        template = scriptharness.get_config_template(all_actions=actions)
     
         """Add new commandline argument(s)
         https://docs.python.org/dev/library/argparse.html#argparse.ArgumentParser.add_argument
         """
-        parser.add_argument("--new-argument", action='store',
-                            help="help message for --new-argument")
+        template.add_argument("--new-argument", action='store',
+                              help="help message for --new-argument")
     
         """Create the Script object.  If ``get_script()`` is called a second time,
         it will return the same-named script object.  (`name` in get_script()
@@ -111,7 +109,7 @@ Here's an example script.  The file is also viewable here_.
         above; the Script object will parse it and store the new_argument
         value in its config.
         """
-        script = scriptharness.get_script(actions=actions, parser=parser)
+        script = scriptharness.get_script(actions=actions, template=template)
     
         """This will run the script.
         Essentially, it will go through the list of actions, and if the action
@@ -127,7 +125,7 @@ output
 If you run this without any arguments, you might get output like this::
 
     $ ./quickstart.py
-    00:00:00     INFO - Starting at 2015-05-25 00:00 PDT.
+    00:00:00     INFO - Starting at 2015-06-21 00:00 PDT.
     00:00:00     INFO - Enabled actions:
     00:00:00     INFO -  pull, build, package
     00:00:00     INFO - {'new_argument': None,
@@ -170,7 +168,7 @@ The same output is written to the file ``artifacts/log.txt``.
 You can change which actions are run via the ``--actions`` option::
 
     $ ./quickstart.py --actions package upload notify
-    00:00:05     INFO - Starting at 2015-05-25 00:00 PDT.
+    00:00:05     INFO - Starting at 2015-06-21 00:00 PDT.
     00:00:05     INFO - Enabled actions:
     00:00:05     INFO -  package, upload, notify
     00:00:05     INFO - {'new_argument': None,
@@ -241,30 +239,33 @@ see what the config is without running anything, you can use the
 You can always use the ``--help`` option::
 
     $ ./quickstart.py --help
-    usage: quickstart.py [-h] [--list-actions] [--actions ACTION [ACTION ...]]
+    usage: quickstart.py [-h] [--opt-config-file CONFIG_FILE]
+                         [--config-file CONFIG_FILE] [--dump-config]
+                         [--actions ACTION [ACTION ...]]
                          [--skip-actions ACTION [ACTION ...]]
-                         [--add-actions ACTION [ACTION ...]]
-                         [--action-group {all,none}] [--config-file CONFIG_FILE]
-                         [--opt-config-file CONFIG_FILE] [--dump-config]
-                         [--new-argument NEW_ARGUMENT]
+                         [--add-actions ACTION [ACTION ...]] [--list-actions]
+                         [--action-group {none,all}] [--new-argument NEW_ARGUMENT]
     
     optional arguments:
       -h, --help            show this help message and exit
-      --list-actions        List all actions (default prepended with '*') and
-                            exit.
+      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
+                            Specify optional config files/urls
+      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
+                            Specify required config files/urls
+      --dump-config         Log the built configuration and exit.
       --actions ACTION [ACTION ...]
                             Specify the actions to run.
       --skip-actions ACTION [ACTION ...]
                             Specify the actions to skip.
       --add-actions ACTION [ACTION ...]
                             Specify the actions to add to the default set.
-      --action-group {all,none}
+      --list-actions        List all actions (default prepended with '*') and
+                            exit.
+      --action-group {none,all}
                             Specify the action group to use.
-      --config-file CONFIG_FILE, --cfg CONFIG_FILE, -c CONFIG_FILE
-                            Specify required config files/urls
-      --opt-config-file CONFIG_FILE, --opt-cfg CONFIG_FILE
-                            Specify optional config files/urls
-      --dump-config         Log the built configuration and exit.
       --new-argument NEW_ARGUMENT
                             help message for --new-argument
 
+
+
+.. _quickstart.py: https://github.com/scriptharness/python-scriptharness/blob/master/examples/quickstart.py

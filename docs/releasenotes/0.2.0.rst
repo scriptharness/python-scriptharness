@@ -1,26 +1,33 @@
 Scriptharness 0.2.0 Release Notes
 =================================
 
-**UNRELEASED**
+:date: 2015/06/21
 
-.. :date: DATE
+Highlights
+----------
 
-Changelog for the unreleased 0.2.0 version.
+This release adds :ref:`Command-and-run`, :ref:`ParsedCommand-and-parse`, and :ref:`Output-get_output-and-get_text_output` with output_timeout and max_timeout support.  ParsedCommand supports context lines (see :ref:`OutputBuffer-and-context-lines`).
+
+It also adds :ref:`ConfigTemplates`, which allow for specifying what a well-formed configuration looks like for a script, as well as config validation.
 
 What's New
 ----------
 * More ways to enable and disable actions.  Now, in addition to ``--actions``, there's ``--add-actions``, ``--skip-actions``, and ``--action-group`` to change the set of default actions to run.  (See :ref:`Enabling-and-Disabling-Actions`.)
 
-* Added ``Command`` object with cross-platform output_timeout and max_timeout support, with a ``run()`` wrapper function for easier use.  This is for running external tools with timeouts.
+* Added Command_ object with cross-platform output_timeout and max_timeout support, with a `run()`_ wrapper function for easier use.  This is for running external tools with timeouts.  (See :ref:`Command-and-run`.)
 
-    * Added ``ScriptHarnessTimeout`` exception
+    * Added ScriptHarnessTimeout_ exception
 
-* Added ``ParsedCommand`` subclass of ``Command``.  Also added a ``parse()`` wrapper function for easier use.  This is for running external tools, and parsing the output of those tools to detect errors.
+* Added ParsedCommand_ subclass of Command_.  Also added a `parse()`_ wrapper function for easier use.  This is for running external tools, and parsing the output of those tools to detect errors. (See :ref:`ParsedCommand-and-parse`.)
 
-    * Added ``ErrorList``, ``OutputParser`` objects for ``ParsedCommand`` error parsing.
-    * Added ``OutputBuffer`` object for ``ParsedCommand`` context lines support.
+    * Added ErrorList_, OutputParser_ objects for ParsedCommand_ error parsing.  (See :ref:`ErrorLists-and-OutputParser`.)
+    * Added OutputBuffer_ object for ParsedCommand_ context lines support.  (See :ref:`OutputBuffer-and-context-lines`.)
 
-* Added ``Output`` object with cross-platform output_timeout and max_timeout support.  Also added ``get_output()``, and ``get_text_output()`` wrapper functions for easier use.  This is for capturing the output of an external tool for later use.
+* Added Output_ object with cross-platform output_timeout and max_timeout support.  Also added `get_output()`_, and `get_text_output()`_ wrapper functions for easier use.  This is for capturing the output of an external tool for later use.  (See :ref:`Output-get_output-and-get_text_output`.)
+
+* Added ConfigVariable_ and ConfigTemplate_ objects for configuration definition and validation support.  See :ref:`ConfigTemplates`.
+
+* Added documentation.
 
 * Script.actions is now a namedtuple
 
@@ -32,8 +39,22 @@ What's New
 
 * pylint 10.00
 
-Known Issues
-------------
-*
+* `Current issues`_ are tracked on GitHub.
 
 .. note:: If you've cloned python-scriptharness 0.1.0, you may need to remove the ``scriptharness/commands`` directory, as it will conflict with the new ``scriptharness/commands.py`` module.
+
+
+.. _Command: ../scriptharness.commands/#scriptharness.commands.Command
+.. _ConfigTemplate: ../scriptharness.config/#scriptharness.config.ConfigTemplate
+.. _ConfigVariable: ../scriptharness.config/#scriptharness.config.ConfigVariable
+.. _Current issues: https://github.com/scriptharness/python-scriptharness/issues
+.. _ErrorList: ../scriptharness.errorlists/#scriptharness.errorlists.ErrorList
+.. _Output: ../scriptharness.commands/#scriptharness.commands.Output
+.. _OutputBuffer: ../scriptharness.log/#scriptharness.log.OutputBuffer
+.. _OutputParser: ../scriptharness.log/#scriptharness.log.OutputParser
+.. _ParsedCommand: ../scriptharness.commands/#scriptharness.commands.ParsedCommand
+.. _ScriptHarnessTimeout: ../scriptharness.exceptions/#scriptharness.exceptions.ScriptHarnessTimeout
+.. _get_output(): ../scriptharness.commands/#scriptharness.commands.get_output
+.. _get_text_output(): ../scriptharness.commands/#scriptharness.commands.get_text_output
+.. _parse(): ../scriptharness.commands/#scriptharness.commands.parse
+.. _run(): ../scriptharness.commands/#scriptharness.commands.run

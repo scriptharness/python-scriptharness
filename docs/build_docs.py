@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-RELEASE_DATE = "2015-05-25 00:00 PDT"
+RELEASE_DATE = "2015-06-21 00:00 PDT"
 READTHEDOCS_LINK = """
 .. image:: https://readthedocs.org/projects/python-scriptharness/badge/?version=latest
     :target: https://readthedocs.org/projects/python-scriptharness/?badge=latest
@@ -118,7 +118,8 @@ def main():
     build_readme_rst()
     build_releasenotes_rst()
     build_quickstart()
-    subprocess.check_call(["make", "html"])
+    subprocess.check_call(["make", "clean", "html"])
+    subprocess.check_call(["make", "dirhtml"])
     subprocess.check_call(["make", "text"])
     subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
     if os.path.exists("artifacts"):
