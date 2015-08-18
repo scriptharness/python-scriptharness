@@ -5,15 +5,11 @@ variety of contexts and environments.
 
 Attributes:
   LOGGER_NAME (str): logging.getLogger name
-
   OPTION_REGEX (re.compile): regular expression to validate a commandline
     option
-
-  VALID_ARGPARSE_ACTIONS (tuple): for validating the ConfigVariable action
-
-  STRINGS (dict): strings for ConfigVariable
-
-  DEFAULT_CONFIG_DEFINITION (dict): Config definition to create the default
+  VALID_ARGPARSE_ACTIONS (Tuple[Any, ...]): for validating the ConfigVariable action
+  STRINGS (Dict[str, Dict[str, str]]): strings for ConfigVariable
+  DEFAULT_CONFIG_DEFINITION (Dict[str, Dict[str, Any]]): Config definition to create the default
     ConfigTemplate for all scriptharness scripts.
 """
 from __future__ import absolute_import, division, print_function, \
@@ -92,7 +88,7 @@ def parse_config_file(path):
       path (str): path or url to config file.
 
     Returns:
-      config (dict): the parsed json dict.
+      config (Dict[str, Any]): the parsed json dict.
 
     Raises:
       scriptharness.exceptions.ScriptHarnessException: if the path is
@@ -209,11 +205,9 @@ def get_list_actions_string(action_name, enabled, groups=None):
 
     Args:
       action_name (str):  name of the action
-
       enabled (bool): whether the action is enabled by default
-
-      groups (Optional[list]): a list of action_group names that the action
-        belongs to.  Defaults to None.
+      groups (Optional[List[str]]): a list of action_group names that the
+        action belongs to. Defaults to None.
 
     Returns:
       string (str): a line of --list-actions output.
@@ -232,9 +226,9 @@ def action_config_template(all_actions):
     Actions to run are specified as the argparse.REMAINDER options.
 
     Args:
-      all_actions (iterable): this is either all Action objects for the
-        script, or a data structure of pairs of action_name:enabled to pass
-        to iterate_pairs().
+      all_actions (scriptharness.actions.Action or Sequence[str, bool]): this
+        is either all Action objects for the script, or a data structure of
+        pairs of action_name:enabled to pass to iterate_pairs().
 
     Returns:
       ConfigTemplate: with action options
@@ -320,8 +314,9 @@ def get_config_template(template=None, all_actions=None, definition=None):
       all_actions (Optional[list]): list of actions to generate an action
         ConfigTemplate.  Defaults to None.
 
-      definition (Optional[dict]): config definition to prepopulate the
-        ConfigTemplate with.  Defaults to DEFAULT_CONFIG_DEFINITION.
+      definition (Optional[Dict[str, Dict[str, Any]]]): config definition to
+        prepopulate the ConfigTemplate with.  Defaults to
+        DEFAULT_CONFIG_DEFINITION.
 
     Returns:
       ConfigTemplate
@@ -348,7 +343,7 @@ def parse_args(template, cmdln_args=None, **kwargs):
         ConfigTemplate
 
     Returns:
-      tuple(ArgumentParser, parsed_args)
+      Tuple[ArgumentParser, parsed_args]
     """
     args = []
     parser = template.get_parser(**kwargs)
@@ -374,7 +369,7 @@ def update_dirs(config, max_depth=2):
     with the other dirs as the replacement dictionary.
 
     Args:
-      config (dict): the config to parse for scriptharness_SOMETHING_dir keys.
+      config (Dict[str, str]): the config to parse for scriptharness_SOMETHING_dir keys.
     """
     repl_dict = {}
     for key, value in config.items():
@@ -408,7 +403,7 @@ def build_config(template, parsed_args, initial_config=None):
     Args:
       parser (ArgumentParser): the parser used to parse_args()
       parsed_args (argparse Namespace): the results of parse_args()
-      initial_config (Optional[dict]): initial configuration to set before
+      initial_config (Optional[Dict[str, str]]): initial configuration to set before
         commandline args
     """
     config = template.defaults()

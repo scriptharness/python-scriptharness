@@ -6,8 +6,8 @@
 
 Attributes:
   LOGGER_NAME (str): logging.Logger name to use
-  STRINGS (dict): strings for actions.  In the future these may be in a
-    function to allow for localization.
+  STRINGS (Dict[str, Dict[str, str]]): strings for actions.  In the future
+    these may be in a function to allow for localization.
 """
 from __future__ import absolute_import, division, print_function, \
                        unicode_literals
@@ -43,7 +43,7 @@ def get_function_by_name(function_name):
       function_name (str): The name of the function to find.
 
     Returns:
-      function: the function found.
+      Callable[[Any], Any]: the function found.
 
     Raises:
       scriptharness.exceptions.ScriptHarnesException: if the function is
@@ -70,14 +70,15 @@ class Action(object):
       enabled (bool): Enabled actions will run.  Disabled actions will log
         the skip_message and not run.
 
-      strings (dict): Strings for action-specific log messages.
+      strings (Dict[str, str]): Strings for action-specific log messages.
 
       logger_name (str): The logger name for logging calls inside this object.
 
-      function (function): This is the function to call in run_function().
+      function (Callable[[Any], Any]): This is the function to call in
+        run_function().
 
-      history (dict): History of the action (return_value, status, start_time,
-        end_time).
+      history (Dict[str, Any]): History of the action (return_value, status,
+        start_time, end_time).
     """
     def __init__(self, name, action_groups=None, function=None, enabled=True):
         r"""Create the Action object.
@@ -85,13 +86,13 @@ class Action(object):
         Args:
           name (str): Action name, for logging.
 
-          action_groups (list): a list of action group names that this
+          action_groups (List[str]): a list of action group names that this
             Action belongs to.  If scriptharness_volatile_action_group is
             specified in config (usually via \--action-group), all actions
             belonging to that action group will be enabled by default, and all
             others disabled by default.
 
-          function (Optional[function]).  This is the function or method
+          function (Optional[Callable[[Any], Any]]).  This is the function or method
             to run in run_function().  If not specified, use
             get_function_by_name() to find the function that matches the
             action name.  If not found, raise.
@@ -124,8 +125,8 @@ class Action(object):
         This sets self.history['return_value'] for posterity.
 
         Args:
-          context (Context): the context from the calling Script
-            (passed from run()).
+          context (Context): the context from the calling Script; as defined
+            in `script.py`. (passed from run()).
         """
         self.history['return_value'] = self.function(context)
 
@@ -135,7 +136,8 @@ class Action(object):
         This sets self.history timestamps and status.
 
         Args:
-          context (Context): the context from the calling Script.
+          context (Context): the context from the calling Script; as defined
+            in `script.py`
 
         Returns:
           status (int): one of SUCCESS, ERROR, or FATAL.

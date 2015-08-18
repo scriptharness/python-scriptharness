@@ -36,9 +36,9 @@ class ScriptManager(object):
     multiple globals that pylint would complain about.
 
     Attributes:
-      all_scripts (dict): a dict of name:script
-      action_class (class): the class to instantiate for new actions
-      script_class (class): the class to instantiate for new scripts
+      all_scripts (Dict[str, scriptharness.script.Script]): a dict of name:script
+      action_class (scriptharness.actions.Action): the class to instantiate for new actions
+      script_class (scriptharness.script.Script): the class to instantiate for new scripts
     """
     def __init__(self):
         self.all_scripts = {}
@@ -59,6 +59,10 @@ class ScriptManager(object):
 
     def get_config(self, name="root"):
         """Back end for scriptharness.get_config().
+
+        Args:
+          name (Optional[str]):  The name of the script to get the config from.
+            Defaults to "root".
         """
         if name not in self.all_scripts:
             raise ScriptHarnessException(os.linesep.join([
@@ -74,6 +78,10 @@ class ScriptManager(object):
 
     def get_logger(self, name="root"):
         """Back end for scriptharness.get_logger().
+
+        Args:
+          name (Optional[str]):  The name of the script to get the config from.
+            Defaults to "root".
         """
         if name not in self.all_scripts:
             raise ScriptHarnessException(os.linesep.join([
@@ -104,8 +112,8 @@ def get_script(*args, **kwargs):
     """This will retrieve an existing script or create one and return it.
 
     Args:
-      actions (tuple of Actions): When creating a new Script,
-        this is required.  When retrieving an existing script, this is
+      actions (Tuple[scriptharness.actions.Action...]): When creating a new
+        Script, this is required.  When retrieving an existing script, this is
         ignored/optional.
 
       parser (argparse.ArgumentParser): When creating a new Script,
@@ -136,7 +144,7 @@ def get_config(name="root"):
         of name `name`.
 
     Returns:
-      config (dict): By default scriptharness.structures.LoggingDict
+      config (Dict[str, str]): By default scriptharness.structures.LoggingDict
     """
     return MANAGER.get_config(name=name)
 
@@ -158,7 +166,7 @@ def get_logger(name="root"):
         of name `name`.
 
     Returns:
-      logger (logging.Logger)
+      logging.Logger: logger
     """
     return MANAGER.get_logger(name=name)
 
@@ -185,11 +193,11 @@ def get_actions(all_actions):
     """Build a tuple of Action objects for the script.
 
     Args:
-      all_actions (data structure): ordered mapping of action_name:enabled
+      all_actions (Sequence[str, bool]): ordered mapping of action_name:enabled
         bool, as accepted by iterate_pairs()
 
     Returns:
-      tuple of Action objects
+      Tuple[scriptharness.actions.Action, ...]: tuple of Action objects
     """
     action_list = []
     for action_name, value in iterate_pairs(all_actions):
@@ -201,11 +209,11 @@ def get_actions_from_list(all_actions, default_actions=None):
     """Helper method to generate the ordered mapping for get_actions().
 
     Args:
-      all_actions (list): ordered list of all action names
-      default_actions (Optional[list]): actions that are enabled by default
+      all_actions (List[str]): ordered list of all action names
+      default_actions (Optional[List[str]]): actions that are enabled by default
 
     Returns:
-      tuple of Action objects
+      Tuple[scriptharness.actions.Action, ...]: tuple of Action objects
     """
     if default_actions is None:
         default_actions = all_actions[:]
