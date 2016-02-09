@@ -588,6 +588,7 @@ SUPPORTED_LOGGING_TYPES = {
     tuple: LoggingTuple,
 }
 
+
 def is_logging_class(item):
     """Determine if a class is one of the Logging* classes.
 
@@ -595,6 +596,7 @@ def is_logging_class(item):
       item (Any): the object to check.
     """
     return issubclass(item.__class__, LoggingClass)
+
 
 def add_logging_to_obj(item, **kwargs):
     """Recursively add logging to all contents of a LoggingDict.
@@ -613,6 +615,7 @@ def add_logging_to_obj(item, **kwargs):
         if isinstance(item, key):
             result = value(item, **kwargs)
     return result
+
 
 def get_strings(instance_type, muted=False):
     """Get the strings for LoggingClass instance, muted or unmuted
@@ -668,6 +671,7 @@ class LockedTuple(tuple):
     """
     def __new__(cls, items):
         return tuple.__new__(cls, (make_immutable(x) for x in items))
+
     def __deepcopy__(self, memo):
         """Return a list on deepcopy.
         """
@@ -684,6 +688,7 @@ class ReadOnlyDict(dict):
       _lock (bool): When locked, the dict is read-only and cannot be unlocked.
     """
     _lock = None
+
     def __init__(self, *args, **kwargs):
         super(ReadOnlyDict, self).__init__(*args, **kwargs)
         self._lock = False

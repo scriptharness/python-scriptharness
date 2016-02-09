@@ -47,6 +47,7 @@ def exactly_one(key1, key2, error_check, messages):
         status = False
     return status
 
+
 def verify_unicode(key, error_check, messages):
     """If key is in error_check, it must be of type six.text_type.
     If not, append an error message to messages.
@@ -61,6 +62,7 @@ def verify_unicode(key, error_check, messages):
         messages.append(
             "%s %s is not of type %s!" % (error_check, key, six.text_type)
         )
+
 
 def check_ignore(strict, ignore, message, messages):
     """If the level of an error_check is negative, it will be ignored.
@@ -79,6 +81,7 @@ def check_ignore(strict, ignore, message, messages):
     """
     if ignore and strict:
         messages.append(message)
+
 
 def check_context_lines(context_lines, orig_context_lines, name, messages):
     """Verifies and returns the larger int of context_lines and
@@ -197,9 +200,9 @@ class ErrorList(list):
                     "%s level must be set if exception is not set!" %
                     error_check_str
                 )
-            if 'exception' in error_check and (not \
-                    isinstance(error_check['exception'], type) or not \
-                    issubclass(error_check['exception'], Exception)):
+            if 'exception' in error_check and (
+                    not isinstance(error_check['exception'], type) or
+                    not issubclass(error_check['exception'], Exception)):
                 messages.append(
                     "%s exception must be a subclass of Exception!" %
                     error_check_str

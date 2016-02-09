@@ -17,19 +17,24 @@ class TestContext(object):
     """Context for test logging
     """
     logger = None
+
     def __init__(self):
         self.new_logger()
+
     def new_logger(self):
         """Create a new logger"""
         self.logger = LoggerReplacement()
+
     def silence_pylint(self):
         """silence pylint"""
         assert self
+
 
 def cleanup():
     """Cleanliness"""
     if os.path.exists(TEST_DIR):
         shutil.rmtree(TEST_DIR)
+
 
 class TestFunctions(unittest.TestCase):
     """Test the os functions

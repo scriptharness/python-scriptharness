@@ -83,7 +83,7 @@ def command_subprocess(queue, *args, **kwargs):
     sys.exit(handle.returncode)
 
 
-def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
+def watch_command(logger, queue, runner,  # pylint: disable=too-many-arguments
                   add_line_cb, max_timeout=None, output_timeout=None):
     """This function watches the queue of the command_subprocess process.
 
@@ -152,7 +152,7 @@ def watch_command(logger, queue, runner, # pylint: disable=too-many-arguments
                 raise ScriptHarnessTimeout(message)
 
 
-def watch_output(logger, runner, stdout, # pylint: disable=too-many-arguments
+def watch_output(logger, runner, stdout,  # pylint: disable=too-many-arguments
                  stderr, max_timeout=None, output_timeout=None):
     """This function watches the queue of the output_subprocess process.
 

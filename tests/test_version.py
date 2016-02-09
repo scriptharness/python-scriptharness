@@ -13,10 +13,13 @@ import unittest
 
 
 TEST_VERSION_JSON = "_test_version.json"
+
+
 def cleanup():
     """cleanliness"""
     if os.path.exists(TEST_VERSION_JSON):
         os.remove(TEST_VERSION_JSON)
+
 
 class TestVersionString(unittest.TestCase):
     """Test the various semver version->version string conversions
@@ -108,7 +111,6 @@ class TestVersionString(unittest.TestCase):
             if os.path.exists(version_json):
                 os.remove(version_json)
             os.rename(TEST_VERSION_JSON, version_json)
-
 
     def test_write_version(self):
         """test_version | write_version()

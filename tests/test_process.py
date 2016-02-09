@@ -94,6 +94,7 @@ class TestProcess(unittest.TestCase):
             def get(self, **_):
                 """Raise KeyboardInterrupt"""
                 self.raise_ki()
+
             @staticmethod
             def raise_ki():
                 """Silence pylint"""

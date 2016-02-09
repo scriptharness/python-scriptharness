@@ -79,6 +79,7 @@ DEFAULT_CONFIG_DEFINITION = {
     },
 }
 
+
 # parse_config_file() {{{1
 def parse_config_file(path):
     """Read a config file and return a dictionary.
@@ -220,6 +221,7 @@ def get_list_actions_string(action_name, enabled, groups=None):
     string += '%s %s' % (action_name, list(groups))
     return string
 
+
 def action_config_template(all_actions):
     """Create an action option parser from the action list.
 
@@ -251,6 +253,7 @@ def action_config_template(all_actions):
                 message.append(get_list_actions_string(name, enabled))
                 action_names.append(name)
             break
+
     def list_actions():
         """Helper function to list all actions (enabled shown with a '*')"""
         print(os.linesep.join(message))
@@ -381,6 +384,7 @@ def update_dirs(config, max_depth=2):
         for key in repl_dict:
             repl_dict[key] = repl_dict[key] % repl_dict
     config.update(repl_dict)
+
 
 # build_config {{{1
 def build_config(template, parsed_args, initial_config=None):

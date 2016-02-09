@@ -88,6 +88,7 @@ def build_context(script, phase, action=None):
         action=action, phase=phase
     )
 
+
 def enable_actions(parsed_args, action_list):
     """If parsed_args has action-related options, enable/disable actions
     as appropriate.
@@ -118,6 +119,7 @@ def enable_actions(parsed_args, action_list):
         if action.name in (  # pylint disable=superfluous-parens
                 args.get('scriptharness_volatile_skip_actions') or []):
             action.enabled = False
+
 
 # Script {{{1
 class Script(object):

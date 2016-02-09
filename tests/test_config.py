@@ -38,6 +38,7 @@ def cleanup():
         if os.path.exists(path):
             os.remove(path)
 
+
 @contextmanager
 def start_webserver():
     """Start a webserver for local requests testing
@@ -72,15 +73,18 @@ def start_webserver():
         except requests.exceptions.ConnectionError:
             pass
 
+
 def bad_validate(*_):
     """Return a list for validate_config
     """
     return ["bad validate"]
 
+
 def good_validate(*_):
     """Return nothing for validate_config
     """
     return None
+
 
 # TestUrlFunctions {{{1
 class TestUrlFunctionss(unittest.TestCase):
@@ -148,6 +152,7 @@ class TestUrlFunctionss(unittest.TestCase):
                 if args or kwargs:  # silence pylint
                     pass
                 raise requests.exceptions.Timeout("test timeout")
+
             @staticmethod
             def silence_pyint():
                 """silence pylint"""
@@ -172,6 +177,7 @@ class TestUrlFunctionss(unittest.TestCase):
                 if args or kwargs:  # silence pylint
                     pass
                 raise requests.exceptions.RequestException("Bad url")
+
             @staticmethod
             def silence_pyint():
                 """silence pylint"""
@@ -227,6 +233,7 @@ class TestUrlFunctionss(unittest.TestCase):
 class TestTemplateFunctions(unittest.TestCase):
     """Test template functions
     """
+
     @mock.patch('%s.print' % BUILTIN)
     def test_list_actions(self, mock_print):
         """test_config | --list-actions
@@ -256,6 +263,7 @@ class TestTemplateFunctions(unittest.TestCase):
         """test_config | action parser
         """
         actions = []
+
         def func():
             """test function"""
             pass

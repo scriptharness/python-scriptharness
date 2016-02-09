@@ -1,4 +1,4 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 """Wrapper for nose for Windows.
 
 This is primarily here because multiprocessing will die under nosetests on

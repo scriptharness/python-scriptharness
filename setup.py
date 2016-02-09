@@ -25,14 +25,17 @@ if sys.version_info < (2, 7) or (sys.version_info[0] == 3 and
     print('ERROR: scriptharness requires Python 2.7 or 3.3+! Exiting...')
     sys.exit(1)
 
+
 def read(fname):
     """http://pythonhosted.org/an_example_pypi_project/setuptools.html"""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 setup(
     name='scriptharness',
     version=VERSION,
-    description='A generic logging, configuration, and workflow framework for scripts.',
+    description='A generic logging, configuration, and workflow framework for '
+                'scripts.',
     long_description=read('README'),
     author='Aki Sasaki',
     author_email='aki@escapewindow.com',

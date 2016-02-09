@@ -222,6 +222,7 @@ class LogMethod(object):
           **kwargs: the kwargs from the wrapped function call.
         """
         self.func = func
+
         def wrapped_func(*args, **kwargs):
             """This function replaces the decorated function.
             """

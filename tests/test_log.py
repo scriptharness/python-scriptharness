@@ -37,6 +37,7 @@ TEST_CONSOLE = '_test_log_console'
 TEST_FILE_CONTENTS = "Newly initialized test file"
 TEST_STRING = "This is a test string"
 
+
 # Helper methods {{{1
 def _absent_test_file(path=TEST_FILE):
     """Return a test file path that doesn't exist.
@@ -46,6 +47,7 @@ def _absent_test_file(path=TEST_FILE):
     assert not os.path.exists(path)
     return path
 
+
 def _present_test_file(path=TEST_FILE, contents=None):
     """Return a test file path that exists with initialized content.
     """
@@ -54,19 +56,23 @@ def _present_test_file(path=TEST_FILE, contents=None):
             print(TEST_FILE_CONTENTS, file=filehandle)
     return path
 
+
 class NoPostFunc(log.LogMethod):
     """Subclass LogMethod to only log from pre_func()
     """
     def call_func(self):
         """Skip calling"""
         pass
+
     def post_func(self):
         """Skip logging"""
         pass
 
+
 def always_fail_cb(*args):
     """always fail"""
     return True
+
 
 def always_succeed_cb(*args):
     """always succeed"""
@@ -90,6 +96,7 @@ class TestPrepareSimpleLogging(unittest.TestCase):
         log.prepare_simple_logging(path)
         console_mock.assert_called_once_with(log.DEFAULT_LEVEL)
         file_mock.assert_called_once_with(log.DEFAULT_LEVEL)
+
 
 # TestGetFileHandler {{{1
 class TestGetFileHandler(unittest.TestCase):
@@ -127,6 +134,7 @@ class TestGetFileHandler(unittest.TestCase):
             line = filehandle.readline().rstrip()
             self.assertEqual(line, TEST_STRING)
 
+
 # TestGetConsoleHandler {{{1
 class TestGetConsoleHandler(unittest.TestCase):
     """test_log | scriptharness.log.get_console_handler() method
@@ -152,6 +160,7 @@ class TestGetConsoleHandler(unittest.TestCase):
                                           level=logging.DEBUG)
         handler.setLevel.assert_called_once_with(logging.DEBUG)
         handler.setFormatter.assert_called_once_with(formatter)
+
 
 # TestLogMethodInit {{{1
 class TestLogMethodInit(unittest.TestCase):
@@ -327,6 +336,7 @@ class TestLogMethodFunction(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
+
         @log.LogMethod(detect_error_cb=always_fail_cb,
                        exception=ScriptHarnessError)
         def test_func(*args, **kwargs):
@@ -357,6 +367,7 @@ class TestLogMethodFunction(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
+
         @log.LogMethod(detect_error_cb=always_succeed_cb,
                        exception=ScriptHarnessException)
         def test_func(*args, **kwargs):
@@ -396,6 +407,7 @@ class TestLogMethodClass(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
+
         class TestClass(object):
             """test class"""
             @log.LogMethod(detect_error_cb=always_fail_cb,
@@ -403,6 +415,7 @@ class TestLogMethodClass(unittest.TestCase):
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs
+
             def silence_pylint(self):
                 """pylint complains about too few public methods"""
                 pass
@@ -437,6 +450,7 @@ class TestLogMethodClass(unittest.TestCase):
         mock_logging.getLogger.return_value = logger
         args = ('a', 'b')
         kwargs = {'c': 1, 'd': 2}
+
         class TestClass(object):
             """test class"""
             @log.LogMethod(detect_error_cb=always_succeed_cb,
@@ -444,6 +458,7 @@ class TestLogMethodClass(unittest.TestCase):
             def test_func(self, *args, **kwargs):
                 """test method"""
                 return self, args, kwargs
+
             def silence_pylint(self):
                 """pylint complains about too few public methods"""
                 pass

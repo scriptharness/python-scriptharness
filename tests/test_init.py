@@ -25,17 +25,20 @@ class FakeAction(object):  # pylint: disable=too-few-public-methods
     def __init__(self, *args, **kwargs):
         pass
 
+
 class FakeScript(object):
     """Pretend Script class"""
     def __init__(self, *args, **kwargs):
         if args or kwargs:  # silence pylint
             pass
         self.logger = True
+
     def add_config(self):
         """add self.config"""
         self.config = {  # pylint: disable=attribute-defined-outside-init
             "fakescript": True
         }
+
     def get_logger(self):
         """get logger"""
         return self.logger

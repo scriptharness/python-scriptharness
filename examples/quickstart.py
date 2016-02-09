@@ -24,20 +24,25 @@ the same script run.  It could have happened yesterday, or three weeks ago,
 and `package` should still be able to run.  If you need to save state
 between actions, consider saving state to disk.
 """
+
+
 def clobber(context):
     """Clobber the source"""
     context.logger.info("log message from clobber")
 
+
 def pull(context):
     """Pull source"""
     context.logger.info("log message from pull")
+
 
 def build(context):
     """Build source"""
     context.logger.info("log message from build")
     if context.config.get("new_argument"):
         context.logger.info("new_argument is set to %s",
-                            context_config['new_argument'])
+                            context.config['new_argument'])
+
 
 def package(context):
     """Package source"""
@@ -47,9 +52,11 @@ def package(context):
          "from __future__ import print_function; print('hello world!')"]
     )
 
+
 def upload(context):
     """Upload packages"""
     context.logger.info("log message from upload")
+
 
 def notify(context):
     """Notify watchers"""

@@ -7,6 +7,7 @@ import os
 from six.moves.CGIHTTPServer import CGIHTTPRequestHandler
 from six.moves.BaseHTTPServer import HTTPServer
 
+
 def start_webserver():
     """Start the webserver.
     """

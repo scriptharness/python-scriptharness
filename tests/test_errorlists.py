@@ -83,5 +83,3 @@ class TestErrorList(unittest.TestCase):
             self.assertRaises(
                 ScriptHarnessException, ErrorList, error_list
             )
-
-

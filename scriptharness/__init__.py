@@ -132,6 +132,7 @@ def get_script(*args, **kwargs):
     """
     return MANAGER.get_script(*args, **kwargs)
 
+
 def get_config(name="root"):
     """This will return the config from an existing script.
 
@@ -147,6 +148,7 @@ def get_config(name="root"):
       config (Dict[str, str]): By default scriptharness.structures.LoggingDict
     """
     return MANAGER.get_config(name=name)
+
 
 def get_logger(name="root"):
     """This will return the logger from an existing script.
@@ -170,6 +172,7 @@ def get_logger(name="root"):
     """
     return MANAGER.get_logger(name=name)
 
+
 def set_action_class(action_class):
     """By default new actions use the scriptharness.actions.Action class.
      Override here.
@@ -178,6 +181,7 @@ def set_action_class(action_class):
       action_class (class): use this class for new actions.
     """
     return MANAGER.set_action_class(action_class)
+
 
 def set_script_class(script_class):
     """By default new scripts use the scriptharness.script.Script class.
@@ -204,6 +208,7 @@ def get_actions(all_actions):
         action = MANAGER.action_class(action_name, enabled=value)
         action_list.append(action)
     return tuple(action_list)
+
 
 def get_actions_from_list(all_actions, default_actions=None):
     """Helper method to generate the ordered mapping for get_actions().

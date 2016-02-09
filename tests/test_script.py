@@ -27,9 +27,11 @@ def noop(*args):
     if args:
         pass
 
+
 def get_action(name, function, **kwargs):
     """Helper function to generate Actions"""
     return actions.Action(name, function=function, **kwargs)
+
 
 def get_grouped_actions():
     """Helper function for testing action_groups
@@ -106,6 +108,7 @@ class TestScript(unittest.TestCase):
     """Test Script()
     """
     timings = None
+
     def setUp(self):
         """Clear statuses before every test"""
         self.timings = []
@@ -310,18 +313,22 @@ class TestScript(unittest.TestCase):
             contents, json.dumps(initial_config, sort_keys=True, indent=4)
         )
 
+
 # TestStrictScript {{{1
 def change_config1(context):
     """This should raise"""
     context.script.config = {'a': 1}
 
+
 def change_config2(context):
     """This should raise"""
     context.script.config['a'] = 1
 
+
 def change_attribute(context):
     """This should raise"""
     context.script.a = 1
+
 
 class TestStrictScript(unittest.TestCase):
     """Test StrictScript()
@@ -353,9 +360,11 @@ class TestStrictScript(unittest.TestCase):
         """
         scr = self.get_script()
         scr.b = 1
+
         def testfunc():
             """set attribute"""
             scr.config['a'] = 1
+
         def testfunc2():
             """Set the lock; this shouldn't raise"""
             scr._lock = True  # pylint: disable=protected-access

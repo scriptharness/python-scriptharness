@@ -208,7 +208,7 @@ class Command(object):
         if 'cwd' in self.kwargs:
             if not os.path.isdir(self.kwargs['cwd']):
                 raise ScriptHarnessException(
-                    self.strings["cwd_doesn't_exist"] % \
+                    self.strings["cwd_doesn't_exist"] %
                     {'cwd': self.kwargs['cwd'], 'command': self.command}
                 )
             self.logger.info(
@@ -241,7 +241,7 @@ class Command(object):
         """
         if self.history['status'] != scriptharness.status.SUCCESS:
             raise ScriptHarnessError(
-                self.strings["error"] % {'command': self.command,}
+                self.strings["error"] % {'command': self.command, }
             )
 
     def run(self):
@@ -522,6 +522,7 @@ def get_output(command, halt_on_failure=False, **kwargs):
         yield cmd
     finally:
         cmd.cleanup()
+
 
 # get_text_output {{{1
 def get_text_output(command, level=logging.INFO, **kwargs):

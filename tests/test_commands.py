@@ -38,6 +38,7 @@ def cleanup():
     if os.path.exists(TEST_DIR):
         shutil.rmtree(TEST_DIR)
 
+
 def get_command(command=None, **kwargs):
     """Create a Command for testing
     """
@@ -46,6 +47,7 @@ def get_command(command=None, **kwargs):
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.Command(command, **kwargs)
 
+
 def get_parsed_command(command=None, **kwargs):
     """Create a ParsedCommand for testing
     """
@@ -53,6 +55,7 @@ def get_parsed_command(command=None, **kwargs):
         command = TEST_COMMAND
     kwargs.setdefault('logger', LoggerReplacement())
     return commands.ParsedCommand(command, **kwargs)
+
 
 @contextmanager
 def get_output(command=None, **kwargs):
@@ -387,8 +390,9 @@ class TestOutput(unittest.TestCase):
                 output = filehandle.read()
             self.assertEqual(to_unicode(output).rstrip(), "bar")
             self.assertEqual(os.path.getsize(command.stderr.name), 0)
-            command.cleanup()  # This will result in cleanup() being called
-                               # twice; idempotence test
+            # This will result in cleanup() being called twice;
+            # idempotence test
+            command.cleanup()
 
     def test_output_timeout(self):
         """test_commands | Output output_timeout

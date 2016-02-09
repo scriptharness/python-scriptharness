@@ -21,9 +21,11 @@ def action_func(_):
     """Return 50"""
     return 50
 
+
 def raise_error(_):
     """raise ScriptHarnessError"""
     raise ScriptHarnessError("error!")
+
 
 def raise_fatal(_):
     """raise ScriptHarnessFatal"""

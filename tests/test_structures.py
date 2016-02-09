@@ -101,6 +101,7 @@ class TestIteratePairs(unittest.TestCase):
         (4, []),
         ('c', 3),
     )
+
     def test_dict(self):
         """test_structures | iterate_pairs(dict)
         """
@@ -125,6 +126,7 @@ class TestIteratePairs(unittest.TestCase):
         for position, pair in enumerate(result):
             self.assertEqual(pair, self.pairs[position])
 
+
 # Test LoggingDict {{{1
 # helper methods {{{2
 def get_logging_dict(name=NAME, muted=False):
@@ -134,6 +136,7 @@ def get_logging_dict(name=NAME, muted=False):
     logdict.logger_name = LOGGER_NAME
     logdict.recursively_set_parent(name=name)
     return logdict
+
 
 def get_logging_list(name=NAME, values=None, muted=False):
     """Helper function to set up logging for the logging dict
@@ -223,6 +226,7 @@ class TestGetStrings(unittest.TestCase):
         self.assertRaises(ScriptHarnessException, structures.get_strings,
                           {})
 
+
 # TestFullNames {{{2
 class TestFullNames(unittest.TestCase):
     """Test LoggingClass.full_name()
@@ -289,6 +293,7 @@ class TestFullNames(unittest.TestCase):
             logdict[name] = []
             self.assertEqual(logdict[name].full_name(),
                              "%s[%s]" % (NAME, expected))
+
 
 # TestLoggingDeepcopy {{{2
 class TestLoggingDeepcopy(unittest.TestCase):
@@ -505,7 +510,7 @@ class TestLoggingList(TestLoggingClass):
         """Helper method to test muted+unmuted delitem.
         """
         del loglist[item]
-        self.verify_log([strings['delitem'] % {"item": item}] + \
+        self.verify_log([strings['delitem'] % {"item": item}] +
                         self.add_log_self(loglist, strings))
 
     @mock.patch('scriptharness.structures.logging')
@@ -562,8 +567,8 @@ class TestLoggingList(TestLoggingClass):
         """Helper method to test muted+unmuted append.
         """
         loglist.append([])
-        self.verify_log([strings['append'] % {"item": []}] + \
-                         self.add_log_self(loglist, strings))
+        self.verify_log([strings['append'] % {"item": []}] +
+                        self.add_log_self(loglist, strings))
         self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
         self.assertEqual(loglist.muted, loglist[-1].muted)
 
@@ -589,7 +594,7 @@ class TestLoggingList(TestLoggingClass):
         extend = ['a', 'b', []]
         loglist.extend(extend)
         self.verify_log(
-            [strings['extend'] % {"item": pprint.pformat(extend)}] + \
+            [strings['extend'] % {"item": pprint.pformat(extend)}] +
             self.add_log_self(loglist, strings)
         )
         self.assertTrue(isinstance(loglist[-1], structures.LoggingClass))
@@ -644,7 +649,7 @@ class TestLoggingList(TestLoggingClass):
                                      (muted_loglist, self.muted_strings)):
                 self.get_logger_replacement(mock_logging)
                 loglist.remove(item)
-                self.verify_log([strings['remove'] % {"item": item}] + \
+                self.verify_log([strings['remove'] % {"item": item}] +
                                 self.add_log_self(loglist, strings))
                 self.assertRaises(ValueError, loglist.index, item)
 
@@ -659,7 +664,7 @@ class TestLoggingList(TestLoggingClass):
             self.get_logger_replacement(mock_logging)
             length = len(loglist)
             loglist.pop()
-            self.verify_log([self.strings['pop_no_args']] + \
+            self.verify_log([self.strings['pop_no_args']] +
                             self.add_log_self(loglist, strings))
             self.assertEqual(length - 1, len(loglist))
 
@@ -676,7 +681,7 @@ class TestLoggingList(TestLoggingClass):
                 length = len(loglist)
                 loglist.pop(position)
                 self.verify_log(
-                    [self.strings['pop_args'] % {"position": position}] + \
+                    [self.strings['pop_args'] % {"position": position}] +
                     self.add_log_self(loglist, strings)
                 )
                 self.assertEqual(length - 1, len(loglist))
@@ -692,7 +697,7 @@ class TestLoggingList(TestLoggingClass):
                                  (muted_loglist, self.muted_strings)):
             self.get_logger_replacement(mock_logging)
             loglist.sort()
-            self.verify_log([strings['sort']] + \
+            self.verify_log([strings['sort']] +
                             self.add_log_self(loglist, strings))
             self.assertEqual(loglist[-1], 9)
 
@@ -706,9 +711,10 @@ class TestLoggingList(TestLoggingClass):
                                  (muted_loglist, self.muted_strings)):
             self.get_logger_replacement(mock_logging)
             loglist.reverse()
-            self.verify_log([strings['reverse']] + \
+            self.verify_log([strings['reverse']] +
                             self.add_log_self(loglist, strings))
             self.assertEqual(loglist[0], "finally")
+
 
 # Test add_logging_to_obj() {{{2
 class TestAddLogging(unittest.TestCase):
@@ -740,12 +746,14 @@ def get_unlocked_rod():
     """
     return structures.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
 
+
 def get_locked_rod():
     """Helper function to create a known locked ReadOnlyDict
     """
     rod = structures.ReadOnlyDict(deepcopy(RO_CONTROL_DICT))
     rod.lock()
     return rod
+
 
 # TestUnlockedROD {{{2
 class TestUnlockedROD(unittest.TestCase):
@@ -890,6 +898,7 @@ class TestLockedROD(unittest.TestCase):
         """test_structures | unlocking locked ROD should raise.
         """
         rod = get_locked_rod()
+
         def func():
             """Test func"""
             rod._lock = False  # pylint: disable=protected-access

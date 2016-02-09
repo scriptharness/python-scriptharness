@@ -19,11 +19,13 @@ READTHEDOCS_LINK = """
     :alt: Documentation Status
 """
 
+
 def cleanup(*args):
     """Cleanliness."""
     for path in args:
         if os.path.exists(path):
             os.remove(path)
+
 
 def build_readme_rst():
     print("Building README...")
@@ -34,6 +36,7 @@ def build_readme_rst():
         filehandle.write(template.render(readthedocs_link=READTHEDOCS_LINK))
     with open("README.rst", "w") as filehandle:
         filehandle.write(template.render())
+
 
 def build_releasenotes_rst():
     print("Building releasenotes...")
@@ -52,6 +55,7 @@ def build_releasenotes_rst():
             previous_releasenotes=previous_releasenotes,
         ))
 
+
 def indent_output(command, time_string='00:00:00', required_string="INFO",
                   **kwargs):
     output = ""
@@ -62,6 +66,7 @@ def indent_output(command, time_string='00:00:00', required_string="INFO",
         output += "    {}{}".format(line, os.linesep)
     assert required_string in output
     return output
+
 
 def build_quickstart():
     for line in subprocess.check_output(['git', 'branch', '--no-color'],
@@ -110,6 +115,7 @@ def build_quickstart():
             )
         )
 
+
 def main():
     """Main function"""
     os.chdir(os.path.dirname(__file__))
@@ -124,6 +130,7 @@ def main():
     subprocess.check_call(["cp", "_build/text/README.txt", "../README"])
     if os.path.exists("artifacts"):
         shutil.rmtree("artifacts")
+
 
 if __name__ == '__main__':
     main()

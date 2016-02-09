@@ -34,6 +34,7 @@ STRINGS = {
     }
 }
 
+
 def get_function_by_name(function_name):
     """If function isn't passed to Action, find the function with the same name
 
@@ -59,6 +60,7 @@ def get_function_by_name(function_name):
         return function
     else:
         raise ScriptHarnessException('%s is not callable!' % function_name)
+
 
 # Action {{{1
 class Action(object):
